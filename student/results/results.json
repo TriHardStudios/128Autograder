@@ -1,0 +1,17 @@
+{
+    "tests": [
+        {
+            "name": "Simple IO Test",
+            "score": 0.0,
+            "max_score": 1.0,
+            "status": "failed",
+            "output": "Test Failed: 'OUTPUT 2\\nOUTPUT 1000\\n' != 'OUTPUT 4\\nOUTPUT 100\\n'\n- OUTPUT 2\n?        ^\n+ OUTPUT 4\n?        ^\n- OUTPUT 1000\n?           -\n+ OUTPUT 100\n\n",
+            "visibility": "visible",
+            "number": "1.0"
+        }
+    ],
+    "leaderboard": [],
+    "visibility": "visible",
+    "execution_time": "0.02",
+    "score": 0.0
+}
