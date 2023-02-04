@@ -1,9 +1,9 @@
 NAME=autograder_prototype
-ROOT=.
+ROOT=$(shell pwd)
 SHELL=/bin/bash
 
-SUBMISSION_DIR=~/git/autograder_prototype/student/submission
-RESULTS_DIR=~/git/autograder_prototype/student/results
+SUBMISSION_DIR=$(ROOT)/student/submission
+RESULTS_DIR=$(ROOT)/student/results
 
 SRC_DIR=$(ROOT)/source
 
@@ -15,7 +15,7 @@ all:
 	@echo "Usage make <target>"
 	@echo "Avaible targets:"
 	# I stole this from stackoverflow - it prints out all the targets in a makefile
-	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/(^|\n)# Files(\n|$$)/,/(^|\n)# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
+	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/(^|\n)(\n|$$)/,/(^|\n) / {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
 
 build-docker: 
 	docker build -t $(NAME) $(ROOT)
