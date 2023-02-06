@@ -16,61 +16,61 @@ import os
 import ast
 from io import StringIO
 import sys
+import signal
 
 
 class StudentSubmission:
     def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: list[str] | None):
-        self.validationError = None
-        mainModuleTuple: (str, any) = StudentSubmission.__discoverMainModule__(_submissionDirectory)
-        self.mainModulePath: str = mainModuleTuple[0]
-        self.mainModule: any = mainModuleTuple[1]
-        self.isModule: bool = self.mainModule is not None
-        self.isValid: bool = False
+        mainModuleTuple = StudentSubmission.__discoverMainModule__(_submissionDirectory)
+        self.studentMainModule: ast.Module = mainModuleTuple[0]
+        self.validationError: str = mainModuleTuple[1]
+        self.isValid: bool = True if self.studentMainModule else False
 
         self.disallowedFunctionCalls: list[ast.Call] = \
-            StudentSubmission.__generateDisallowedFunctionCalls__(
-                _disallowedFunctionSignatures) if _disallowedFunctionSignatures else []
+            StudentSubmission.__generateDisallowedFunctionCalls__(_disallowedFunctionSignatures) \
+                if _disallowedFunctionSignatures else []
 
     @staticmethod
-    def __discoverMainModule__(_submissionDirectory: str) -> (str, any):
+    def __discoverMainModule__(_submissionDirectory: str) -> (ast.Module, str):
         """
-        @brief This function attempts to locate the students submision and determines how to process it based on the syntax
+        @brief This function locates the main module
         """
         if not (os.path.exists(_submissionDirectory) and not os.path.isfile(_submissionDirectory)):
-            raise Exception("Invalid Path")
+            return None, "Validation Error: Invalid student submission path"
 
-        files: list[str] = [file for file in os.listdir(_submissionDirectory) if file[-3:] == ".py"]
+        fileNames: list[str] = [file for file in os.listdir(_submissionDirectory) if file[-3:] == ".py"]
 
-        if len(files) == 0:
-            raise Exception("No '.py' files found")
-        file: str = ""
+        if len(fileNames) == 0:
+            return None, "Validation Error: No .py files were found"
+        fileName: str = ""
 
-        if len(files) == 1:
-            file = _submissionDirectory + files[0]
+        if len(fileNames) == 1:
+            fileName = _submissionDirectory + fileNames[0]
         else:
             # If using multiple files, must have one called main.py
-            filteredFiles: list[str] = [file for file in files if file == "main.py"]
+            filteredFiles: list[str] = [file for file in fileNames if fileName == "main.py"]
             if len(filteredFiles) == 1:
-                file = filteredFiles[0]
-        if not file:
-            raise Exception("Unable to find main file")
+                fileName = filteredFiles[0]
+        if not fileName:
+            return None, "Validation Error: Unable to find main file"
 
-        isModule: bool = False  # This will be set to true if its possible to import this program
+        pythonProgramText: str = None
 
-        # This is prolly not the best way to do this
-        #  Basically the way that I'm checking to see if this is a module is by seeing if it has the module protection if statment
-        #  (thats prolly not the right word but alas)
-        # TODO Need to integrate with AST parsing. But also want to avoid double parsing prolly
-        with open(file, 'r') as pythonProgram:
-            if "if __name__ == \"__main__\":" in pythonProgram:
-                isModule = True
+        try:
+            pythonProgramText = open(fileName, 'r').read()
+        except Exception as ex_g:
+            return None, f"IO Error: {ex_g.msg}"
 
-        # If we try to import a non module then it will run the code and cause this process to hang
-        if isModule:
-            # TODO add some protection against running any code in a potentionally ill formed file
-            return file, __import__(file.replace("/", "."))
 
-        return file, None
+        parsedPythonProgram: ast.Module = None
+
+        try:
+            parsedPythonProgram = ast.parse(pythonProgramText)
+
+        except SyntaxError as ex_se:
+            return None, f"Syntax Error: {ex_se.msg} on line {ex_se.lineno}"
+
+        return parsedPythonProgram, ""
 
     @staticmethod
     def __generateDisallowedFunctionCalls__(_disallowedFunctionSignatures: list[str]) -> list[ast.Call]:
@@ -156,30 +156,14 @@ class StudentSubmission:
         return invalidCalls
 
     @staticmethod
-    def __validateStudentSubmission__(_mainModulePath: str, _disallowedFunctions: list[ast.Call]) -> (bool, str):
-        # the file should exits if we got here so not needed to validate
-
-        pythonProgram: str = open(_mainModulePath, 'r').read();
-        parsedPythonProgram: ast.Module | None = None
-
-        # in the event of a syntax error - this will throw an expection
-        try:
-            parsedPythonProgram = ast.parse(pythonProgram)
-
-        except SyntaxError as ex_se:
-            print(f"Syntax Error: {ex_se.msg}")
-            return False, ex_se.msg
-
-        print("Validating student submission...")
-
+    def __validateStudentSubmission__(_studentMainModule: ast.Module, _disallowedFunctions: list[ast.Call]) -> (bool, str):
         # validating function calls
-        invalidCalls: dict[str, int] = StudentSubmission.__checkForInvalidFunctionCalls__(parsedPythonProgram,
+        invalidCalls: dict[str, int] = StudentSubmission.__checkForInvalidFunctionCalls__(_studentMainModule,
                                                                                           _disallowedFunctions)
 
         if not invalidCalls:
             return True, ""
 
-        print(invalidCalls)
         stringedCalls: str = ""
         for key, value in invalidCalls.items():
             stringedCalls += f"{key}: called {value} times\n"
@@ -188,13 +172,16 @@ class StudentSubmission:
         return False, f"Invalid Function Calls\n{stringedCalls}"
 
     def validateSubmission(self):
-        validationTuple: (bool, str) = StudentSubmission.__validateStudentSubmission__(self.mainModulePath,
+        # If we already ran into a validation error when loading submission
+
+        if not self.isValid:
+            return
+
+        validationTuple: (bool, str) = StudentSubmission.__validateStudentSubmission__(self.studentMainModule,
                                                                                        self.disallowedFunctionCalls)
 
         self.isValid = validationTuple[0]
         self.validationError = validationTuple[1]
-        if not self.isValid:
-            print(f"Submission is invalid. Reason: {validationTuple[1]}")
 
     def isSubmissionValid(self) -> bool:
         return self.isValid
@@ -205,25 +192,37 @@ class StudentSubmission:
     def getValidationError(self) -> str:
         return self.validationError
 
-    def runModule(self, _stdIn: list[str]) -> (bool, list[str]):
+    @staticmethod
+    def __execWrapper__(_compiledPythonProgram, _timeout: int):
+        class TimeoutError(Exception):
+            pass
+
+        def catchTimeout():
+            raise TimeoutError()
+
+        signal.signal(signal.SIGTERM, catchTimeout)
+        signal.alarm(_timeout)
+
+        try:
+            exec(_compiledPythonProgram)
+        except TimeoutError:
+            pass
+        finally:
+            signal.alarm(0)
+
+
+    def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
         """
         @brief This function compiles and runs python code from the AST
         """
         if not self.isValid:
             return False, []
 
-        pythonProgram = open(self.mainModulePath, 'r').read()
-
         try:
-            parsedPythonProgram: ast.Module = ast.parse(pythonProgram)
-        except SyntaxError:
-            return False, []
-
-        try:
-            compiledPythonProgram: code = compile(parsedPythonProgram, "<student_submission>", "exec")
+            compiledPythonProgram = compile(self.studentMainModule, "<student_submission>", "exec")
             # This can also cause a stack overflow - but lets not worry about that
-        except (SyntaxError, ValueError):
-            return False, []
+        except (SyntaxError, ValueError) as g_ex:
+            return False, [g_ex]
 
         oldStdOut = sys.stdout
         oldStdIn = sys.stdin
@@ -233,18 +232,17 @@ class StudentSubmission:
         stdOut: list[str] = []
 
         try:
-            exec(compiledPythonProgram)
+            StudentSubmission.__execWrapper__(compiledPythonProgram, timeoutDuration)
             capturedOutput.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
-        except Exception:
+        except Exception as g_ex:
             sys.stdin = oldStdIn
             sys.stdout = oldStdOut
-            return False, []
+            return False, [f"A runtime occured. Exception type is {type(g_ex).__qualname__}"]
 
         sys.stdin = oldStdIn
         sys.stdout = oldStdOut
         stdOut = StudentSubmission.filterStdOut(stdOut)
-        # print("".join(["OUTPUT " + line + "\n" for line in stdOut]))
         return True, stdOut
 
     @staticmethod
@@ -261,3 +259,5 @@ class StudentSubmission:
                 filteredOutput.append(line[line.lower().find("output ") + 7:])
 
         return filteredOutput
+
+

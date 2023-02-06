@@ -16,18 +16,19 @@ class Test(unittest.TestCase):
         cls.studentSubmission.validateSubmission()
 
     @classmethod
+    def reformatOuput(cls, _output: list[str]) -> str:
+        return "".join("OUTPUT " + line + "\n" for line in _output)
+
+    @classmethod
     def tearDownClass(cls):
         pass
 
     def failIfInvalid(self):
-        self.assertEqual(self.studentSubmission.isSubmissionValid(), True, msg=f"Student submission is invalid due to:\n{self.studentSubmission.getValidationError()}")
+        self.assertTrue(self.studentSubmission.isSubmissionValid(), msg=f"Student submission is invalid due to:\n{self.studentSubmission.getValidationError()}")
 
     def failIfNotModule(self):
         pass
 
-    @classmethod
-    def reformatOuput(cls, _output: list[str]) -> str:
-        return "".join("OUTPUT " + line + "\n" for line in _output)
 
     @weight(1.0)
     @number("1.0")
@@ -37,9 +38,9 @@ class Test(unittest.TestCase):
         self.failIfInvalid()
         expected: list[str] = [f"{int('10', 2)}", f"1000"]
 
-        completedSuccessfully, actual = self.studentSubmission.runModule(["10"])
+        completedSuccessfully, actual = self.studentSubmission.runMainModule(["10"], 10)
 
-        self.assertTrue(completedSuccessfully, msg="Failed to execute student submission")
+        self.assertTrue(completedSuccessfully, msg=f"Failed to execute student submission. Error: {actual[0]}")
 
         self.assertGreater(len(actual), 0, msg="No OUTPUT lines.\nCheck output formatting")
 
