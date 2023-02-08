@@ -15,10 +15,14 @@ MUST SUPPORT:
 import multiprocessing
 import os
 import ast
+import threading
 from io import StringIO
 import sys
 import signal
 from multiprocessing import Process
+from threading import Thread
+
+from RunnableStudentMainModule import RunnableStudentMainModule
 
 
 class StudentSubmission:
@@ -203,27 +207,21 @@ class StudentSubmission:
         pass
 
     @staticmethod
-    def __processWrapper__(_compiledPythonProgram, submissionQueue: multiprocessing.Queue):
-        submissionQueue.put(exec(_compiledPythonProgram))
-
-    @staticmethod
     def __executeMainModule__(_compiledPythonProgram, timeout: int = 10):
-        studentSubmissionWorker: multiprocessing.Queue = multiprocessing.Queue()
-        submissionProcess: multiprocessing.Process = multiprocessing.Process(
-            target=StudentSubmission.__processWrapper__,
-            args=(_compiledPythonProgram, studentSubmissionWorker)
-        )
-
-        submissionProcess.start()
+        submissionThread: threading.Thread = RunnableStudentMainModule(_compiledPythonProgram)
+        submissionThread.start()
         try:
-            studentSubmissionWorker.get(timeout=timeout)
-        except multiprocessing.queues.Empty:
-            raise TimeoutError()
-        finally:
-            try:
-                submissionProcess.terminate()
-            except:
-                pass
+            submissionThread.join(timeout)
+
+            if submissionThread.is_alive():
+                raise TimeoutError()
+        # It may not be necessary to catch each of the exception types - might be able to just use the exception type
+        except TimeoutError:
+            raise
+        except RuntimeError:
+            raise
+        except Exception:
+            raise
 
     def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
         """
@@ -250,14 +248,19 @@ class StudentSubmission:
             StudentSubmission.__executeMainModule__(compiledPythonProgram, timeoutDuration)
             capturedOutput.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
+            print(f"Captured output: {stdOut}", file=sys.stderr)
         except TimeoutError as to_ex:
             sys.stdin = oldStdIn
             sys.stdout = oldStdOut
             return False, [f"Submission timed out after {timeoutDuration} seconds."]
+        except RuntimeError as rt_ex:
+            sys.stdin = oldStdIn
+            sys.stdout = oldStdOut
+            return False, [f"A runtime occurred. {str(rt_ex)}"]
         except Exception as g_ex:
             sys.stdin = oldStdIn
             sys.stdout = oldStdOut
-            return False, [f"A runtime occurred. Exception type is {type(g_ex).__qualname__}"]
+            return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception."]
 
         sys.stdin = oldStdIn
         sys.stdout = oldStdOut
