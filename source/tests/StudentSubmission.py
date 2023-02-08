@@ -12,11 +12,13 @@ MUST SUPPORT:
 -   supporting multiple files
 
 """
+import multiprocessing
 import os
 import ast
 from io import StringIO
 import sys
 import signal
+from multiprocessing import Process
 
 
 class StudentSubmission:
@@ -54,21 +56,20 @@ class StudentSubmission:
         if not fileName:
             return None, "Validation Error: Unable to find main file"
 
-        pythonProgramText: str = None
+        pythonProgramText: str | None = None
 
         try:
             pythonProgramText = open(fileName, 'r').read()
         except Exception as ex_g:
-            return None, f"IO Error: {ex_g.msg}"
+            return pythonProgramText, f"IO Error: {type(ex_g).__qualname__}"
 
-
-        parsedPythonProgram: ast.Module = None
+        parsedPythonProgram: ast.Module | None = None
 
         try:
             parsedPythonProgram = ast.parse(pythonProgramText)
 
         except SyntaxError as ex_se:
-            return None, f"Syntax Error: {ex_se.msg} on line {ex_se.lineno}"
+            return parsedPythonProgram, f"Syntax Error: {ex_se.msg} on line {ex_se.lineno}"
 
         return parsedPythonProgram, ""
 
@@ -87,7 +88,7 @@ class StudentSubmission:
 
         for signature in _disallowedFunctionSignatures:
             try:
-                expr: ast.Expr = ast.parse(signature, mode="eval").body
+                expr: ast.expr = ast.parse(signature, mode="eval").body
                 if not isinstance(expr, ast.Call):
                     print(
                         f"Failed to parse function signature: {signature}. Incorrect type: Parsed type is {type(expr)}")
@@ -101,7 +102,7 @@ class StudentSubmission:
 
     @staticmethod
     def __checkForInvalidFunctionCalls__(_parsedPythonProgram: ast.Module, _disallowedFunctions: list[ast.Call]) -> \
-    dict[str, int]:
+            dict[str, int]:
         """
         @brief This function checks to see if any of the functions that a student used are on a 'black list' of disallowedFunctions.
         This function works by taking a parsed python script and walks the AST to see if any of the called functions are disallowed.
@@ -116,51 +117,60 @@ class StudentSubmission:
         invalidCalls: dict[str, int] = {}
         # This walks through every node in the program and sees if it is invalid
         for node in ast.walk(_parsedPythonProgram):
-            if type(node) is ast.Call:
-                for functionCall in _disallowedFunctions:
-                    # If we are blanket flagging the use of a function ie: flagging all uses of eval
-                    if node.func.id == functionCall.func.id and len(functionCall.args) == 0:
+            if type(node) is not ast.Call:
+                continue
+            # For now we are ignoring imported functions TODO: fix this
+            if type(node.func) is ast.Attribute:
+                continue
+            for functionCall in _disallowedFunctions:
+                # If we are blanket flagging the use of a function ie: flagging all uses of eval
+                if node.func.id == functionCall.func.id and len(functionCall.args) == 0:
+                    if functionCall.func.id not in invalidCalls.keys():
+                        invalidCalls[functionCall.func.id] = 0
+
+                    invalidCalls[functionCall.func.id] += 1
+                    continue
+
+                # If the function signature matches. Python is dynamically typed and types are evaluated while its
+                #  running rather than at parse time. So just seeing if the id and number of arguments matches.
+                #  This is also ignore star arguments.
+                if node.func.id == functionCall.func.id and len(node.args) == len(functionCall.args):
+                    # Using guilty til proven innocent approach
+                    isInvalidCall = True
+                    for i, arg in enumerate(functionCall.args):
+                        # If the type in an in the argument is a variable and its an exclusive wild card (`_`) then
+                        #  we dont care about whats there so skip
+                        if type(arg) is ast.Name and arg.id == '_':
+                            continue
+
+                        # If there is a constant where there is a variable - then its a mismatch
+                        if type(arg) is ast.Name and type(node.args[i]) is not ast.Name:
+                            isInvalidCall = False
+                            break
+
+                        # If the constant values don't match - then its a mismatch
+                        if (type(arg) is ast.Constant and type(node.args[i]) is ast.Constant) and arg.value is not \
+                                node.args[i].value:
+                            isInvalidCall = False
+                            break
+
+                    if isInvalidCall:
                         if functionCall.func.id not in invalidCalls.keys():
                             invalidCalls[functionCall.func.id] = 0
 
                         invalidCalls[functionCall.func.id] += 1
-                        continue
-
-                    # If the function sigiture matches. Python is dynamically typed and types are evaluated while its running rather than at
-                    #  parse time. So just seeing if the id and number of arguments matches. This is also ignore star arugments.
-                    if node.func.id == functionCall.func.id and len(node.args) == len(functionCall.args):
-                        # Using guilty til proven innocent approach
-                        isInvalidCall = True
-                        for i, arg in enumerate(functionCall.args):
-                            # If the type in a in the arugment is a variable and its a exclusive wild card (`_`) then we dont care about whats there so skip
-                            if type(arg) is ast.Name and arg.id == '_':
-                                continue
-
-                            # If there is a constant where there is a variable - then its a mismatch
-                            if type(arg) is ast.Name and type(node.args[i]) is not ast.Name:
-                                isInvalidCall = False
-                                break
-
-                            # If the constant values don't match - then its a mismatch
-                            if (type(arg) is ast.Constant and type(node.args[i]) is ast.Constant) and arg.value is not \
-                                    node.args[i].value:
-                                isInvalidCall = False
-                                break
-
-                        if isInvalidCall:
-                            if functionCall.func.id not in invalidCalls.keys():
-                                invalidCalls[functionCall.func.id] = 0
-
-                            invalidCalls[functionCall.func.id] += 1
 
         return invalidCalls
 
     @staticmethod
-    def __validateStudentSubmission__(_studentMainModule: ast.Module, _disallowedFunctions: list[ast.Call]) -> (bool, str):
+    def __validateStudentSubmission__(_studentMainModule: ast.Module, _disallowedFunctions: list[ast.Call]) -> (
+            bool, str):
+
         # validating function calls
         invalidCalls: dict[str, int] = StudentSubmission.__checkForInvalidFunctionCalls__(_studentMainModule,
                                                                                           _disallowedFunctions)
 
+        # need to roll import statements
         if not invalidCalls:
             return True, ""
 
@@ -186,30 +196,34 @@ class StudentSubmission:
     def isSubmissionValid(self) -> bool:
         return self.isValid
 
-    def isSubmissionAModule(self) -> bool:
-        return self.isModule
-
     def getValidationError(self) -> str:
         return self.validationError
 
+    class TimeoutError(Exception):
+        pass
+
     @staticmethod
-    def __execWrapper__(_compiledPythonProgram, _timeout: int):
-        class TimeoutError(Exception):
-            pass
+    def __processWrapper__(_compiledPythonProgram, submissionQueue: multiprocessing.Queue):
+        submissionQueue.put(exec(_compiledPythonProgram))
 
-        def catchTimeout():
-            raise TimeoutError()
+    @staticmethod
+    def __executeMainModule__(_compiledPythonProgram, timeout: int = 10):
+        studentSubmissionWorker: multiprocessing.Queue = multiprocessing.Queue()
+        submissionProcess: multiprocessing.Process = multiprocessing.Process(
+            target=StudentSubmission.__processWrapper__,
+            args=(_compiledPythonProgram, studentSubmissionWorker)
+        )
 
-        signal.signal(signal.SIGTERM, catchTimeout)
-        signal.alarm(_timeout)
-
+        submissionProcess.start()
         try:
-            exec(_compiledPythonProgram)
-        except TimeoutError:
-            pass
+            studentSubmissionWorker.get(timeout=timeout)
+        except multiprocessing.queues.Empty:
+            raise TimeoutError()
         finally:
-            signal.alarm(0)
-
+            try:
+                submissionProcess.terminate()
+            except:
+                pass
 
     def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
         """
@@ -221,8 +235,9 @@ class StudentSubmission:
         try:
             compiledPythonProgram = compile(self.studentMainModule, "<student_submission>", "exec")
             # This can also cause a stack overflow - but lets not worry about that
+            # TODO explicitly handle some common error types
         except (SyntaxError, ValueError) as g_ex:
-            return False, [g_ex]
+            return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}"]
 
         oldStdOut = sys.stdout
         oldStdIn = sys.stdin
@@ -232,13 +247,17 @@ class StudentSubmission:
         stdOut: list[str] = []
 
         try:
-            StudentSubmission.__execWrapper__(compiledPythonProgram, timeoutDuration)
+            StudentSubmission.__executeMainModule__(compiledPythonProgram, timeoutDuration)
             capturedOutput.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
+        except TimeoutError as to_ex:
+            sys.stdin = oldStdIn
+            sys.stdout = oldStdOut
+            return False, [f"Submission timed out after {timeoutDuration} seconds."]
         except Exception as g_ex:
             sys.stdin = oldStdIn
             sys.stdout = oldStdOut
-            return False, [f"A runtime occured. Exception type is {type(g_ex).__qualname__}"]
+            return False, [f"A runtime occurred. Exception type is {type(g_ex).__qualname__}"]
 
         sys.stdin = oldStdIn
         sys.stdout = oldStdOut
@@ -248,9 +267,9 @@ class StudentSubmission:
     @staticmethod
     def filterStdOut(_stdOut: list[str]) -> list[str]:
         """
-        @breif This function takes in a list representing the output from the program. It includes ALL output,
+        @brief This function takes in a list representing the output from the program. It includes ALL output,
         so lines may appear as 'NUMBER> OUTPUT 3' where we only care about what is right after the OUTPUT statement
-        This is adapted from John Henke's implmentation
+        This is adapted from John Henke's implementation
         """
 
         filteredOutput: list[str] = []
@@ -259,5 +278,3 @@ class StudentSubmission:
                 filteredOutput.append(line[line.lower().find("output ") + 7:])
 
         return filteredOutput
-
-
