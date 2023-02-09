@@ -1,6 +1,12 @@
 from StudentSubmission import StudentSubmission
 
-class StudentSubmissionStdIOAssertions:
+
+class StudentSubmissionAssertions:
+    def assertSubmissionValid(self):
+        pass
+
+
+class StudentSubmissionStdIOAssertions(StudentSubmissionAssertions):
 
     def assertSubmissionExecution(self, _studentSubmission: StudentSubmission,
                                   _stdin: list[str], _stdout: list[str],

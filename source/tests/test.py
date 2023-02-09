@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch
 
@@ -6,7 +7,7 @@ from gradescope_utils.autograder_utils.decorators import weight, visibility, num
 from io import StringIO
 
 from StudentSubmission import StudentSubmission
-from StudentSubmissionStdIOAssertions import StudentSubmissionStdIOAssertions
+from StudentSubmissionAssertions import StudentSubmissionStdIOAssertions
 
 
 class Test(unittest.TestCase, StudentSubmissionStdIOAssertions):
@@ -14,7 +15,11 @@ class Test(unittest.TestCase, StudentSubmissionStdIOAssertions):
 
     @classmethod
     def setUpClass(cls):
-        cls.studentSubmission = StudentSubmission("/autograder/submission/", ["eval()", "int(_, 16)"])
+        submissionDirectory: str = "/autograder/submission/"
+        if not os.getenv("RUNNING_IN_AUTOGRADER"):
+            submissionDirectory = "../student/submission/"
+
+        cls.studentSubmission = StudentSubmission(submissionDirectory, ["eval()", "int(_, 16)"])
         cls.studentSubmission.validateSubmission()
 
     @classmethod
