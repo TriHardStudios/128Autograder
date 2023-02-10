@@ -12,17 +12,13 @@ MUST SUPPORT:
 -   supporting multiple files
 
 """
-import multiprocessing
-import os
 import ast
+import os
+import sys
 import threading
 from io import StringIO
-import sys
-import signal
-from multiprocessing import Process
-from threading import Thread
 
-from RunnableStudentMainModule import RunnableStudentMainModule
+from .RunnableStudentMainModule import RunnableStudentMainModule
 
 
 class StudentSubmission:
@@ -248,7 +244,6 @@ class StudentSubmission:
             StudentSubmission.__executeMainModule__(compiledPythonProgram, timeoutDuration)
             capturedOutput.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
-            print(f"Captured output: {stdOut}", file=sys.stderr)
         except TimeoutError as to_ex:
             sys.stdin = oldStdIn
             sys.stdout = oldStdOut
