@@ -38,3 +38,5 @@ git checkout -b $1
 echo "Publishing new branch"
 
 git push $2 $1:$1
+
+git branch --set-upstream-to=$2/$1 $1
