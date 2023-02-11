@@ -37,5 +37,4 @@ git checkout -b $1
 
 echo "Publishing new branch"
 
-git push $1:$1 $2
-
+git push $2 $1:$1
