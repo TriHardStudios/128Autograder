@@ -11,7 +11,6 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
     def test_stdIO(self):
         """Simple IO Test"""
 
-
         expected: list[str] = [f"{int('10', 2)}", f"1000"]
 
         actual = []
