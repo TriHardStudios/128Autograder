@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 2 ]
 then
     echo "Usage: ./util/create_new_autograder.sh <autograder_name> <remote_name>"
     exit 64
 fi
 
-if [ -d ".git" ]
+if [ ! -d ".git" ]
 then
     echo "This script must be run in the root of the autograder repository"
     exit 2
