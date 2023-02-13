@@ -51,11 +51,11 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
 
 
     @weight(1.0)
-    @number(1.4)
+    @number(1.5)
     def test_multiplation(self):
-        """Simple Integer Division Test"""
+        """Simple Float Division Test"""
 
-        expected: list[str] = [f"{2/2}"]
+        expected: list[str] = [f"{2/2:.02f}"]
         input: list[str] = ["4", "2", "2"]
 
         self.runStdIOTest(input, expected)
@@ -74,7 +74,7 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
     @number(2.1)
     def test_floatAddition(self):
         """Float Addition Test"""
-        expected: list[str] = [f"{1.5 + 2}"]
+        expected: list[str] = [f"{1.5 + 2:.0f}"]
         input: list[str] = ["1", "1.5", "2"]
 
         self.runStdIOTest(input, expected)
@@ -84,7 +84,7 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
     @number(2.2)
     def test_intDivisionWithFloats(self):
         """Integer Division with Floats"""
-        expected: list[str] = [f"{10.5 // 3.1}"]
+        expected: list[str] = [f"{10.5 // 3.1:.0f}"]
         input: list[str] = ["4", "10.5", "3.1"]
 
         self.runStdIOTest(input, expected)
