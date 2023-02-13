@@ -56,7 +56,7 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
         """Simple Float Division Test"""
 
         expected: list[str] = [f"{2/2:.02f}"]
-        input: list[str] = ["4", "2", "2"]
+        input: list[str] = ["5", "2", "2"]
 
         self.runStdIOTest(input, expected)
 
