@@ -14,6 +14,9 @@ class TestRegister(TestSuite):
         if len(sys.argv) == 2 and sys.argv[1] == "--local":
             submissionDirectory = "../student/submission/"
             testPath = "studentTests"
+        if len(sys.argv) == 2 and sys.argv[1] == "--unit-test-only":
+            print(f"Fatal: Missing student submission directory")
+            exit(2)
         if len(sys.argv) == 3 and sys.argv[1] == "--unit-test-only":
             if not os.path.exists(sys.argv[2]):
                 print(f"Fatal: {sys.argv[2]} does not exist")
