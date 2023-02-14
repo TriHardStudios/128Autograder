@@ -205,12 +205,13 @@ class StudentSubmission:
 
     @staticmethod
     def __executeMainModule__(_compiledPythonProgram, timeout: int = 10):
-        submissionThread: threading.Thread = RunnableStudentMainModule(_compiledPythonProgram)
-        submissionThread.start()
+        submissionProcess: RunnableStudentMainModule = RunnableStudentMainModule(_compiledPythonProgram)
+        submissionProcess.start()
         try:
-            submissionThread.join(timeout)
+            submissionProcess.join(timeout)
 
-            if submissionThread.is_alive():
+            if submissionProcess.is_alive():
+                submissionProcess.stop()
                 raise TimeoutError()
         # It may not be necessary to catch each of the exception types - might be able to just use the exception type
         except TimeoutError:

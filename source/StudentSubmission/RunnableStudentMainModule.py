@@ -1,7 +1,8 @@
 import threading
+import multiprocessing.process
 
 
-class RunnableStudentMainModule(threading.Thread):
+class RunnableStudentMainModule(multiprocessing.Process):
 
     def __init__(self, _compiledStudentCode):
         super().__init__(name="Student Submission")
@@ -14,8 +15,16 @@ class RunnableStudentMainModule(threading.Thread):
         except Exception as g_ex:
             self.runtimeException = g_ex
 
+    def stop(self):
+        self.terminate()
+        if self.is_alive():
+            self.kill()
+
+        self.close()
+
     def join(self, timeout: float | None = ...):
-        threading.Thread.join(self, timeout)
+        multiprocessing.process.BaseProcess.join(self, timeout)
+        # threading.Thread.join(self, timeout)
 
         if self.runtimeException:
             raise self.runtimeException
