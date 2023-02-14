@@ -40,7 +40,7 @@ build: clean
 	@echo "	Building autograder in $(UPLOAD_DIR)/$(autograder_name).zip..."
 	@mkdir -p $(UPLOAD_DIR)
 	@echo "		Creating zip..."
-	@pushd $(GENERATION_DIR) popd > /dev/null ; zip -r $(autograder_name) . -x .* popd > /dev/null ; popd > /dev/null 
+	@pushd $(GENERATION_DIR) > /dev/null ; zip -r $(autograder_name) . -x .* > /dev/null ; popd > /dev/null 
 	@echo "		Moving zip to output directory..."
 	@mv $(GENERATION_DIR)/$(autograder_name).zip $(UPLOAD_DIR)/$(autograder_name).zip
 	@echo "Done."

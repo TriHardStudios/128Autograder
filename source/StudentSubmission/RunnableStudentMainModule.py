@@ -10,7 +10,7 @@ class RunnableStudentMainModule(threading.Thread):
 
     def run(self):
         try:
-            exec(self.code)
+            exec(self.code, {'__name__': "__main__"})
         except Exception as g_ex:
             self.runtimeException = g_ex
 
