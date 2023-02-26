@@ -20,7 +20,7 @@ import threading
 from io import StringIO
 from typing.io import TextIO
 
-from .RunnableStudentMainModule import RunnableStudentMainModule
+from .RunnableStudentSubmission import RunnableStudentSubmission
 
 
 class StudentSubmission:
@@ -206,25 +206,24 @@ class StudentSubmission:
         pass
 
     @staticmethod
-    def __executeMainModule__(_compiledPythonProgram, _stdin: StringIO, timeout: int = 10) -> (StringIO, StringIO):
-        submissionProcess: RunnableStudentMainModule = RunnableStudentMainModule(_compiledPythonProgram, _stdin)
-        submissionProcess.start()
+    def _executeMainModule(_compiledPythonProgram, _stdin: StringIO, timeout: int = 10) -> StringIO:
+        runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
+
+        # submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
+        submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, 10000)
+
         try:
-            # submissionProcess.join(timeout)
-            submissionProcess.join(1000)
-
-            if submissionProcess.is_alive():
-                submissionProcess.stop()
-                raise TimeoutError()
-        # It may not be necessary to catch each of the exception types - might be able to just use the exception type
-        except TimeoutError:
-            raise
-        except RuntimeError:
-            raise
-        except Exception:
+            submissionProcess.run()
+        except OSError:
             raise
 
-        return submissionProcess.getStdOut(), submissionProcess.getStdErr()
+        if submissionProcess.getTimeoutOccurred():
+            raise TimeoutError
+
+        if submissionProcess.getExceptions():
+            raise submissionProcess.getExceptions()
+
+        return submissionProcess.getStdOut()
 
     def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
         """
@@ -242,14 +241,11 @@ class StudentSubmission:
 
         stdIn = StringIO("".join([line + "\n" for line in _stdIn]))
         stdOut: list[str] = []
-        stdErr: list[str] = []
 
         try:
-            capturedOutput, capturedErr = StudentSubmission.__executeMainModule__(compiledPythonProgram, stdIn, timeoutDuration)
+            capturedOutput = StudentSubmission._executeMainModule(compiledPythonProgram, stdIn, timeoutDuration)
             capturedOutput.seek(0)
-            capturedErr.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
-            stdErr = capturedErr.getvalue().splitlines()
         except TimeoutError as to_ex:
             return False, [f"Submission timed out after {timeoutDuration} seconds."]
         except RuntimeError as rt_ex:
