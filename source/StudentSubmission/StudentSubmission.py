@@ -13,10 +13,12 @@ MUST SUPPORT:
 
 """
 import ast
+import multiprocessing
 import os
 import sys
 import threading
 from io import StringIO
+from typing.io import TextIO
 
 from .RunnableStudentMainModule import RunnableStudentMainModule
 
@@ -204,11 +206,12 @@ class StudentSubmission:
         pass
 
     @staticmethod
-    def __executeMainModule__(_compiledPythonProgram, timeout: int = 10):
-        submissionProcess: RunnableStudentMainModule = RunnableStudentMainModule(_compiledPythonProgram)
+    def __executeMainModule__(_compiledPythonProgram, _stdin: StringIO, timeout: int = 10) -> (StringIO, StringIO):
+        submissionProcess: RunnableStudentMainModule = RunnableStudentMainModule(_compiledPythonProgram, _stdin)
         submissionProcess.start()
         try:
-            submissionProcess.join(timeout)
+            # submissionProcess.join(timeout)
+            submissionProcess.join(1000)
 
             if submissionProcess.is_alive():
                 submissionProcess.stop()
@@ -220,6 +223,8 @@ class StudentSubmission:
             raise
         except Exception:
             raise
+
+        return submissionProcess.getStdOut(), submissionProcess.getStdErr()
 
     def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
         """
@@ -233,34 +238,25 @@ class StudentSubmission:
             # This can also cause a stack overflow - but lets not worry about that
             # TODO explicitly handle some common error types
         except (SyntaxError, ValueError) as g_ex:
-            return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}"]
+            return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}", str(g_ex)]
 
-        oldStdOut = sys.stdout
-        oldStdIn = sys.stdin
-
-        stdIn = sys.stdin = StringIO("".join([line + "\n" for line in _stdIn]))
-        capturedOutput = sys.stdout = StringIO()
+        stdIn = StringIO("".join([line + "\n" for line in _stdIn]))
         stdOut: list[str] = []
+        stdErr: list[str] = []
 
         try:
-            StudentSubmission.__executeMainModule__(compiledPythonProgram, timeoutDuration)
+            capturedOutput, capturedErr = StudentSubmission.__executeMainModule__(compiledPythonProgram, stdIn, timeoutDuration)
             capturedOutput.seek(0)
+            capturedErr.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
+            stdErr = capturedErr.getvalue().splitlines()
         except TimeoutError as to_ex:
-            sys.stdin = oldStdIn
-            sys.stdout = oldStdOut
             return False, [f"Submission timed out after {timeoutDuration} seconds."]
         except RuntimeError as rt_ex:
-            sys.stdin = oldStdIn
-            sys.stdout = oldStdOut
             return False, [f"A runtime occurred. {str(rt_ex)}"]
         except Exception as g_ex:
-            sys.stdin = oldStdIn
-            sys.stdout = oldStdOut
-            return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception."]
+            return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception.", str(g_ex)]
 
-        sys.stdin = oldStdIn
-        sys.stdout = oldStdOut
         stdOut = StudentSubmission.filterStdOut(stdOut)
         return True, stdOut
 
