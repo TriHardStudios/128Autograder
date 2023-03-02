@@ -1,10 +1,56 @@
-import code
+import multiprocessing
 import os
 import sys
 from io import StringIO
-import tempfile
 
-import psutil
+
+class StudentSubmissionProcess(multiprocessing.Process):
+    def __init__(self, _runner, _inputFD, _outputFD, timeout: int = 10):
+        super().__init__(name="Student Submission")
+        self.runner = _runner
+        self.inputFD = _inputFD
+        self.outputFD = _outputFD
+        self.exception: Exception | None = None
+        self.timeout = timeout
+
+    def _serialize(self, _object: object) -> str:
+        pass
+
+    def run(self):
+        try:
+            os.dup2(self.inputFD, sys.stdin.fileno())
+            os.dup2(self.outputFD, sys.stdout.fileno())
+        except OSError:
+            raise
+
+        returnValue: object = None
+        try:
+            returnValue = self.runner()
+        except EOFError:
+            pass  # todo - need to handle eof- raising it doesnt work :(
+        except Exception as g_ex:
+            self.exception = g_ex
+
+        if returnValue:
+            print(self._serialize(returnValue))  # I dont like this approach
+        # not sure if we need to close the pipe
+
+        os.close(self.inputFD)
+        os.close(self.outputFD)
+
+        if self.exception:
+            raise self.exception
+
+    def join(self, **kwargs):
+        multiprocessing.Process.join(self, timeout=self.timeout)
+
+    def terminate(self):
+        # SigKill - cant be caught
+        multiprocessing.Process.kill(self)
+        # Checks to see if we are killed and cleans up process
+        multiprocessing.Process.terminate(self)
+        # Clean up the zombie
+        multiprocessing.Process.join(self, timeout=0)
 
 
 class RunnableStudentSubmission:
@@ -12,94 +58,52 @@ class RunnableStudentSubmission:
     def __init__(self, _stdin: StringIO, _runner: callable, timeout: int = 10):
         self.stdin: StringIO = _stdin
         self.stdout: StringIO = StringIO()
-        self.runner: callable = _runner
-        self.timeout: int = timeout
+        self.stdinR, self.stdinW = os.pipe()
+        self.stdoutR, self.stdoutW = os.pipe()
+        self.studentSubmissionProcess = StudentSubmissionProcess(_runner, self.stdinR, self.stdoutW, timeout)
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
 
-    @staticmethod
-    def _runStudentSubmission(_stdinFD: int, _stdoutFD: int, _stderrFD: int | None, _runner: callable):
-        # if _runner is not callable:
-        #     raise AttributeError("Invalid runner.")
-
-        os.dup2(_stdinFD, sys.stdin.fileno())
-        os.dup2(_stdoutFD, sys.stdout.fileno())
-        if _stderrFD:
-            os.dup2(_stderrFD, sys.stderr.fileno())
-
-        exception: Exception | None = None
-        returnVal: object = None
-        try:
-            returnVal = _runner()
-        except Exception as g_ex:
-            exception = g_ex
-
-        # todo process and serialize return value
-
-        os.close(_stdinFD)
-        os.close(_stdoutFD)
-        if _stderrFD:
-            os.close(_stderrFD)
-
-        if exception:
-            raise exception
-
-        return 0
-
     def run(self):
-        readFD, writeFD = os.pipe()
-        stdinFD, stdinPath = tempfile.mkstemp()
-        with os.fdopen(stdinFD, 'w') as w:
-            for line in self.stdin:
-                w.write(line)
+        readFromStdoutPipe = os.fdopen(self.stdoutR, 'r')
+        writeToStdinPipe = os.fdopen(self.stdinW, 'w')
 
         try:
-            pid = os.fork()
-        except OSError:
-            # todo might want to handle a bit differently
-            raise
+            for line in self.stdin:
+                writeToStdinPipe.write(line)
 
-        if pid == 0:
-            os.close(readFD)
-            try:
-                self._runStudentSubmission(stdinFD, writeFD, None, self.runner)
-            except Exception as g_ex:
-                self.exception = g_ex
+            writeToStdinPipe.close()
 
-            return
+            self.studentSubmissionProcess.start()
 
-        else:
-            os.close(writeFD)
-            studentSubmissionProcess: psutil.Process = psutil.Process(pid)
-            returnValue: int = 0
-            try:
-                os.waitpid(pid, 0)
-                # returnValue = studentSubmissionProcess.wait(self.timeout)
+            # close the ends that we don't need
+            os.close(self.stdinR)
+            os.close(self.stdoutW)
 
-            except psutil.TimeoutExpired:
+            self.studentSubmissionProcess.join()
+
+            if self.studentSubmissionProcess.is_alive():
+                self.studentSubmissionProcess.terminate()
                 self.timeoutOccurred = True
-            except Exception as g_ex:
-                self.exception = g_ex
 
-            if studentSubmissionProcess.is_running():
-                try:
-                    studentSubmissionProcess.kill()
-                except OSError:
-                    # todo prolly should handle this differently
-                    raise
+            # While not completely required, reading the output when
+            #  we are timed out and will fail anyway
+            if not self.timeoutOccurred:
+                for line in readFromStdoutPipe:
+                    self.stdout.write(line)
 
-            if returnValue != 0:
-                if not self.exception:
-                    self.exception = \
-                        Exception(f"Student submission exited with non-zero exit code. Exit code: {returnValue}")
+            readFromStdoutPipe.close()
 
-            childData = os.fdopen(readFD)
+        except OSError:
+            raise
+        except Exception as g_ex:
+            self.exception = g_ex
 
-            self.stdout.write(childData.read())
-            childData.close()
+    def getStdOut(self) -> StringIO:
+        return self.stdout
 
-    def getStdOut(self) -> StringIO: return self.stdout
+    def getTimeoutOccurred(self) -> bool:
+        return self.timeoutOccurred
 
-    def getTimeoutOccurred(self) -> bool: return self.timeoutOccurred
-
-    def getExceptions(self) -> Exception: return self.exception
+    def getExceptions(self) -> Exception:
+        return self.exception

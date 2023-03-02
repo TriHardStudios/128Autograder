@@ -210,7 +210,7 @@ class StudentSubmission:
         runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
 
         # submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
-        submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, 10000)
+        submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
 
         try:
             submissionProcess.run()
