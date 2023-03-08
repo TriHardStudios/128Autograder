@@ -114,13 +114,9 @@ class StudentSubmissionProcess(multiprocessing.Process):
         sharedOtherData = multiprocessing.shared_memory.ShareableList(otherData, name=self.otherDataMemName)
         sharedOtherData.shm.close()
 
-        capturedStdout = []
         # Need to go to top of the buffer to read
         _stdout.seek(0)
-        for line in _stdout:
-            capturedStdout.append(line)
-
-        sharedStdout = multiprocessing.shared_memory.ShareableList(capturedStdout, name=self.stdoutSharedMemName)
+        sharedStdout = multiprocessing.shared_memory.ShareableList(_stdout.getvalue().splitlines(), name=self.stdoutSharedMemName)
         sharedStdout.shm.close()
 
     def run(self):
@@ -178,20 +174,22 @@ class RunnableStudentSubmission:
         if self.studentSubmissionProcess.is_alive():
             self.studentSubmissionProcess.terminate()
             self.timeoutOccurred = True
+            # If a timeout occurred, we can't trust any of the data in the shared memory. So don't even bother trying to
+            #  read it. Esp as the student already failed
+            return
 
-        if not self.timeoutOccurred:
-            capturedStdoutFromChild = multiprocessing.shared_memory.ShareableList(name=self.stdoutSharedName)
-            for el in capturedStdoutFromChild:
-                self.stdout.write(el)
+        capturedStdoutFromChild = multiprocessing.shared_memory.ShareableList(name=self.stdoutSharedName)
+        for el in capturedStdoutFromChild:
+            self.stdout.write(el)
 
-            capturedStdoutFromChild.shm.close()
-            capturedStdoutFromChild.shm.unlink()
+        capturedStdoutFromChild.shm.close()
+        capturedStdoutFromChild.shm.unlink()
 
-            capturedOtherData = multiprocessing.shared_memory.ShareableList(name=self.otherDataMemName)
-            self.exception = dill.loads(capturedOtherData[0])
-            self.returnData = dill.loads(capturedOtherData[1])
-            capturedOtherData.shm.close()
-            capturedOtherData.shm.unlink()
+        capturedOtherData = multiprocessing.shared_memory.ShareableList(name=self.otherDataMemName)
+        self.exception = dill.loads(capturedOtherData[0])
+        self.returnData = dill.loads(capturedOtherData[1])
+        capturedOtherData.shm.close()
+        capturedOtherData.shm.unlink()
 
     def getStdOut(self) -> StringIO:
         return self.stdout

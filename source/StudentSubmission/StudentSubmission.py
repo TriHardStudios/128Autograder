@@ -15,31 +15,30 @@ MUST SUPPORT:
 import ast
 import multiprocessing
 import os
-import sys
-import threading
 from io import StringIO
+
 import dill
-from typing.io import TextIO
 
 from .RunnableStudentSubmission import RunnableStudentSubmission
 
+# We need to use the dill pickle-ing library to pass functions in the processes
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
 
 
 class StudentSubmission:
     def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: list[str] | None):
-        mainModuleTuple = StudentSubmission.__discoverMainModule__(_submissionDirectory)
+        mainModuleTuple = StudentSubmission._discoverMainModule(_submissionDirectory)
         self.studentMainModule: ast.Module = mainModuleTuple[0]
         self.validationError: str = mainModuleTuple[1]
         self.isValid: bool = True if self.studentMainModule else False
 
         self.disallowedFunctionCalls: list[ast.Call] = \
-            StudentSubmission.__generateDisallowedFunctionCalls__(_disallowedFunctionSignatures) \
+            StudentSubmission._generateDisallowedFunctionCalls(_disallowedFunctionSignatures) \
                 if _disallowedFunctionSignatures else []
 
     @staticmethod
-    def __discoverMainModule__(_submissionDirectory: str) -> (ast.Module, str):
+    def _discoverMainModule(_submissionDirectory: str) -> (ast.Module, str):
         """
         @brief This function locates the main module
         """
@@ -81,7 +80,7 @@ class StudentSubmission:
         return parsedPythonProgram, ""
 
     @staticmethod
-    def __generateDisallowedFunctionCalls__(_disallowedFunctionSignatures: list[str]) -> list[ast.Call]:
+    def _generateDisallowedFunctionCalls(_disallowedFunctionSignatures: list[str]) -> list[ast.Call]:
         """
         @brief This function processes a list of strings and converts them into AST function calls.
         It will discard any mismatches.
@@ -108,7 +107,7 @@ class StudentSubmission:
         return astCalls
 
     @staticmethod
-    def __checkForInvalidFunctionCalls__(_parsedPythonProgram: ast.Module, _disallowedFunctions: list[ast.Call]) -> \
+    def _checkForInvalidFunctionCalls(_parsedPythonProgram: ast.Module, _disallowedFunctions: list[ast.Call]) -> \
             dict[str, int]:
         """
         @brief This function checks to see if any of the functions that a student used are on a 'black list' of disallowedFunctions.
@@ -170,12 +169,12 @@ class StudentSubmission:
         return invalidCalls
 
     @staticmethod
-    def __validateStudentSubmission__(_studentMainModule: ast.Module, _disallowedFunctions: list[ast.Call]) -> (
+    def _validateStudentSubmission(_studentMainModule: ast.Module, _disallowedFunctions: list[ast.Call]) -> (
             bool, str):
 
         # validating function calls
-        invalidCalls: dict[str, int] = StudentSubmission.__checkForInvalidFunctionCalls__(_studentMainModule,
-                                                                                          _disallowedFunctions)
+        invalidCalls: dict[str, int] = StudentSubmission._checkForInvalidFunctionCalls(_studentMainModule,
+                                                                                       _disallowedFunctions)
 
         # need to roll import statements
         if not invalidCalls:
@@ -194,8 +193,8 @@ class StudentSubmission:
         if not self.isValid:
             return
 
-        validationTuple: (bool, str) = StudentSubmission.__validateStudentSubmission__(self.studentMainModule,
-                                                                                       self.disallowedFunctionCalls)
+        validationTuple: (bool, str) = StudentSubmission._validateStudentSubmission(self.studentMainModule,
+                                                                                    self.disallowedFunctionCalls)
 
         self.isValid = validationTuple[0]
         self.validationError = validationTuple[1]
@@ -213,14 +212,12 @@ class StudentSubmission:
     def _executeMainModule(_compiledPythonProgram, _stdin: list[str], timeout: int = 10) -> StringIO:
         runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
 
-        # def runner():
-        #     exec(_compiledPythonProgram, {'__name__': "__main__"})
-
         submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
 
         try:
             submissionProcess.run()
-        except OSError:
+            # It shouldn't be possible fot this to throw an exception
+        except Exception:
             raise
 
         if submissionProcess.getTimeoutOccurred():
@@ -240,12 +237,10 @@ class StudentSubmission:
 
         try:
             compiledPythonProgram = compile(self.studentMainModule, "<student_submission>", "exec")
-            # This can also cause a stack overflow - but lets not worry about that
             # TODO explicitly handle some common error types
         except (SyntaxError, ValueError) as g_ex:
             return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}", str(g_ex)]
 
-        # stdIn = StringIO("".join([line + "\n" for line in _stdIn]))
         stdOut: list[str] = []
 
         try:
@@ -255,6 +250,7 @@ class StudentSubmission:
         except TimeoutError as to_ex:
             return False, [f"Submission timed out after {timeoutDuration} seconds."]
         except RuntimeError as rt_ex:
+            # TODO need to expand this for EOF, stack overflow, and recursion
             return False, [f"A runtime occurred. {str(rt_ex)}"]
         except Exception as g_ex:
             return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception.", str(g_ex)]
