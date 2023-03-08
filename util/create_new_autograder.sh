@@ -3,7 +3,7 @@
 
 if [ $# -ne 1 ]
 then
-    echo "Usage: ./util/create_new_autograder.sh <autograder_name>"
+    echo "Usage: ./create_new_autograder.sh <autograder_name>"
     exit 64
 fi
 
@@ -19,14 +19,30 @@ then
   exit 2
 fi
 
+if [ -d "$1" ]
+then
+    echo "Autograder found in $1. Please use ./update_autograder.sh"
+    exit 2
+fi
+
 # Update autograder base
 pushd autograder_base > /dev/null
 git pull
 popd > /dev/null
 
-mkdir -p "$1"/source "$1"/student "$1"/util
+# Copy over the source files
+echo "Generating new autograder in ./$1/ ..."
+mkdir -p "$1"/source "$1"/student/submission "$1"/student/results "$1"/util
 
-cp -r autograder_base/source "$1"/source
-cp -r autograder_base/student/{results/.gitkeep,submission/.gitkeep} "$1"/student
-cp autograder_base/util/prepare_for_gradescope.sh "$1"/source/util/prepare_for_gradescope.sh
+cp -r autograder_base/source "$1"/
+
+# Copy over utilities
+cp autograder_base/util/prepare_for_gradescope.sh "$1"/util/prepare_for_gradescope.sh
+
 cp -r autograder_base/{makefile,Dockerfile,.gitignore} "$1"/
+
+
+
+git add "$1"
+git commit -m "[NEW] Added base autograder for new autograder $1 in ./$1"
+git push
