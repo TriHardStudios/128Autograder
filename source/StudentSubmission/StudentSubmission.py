@@ -18,9 +18,13 @@ import os
 import sys
 import threading
 from io import StringIO
+import dill
 from typing.io import TextIO
 
 from .RunnableStudentSubmission import RunnableStudentSubmission
+
+dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
+multiprocessing.reduction.dump = dill.dump
 
 
 class StudentSubmission:
@@ -206,10 +210,12 @@ class StudentSubmission:
         pass
 
     @staticmethod
-    def _executeMainModule(_compiledPythonProgram, _stdin: StringIO, timeout: int = 10) -> StringIO:
+    def _executeMainModule(_compiledPythonProgram, _stdin: list[str], timeout: int = 10) -> StringIO:
         runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
 
-        # submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
+        # def runner():
+        #     exec(_compiledPythonProgram, {'__name__': "__main__"})
+
         submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
 
         try:
@@ -239,11 +245,11 @@ class StudentSubmission:
         except (SyntaxError, ValueError) as g_ex:
             return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}", str(g_ex)]
 
-        stdIn = StringIO("".join([line + "\n" for line in _stdIn]))
+        # stdIn = StringIO("".join([line + "\n" for line in _stdIn]))
         stdOut: list[str] = []
 
         try:
-            capturedOutput = StudentSubmission._executeMainModule(compiledPythonProgram, stdIn, timeoutDuration)
+            capturedOutput = StudentSubmission._executeMainModule(compiledPythonProgram, _stdIn, timeoutDuration)
             capturedOutput.seek(0)
             stdOut = capturedOutput.getvalue().splitlines()
         except TimeoutError as to_ex:

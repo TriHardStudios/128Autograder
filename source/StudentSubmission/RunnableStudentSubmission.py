@@ -1,45 +1,55 @@
 import multiprocessing
+import multiprocessing.shared_memory
 import os
 import sys
+import traceback
+import dill
 from io import StringIO
 
 
 class StudentSubmissionProcess(multiprocessing.Process):
-    def __init__(self, _runner, _inputFD, _outputFD, timeout: int = 10):
+    def __init__(self, _runner, _stdinSharedMemName, _stdoutSharedMemName, _otherDataMemName, timeout: int = 10):
         super().__init__(name="Student Submission")
         self.runner = _runner
-        self.inputFD = _inputFD
-        self.outputFD = _outputFD
-        self.exception: Exception | None = None
+        self.stdinSharedMemName = _stdinSharedMemName
+        self.stdoutSharedMemName = _stdoutSharedMemName
+        self.otherDataMemName = _otherDataMemName
         self.timeout = timeout
 
     def _serialize(self, _object: object) -> str:
         pass
 
     def run(self):
-        try:
-            os.dup2(self.inputFD, sys.stdin.fileno())
-            os.dup2(self.outputFD, sys.stdout.fileno())
-        except OSError:
-            raise
+        sharedStdin = multiprocessing.shared_memory.ShareableList(name=self.stdinSharedMemName)
+        sys.stdin = StringIO("".join([line + "\n" for line in sharedStdin]))
+        sharedStdin.shm.close()
+        sharedStdin.shm.unlink()
+
+        stdout = sys.stdout = StringIO()
 
         returnValue: object = None
+        exception: Exception | None = None
         try:
             returnValue = self.runner()
         except EOFError:
             pass  # todo - need to handle eof- raising it doesnt work :(
+        except RuntimeError as rt_er:
+            exception = rt_er
         except Exception as g_ex:
-            self.exception = g_ex
+            exception = g_ex
 
-        if returnValue:
-            print(self._serialize(returnValue))  # I dont like this approach
-        # not sure if we need to close the pipe
+        otherData: list[str] = [dill.dumps(exception), dill.dumps(returnValue)]
 
-        os.close(self.inputFD)
-        os.close(self.outputFD)
+        sharedOtherData = multiprocessing.shared_memory.ShareableList(otherData, name=self.otherDataMemName)
+        sharedOtherData.shm.close()
 
-        if self.exception:
-            raise self.exception
+        capturedStdout = []
+        stdout.seek(0)
+        for line in stdout:
+            capturedStdout.append(line)
+
+        sharedStdout = multiprocessing.shared_memory.ShareableList(capturedStdout, name=self.stdoutSharedMemName)
+        sharedStdout.shm.close()
 
     def join(self, **kwargs):
         multiprocessing.Process.join(self, timeout=self.timeout)
@@ -55,49 +65,47 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: StringIO, _runner: callable, timeout: int = 10):
-        self.stdin: StringIO = _stdin
+    def __init__(self, _stdin: list[str], _runner: callable, timeout: int = 10):
+        self.stdin: list[str] = _stdin
         self.stdout: StringIO = StringIO()
-        self.stdinR, self.stdinW = os.pipe()
-        self.stdoutR, self.stdoutW = os.pipe()
-        self.studentSubmissionProcess = StudentSubmissionProcess(_runner, self.stdinR, self.stdoutW, timeout)
+        self.stdoutSharedName = "sub_stdout"
+        self.stdinSharedName = "sub_stdin"
+        self.otherDataMemName = "sub_other"
+        self.studentSubmissionProcess = StudentSubmissionProcess(
+            _runner,
+            self.stdinSharedName, self.stdoutSharedName, self.otherDataMemName,
+            timeout)
+
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
+        self.returnData: object | None = None
 
     def run(self):
-        readFromStdoutPipe = os.fdopen(self.stdoutR, 'r')
-        writeToStdinPipe = os.fdopen(self.stdinW, 'w')
 
-        try:
-            for line in self.stdin:
-                writeToStdinPipe.write(line)
+        sharedStdin = multiprocessing.shared_memory.ShareableList(self.stdin, name=self.stdinSharedName)
+        sharedStdin.shm.close()
 
-            writeToStdinPipe.close()
+        self.studentSubmissionProcess.start()
 
-            self.studentSubmissionProcess.start()
+        self.studentSubmissionProcess.join()
 
-            # close the ends that we don't need
-            os.close(self.stdinR)
-            os.close(self.stdoutW)
+        if self.studentSubmissionProcess.is_alive():
+            self.studentSubmissionProcess.terminate()
+            self.timeoutOccurred = True
 
-            self.studentSubmissionProcess.join()
+        if not self.timeoutOccurred:
+            capturedStdoutFromChild = multiprocessing.shared_memory.ShareableList(name=self.stdoutSharedName)
+            for el in capturedStdoutFromChild:
+                self.stdout.write(el)
 
-            if self.studentSubmissionProcess.is_alive():
-                self.studentSubmissionProcess.terminate()
-                self.timeoutOccurred = True
+            capturedStdoutFromChild.shm.close()
+            capturedStdoutFromChild.shm.unlink()
 
-            # While not completely required, reading the output when
-            #  we are timed out and will fail anyway
-            if not self.timeoutOccurred:
-                for line in readFromStdoutPipe:
-                    self.stdout.write(line)
-
-            readFromStdoutPipe.close()
-
-        except OSError:
-            raise
-        except Exception as g_ex:
-            self.exception = g_ex
+            capturedOtherData = multiprocessing.shared_memory.ShareableList(name=self.otherDataMemName)
+            self.exception = dill.loads(capturedOtherData[0])
+            self.returnData = dill.loads(capturedOtherData[1])
+            capturedOtherData.shm.close()
+            capturedOtherData.shm.unlink()
 
     def getStdOut(self) -> StringIO:
         return self.stdout
@@ -107,3 +115,6 @@ class RunnableStudentSubmission:
 
     def getExceptions(self) -> Exception:
         return self.exception
+
+    def getReturnData(self) -> object:
+        return self.returnData
