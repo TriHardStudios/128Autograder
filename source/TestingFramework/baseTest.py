@@ -13,7 +13,7 @@ class BaseTest(unittest.TestCase, StudentSubmissionAssertions):
 
     @classmethod
     def setUpClass(cls):
-        cls.studentSubmission = StudentSubmission(cls.submissionDirectory, ["eval()", "int(_, 16)"])
+        cls.studentSubmission = StudentSubmission(cls.submissionDirectory, ["eval()"])
         cls.studentSubmission.validateSubmission()
 
     @classmethod

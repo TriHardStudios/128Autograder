@@ -14,7 +14,7 @@ def main(runUnitTestsOnly: bool, _resultsPath: str | None):
         return
 
     with open(_resultsPath, 'w+') as results:
-        testRunner = JSONTestRunner(visibility='visible', stream=results)
+        testRunner = JSONTestRunner(visibility='visible', stream=results, )
         testRunner.run(testSuite)
 
 
