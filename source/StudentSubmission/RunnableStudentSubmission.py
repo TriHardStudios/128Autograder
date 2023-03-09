@@ -180,7 +180,7 @@ class RunnableStudentSubmission:
 
         capturedStdoutFromChild = multiprocessing.shared_memory.ShareableList(name=self.stdoutSharedName)
         for el in capturedStdoutFromChild:
-            self.stdout.write(el)
+            self.stdout.write(el + "\n")
 
         capturedStdoutFromChild.shm.close()
         capturedStdoutFromChild.shm.unlink()
