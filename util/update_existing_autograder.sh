@@ -31,7 +31,7 @@ popd > /dev/null
 echo "Updating autograder version for autograder in /$1..."
 
 # Copy over submission api
-cp -r autograder_base/source/StudentSubmission "$1"/
+cp -r autograder_base/source/StudentSubmission "$1"/source/
 
 # Copy over main
 cp autograder_base/source/run.py "$1"/source/run.py
