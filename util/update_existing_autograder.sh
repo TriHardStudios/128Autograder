@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! $# -ne 1 ]
+if [ $# -ne 1 ]
 then
   echo "Usage: ./update_existing_autograder.sh <autograder_name>"
   exit 64
@@ -20,7 +20,7 @@ fi
 
 if [ ! -d "$1" ]
 then
-  echo "No autograder found in ./$1/. Please run ./create_new_autograder.sh"
+  echo "No autograder found in ./$1 Please run ./create_new_autograder.sh"
   exit 2
 fi
 
