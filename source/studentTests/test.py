@@ -12,7 +12,7 @@ class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
         actual: list[str] = []
         self.assertSubmissionExecution(self.studentSubmission, input, actual, 1)
 
-        self.assertOutputValid(expectedOutput, actual)
+        self.assertCorrectNumberOfOutputLines(expectedOutput, actual)
 
         self.assertEqual(self.reformatOutput(expectedOutput), self.reformatOutput(actual))
 
