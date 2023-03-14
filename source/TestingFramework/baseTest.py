@@ -5,9 +5,9 @@ import unittest
 from StudentSubmission import StudentSubmission
 # noinspection PyUnresolvedReferences
 from StudentSubmission import StudentSubmissionAssertions
+from .Assertions import Assertions
 
-
-class BaseTest(unittest.TestCase, StudentSubmissionAssertions):
+class BaseTest(Assertions, StudentSubmissionAssertions):
     studentSubmission: StudentSubmission | None = None
     submissionDirectory: str | None = None
 
