@@ -28,7 +28,7 @@ class StudentSubmissionStdIOAssertions(StudentSubmissionAssertions):
 
         _stdout.extend(stdout)
 
-    def assertOutputValid(self, expected: list[str], actual: list[str]):
+    def assertCorrectNumberOfOutputLines(self, expected: list[str], actual: list[str]):
         if len(actual) == 0:
             raise AssertionError("No OUTPUT lines found. Check OUTPUT formatting.")
 
