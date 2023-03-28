@@ -1,3 +1,4 @@
+import math
 import re
 import unittest
 
@@ -77,7 +78,25 @@ class Assertions(unittest.TestCase):
     def _assertIterableEqual(self, _expected, _actual, msg: any = ...):
         for i in range(len(_expected)):
             if _expected[i] != _actual[i]:
-                self._raiseFailure("incorrect output", _expected[i], _actual[i], msg)
+                self._raiseFailure("output", _expected[i], _actual[i], msg)
+
+    @staticmethod
+    def findPrecision(x: float):
+        """
+        This function is stolen from stack overflow verbatim - it computes the precision of a float
+        """
+        max_digits = 14
+        int_part = int(abs(x))
+        magnitude = 1 if int_part == 0 else int(math.log10(int_part)) + 1
+        if magnitude >= max_digits:
+            return magnitude
+        frac_part = abs(x) - int_part
+        multiplier = 10 ** (max_digits - magnitude)
+        frac_digits = multiplier + int(multiplier * frac_part + 0.5)
+        while frac_digits % 10 == 0:
+            frac_digits /= 10
+        scale = int(math.log10(frac_digits))
+        return magnitude + scale
 
     def assertMultiLineEqual(self, _expected: str, _actual: str, msg: any = ...) -> None:
         if not isinstance(_expected, str):
@@ -88,7 +107,7 @@ class Assertions(unittest.TestCase):
         if _expected != _actual:
             self._raiseFailure("output", _expected, _actual, msg)
 
-    def assertListEqual(self, _expected: list[any], _actual: list[object] | str, msg: object = ...) -> None:
+    def _assertListPreCheck(self, _expected: list[any], _actual: list[object] | str, msg: object = ...):
         if not isinstance(_expected, list):
             raise AttributeError(f"Expected must be a list. Actually is {type(_expected).__qualname__}")
         if isinstance(_actual, str):
@@ -100,8 +119,17 @@ class Assertions(unittest.TestCase):
         if len(_expected) != len(_actual):
             self._raiseFailure("number of elements", len(_expected), len(_actual), msg)
 
-        _actual = self._convertIterableFromString(_expected, _actual)
+        return self._convertIterableFromString(_expected, _actual)
+
+    def assertListEqual(self, _expected: list[any], _actual: list[object] | str, msg: object = ...) -> None:
+        _actual = self._assertListPreCheck(_expected, _actual, msg)
         self._assertIterableEqual(_expected, _actual, msg)
+
+    def assertListAlmostEqual(self, _expected: list[any], _actual: list[object] | str, allowedDelta: float, msg: object = ...) -> None:
+        _actual = self._assertListPreCheck(_expected, _actual, msg)
+        for i in range(len(_expected)):
+            if round(abs(_expected[i] - _actual[i]), self.findPrecision(allowedDelta)) > allowedDelta:
+                self._raiseFailure(f"output (allowed delta +/- {allowedDelta})", _expected[i], _actual[i], msg)
 
     def assertTupleEqual(self, _expected: tuple[any, ...], _actual: tuple[object, ...], msg: object = ...) -> None:
         if not isinstance(_expected, tuple):
