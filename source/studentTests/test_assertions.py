@@ -11,7 +11,7 @@ class TestAssertions(BaseTest, StudentSubmissionStdIOAssertions):
         self.assertListEqual([1, 1.0, "hello!", None, False], [1, 1.0, "hello!", None, False])
 
     def test_listAlmostEquals(self):
-        self.assertListAlmostEqual([1.001], "[1.002]", .001)
+        self.assertListAlmostEqual([1.001, 1.0021], "[1.002, 1.0011]", .001)
         self.assertListAlmostEqual([1.001], "[1.000]", .001)
 
     def test_tuple(self):

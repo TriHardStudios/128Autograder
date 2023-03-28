@@ -145,3 +145,7 @@ class Assertions(unittest.TestCase):
 
     def assertDictEqual(self, _expected: dict[any, object], _actual: dict[object, object], msg: any = ...) -> None:
         pass
+
+    def assertAlmostEquals(self, _expected: float, _actual: float, _places: int = ..., msg: any = ..., _delta: float = ...) -> None:
+        pass
+
