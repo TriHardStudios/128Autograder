@@ -12,12 +12,23 @@ class Assertions(unittest.TestCase):
         self.addTypeEqualityFunc(tuple, self.assertTupleEqual)
 
     @staticmethod
-    def _convertStringToList(_str: str) -> list[str]:
+    def _stripOutput(_str: str) -> str:
         if not isinstance(_str, str):
             raise AssertionError(f"Expected a string. Got {type(_str).__qualname__}")
 
         if "output " in _str.lower():
             _str = _str[7:]
+
+        _str = _str.strip()
+
+        return _str
+
+    @staticmethod
+    def _convertStringToList(_str: str) -> list[str]:
+        if not isinstance(_str, str):
+            raise AssertionError(f"Expected a string. Got {type(_str).__qualname__}")
+
+        _str = Assertions._stripOutput(_str)
 
         if "[" in _str:
             _str = _str[1:]
@@ -41,6 +52,33 @@ class Assertions(unittest.TestCase):
 
         raise AssertionError(errorMsg)
 
+    @staticmethod
+    def _convertIterableFromString(_expected, _actual):
+        for i in range(len(_expected)):
+            parsedActual = object
+            expectedType = type(_expected[i])
+            try:
+                if isinstance(_actual[i], type(_expected[i])):
+                    parsedActual = _actual[i]
+                elif _expected[i] is None:
+                    if _actual[i] == "None":
+                        parsedActual = None
+                elif isinstance(_expected[i], bool):
+                    parsedActual = True if _actual[i] == "True" else False
+                else:
+                    parsedActual = expectedType(_actual[i])
+            except Exception:
+                raise AssertionError(f"Failed to parse {expectedType.__qualname__} from {_actual[i]}")
+
+            _actual[i] = parsedActual
+
+        return _actual
+
+    def _assertIterableEqual(self, _expected, _actual, msg: any = ...):
+        for i in range(len(_expected)):
+            if _expected[i] != _actual[i]:
+                self._raiseFailure("incorrect output", _expected[i], _actual[i], msg)
+
     def assertMultiLineEqual(self, _expected: str, _actual: str, msg: any = ...) -> None:
         if not isinstance(_expected, str):
             raise AttributeError(f"Expected must be string. Actually is {type(_expected).__qualname__}")
@@ -62,23 +100,20 @@ class Assertions(unittest.TestCase):
         if len(_expected) != len(_actual):
             self._raiseFailure("number of elements", len(_expected), len(_actual), msg)
 
-        for i in range(len(_expected)):
-            expectedType = type(_expected[i])
-            try:
-                if _expected[i] is None:
-                    if _actual[i] == "None":
-                        _actual[i] = None
-                else:
-                    parsedActual = expectedType(_actual[i])
-            except Exception:
-                raise AssertionError(f"Failed to parse {expectedType.__qualname__} from {_actual[i]}")
-
-            if _expected[i] != parsedActual:
-                self._raiseFailure("list element", _expected[i], parsedActual, msg)
-
+        _actual = self._convertIterableFromString(_expected, _actual)
+        self._assertIterableEqual(_expected, _actual, msg)
 
     def assertTupleEqual(self, _expected: tuple[any, ...], _actual: tuple[object, ...], msg: object = ...) -> None:
-        pass
+        if not isinstance(_expected, tuple):
+            raise AttributeError(f"Expected must be a tuple. Actually is {type(_expected).__qualname__}")
+
+        if not isinstance(_actual, tuple):
+            raise AssertionError(f"Expected a tuple. Got {type(_actual).__qualname__}")
+
+        if len(_expected) != len(_actual):
+            self._raiseFailure("number of elements", len(_expected), len(_actual), msg)
+
+        self._assertIterableEqual(_expected, _actual, msg)
 
     def assertDictEqual(self, _expected: dict[any, object], _actual: dict[object, object], msg: any = ...) -> None:
         pass
