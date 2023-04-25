@@ -4,11 +4,16 @@ import unittest
 
 
 class Assertions(unittest.TestCase):
+    """
+    This class contains the base assertions for the autograder platform. It overrides the one in the base TestCase class
 
+    The primary differentiation factor of this is that it formats the outputs in a nicer way for both gradescope and the
+    local autograder
+    """
     def __init__(self, _testResults):
         super().__init__(_testResults)
         self.addTypeEqualityFunc(str, self.assertMultiLineEqual)
-        self.addTypeEqualityFunc(dict, self.assertDictEqual)
+        # self.addTypeEqualityFunc(dict, self.assertDictEqual)
         self.addTypeEqualityFunc(list, self.assertListEqual)
         self.addTypeEqualityFunc(tuple, self.assertTupleEqual)
 
@@ -125,11 +130,11 @@ class Assertions(unittest.TestCase):
         _actual = self._assertListPreCheck(_expected, _actual, msg)
         self._assertIterableEqual(_expected, _actual, msg)
 
-    def assertListAlmostEqual(self, _expected: list[any], _actual: list[object] | str, allowedDelta: float, msg: object = ...) -> None:
+    def assertListAlmostEqual(self, _expected: list[any], _actual: list[object] | str, allowedDelta: float,
+                              msg: object = ...) -> None:
         _actual = self._assertListPreCheck(_expected, _actual, msg)
         for i in range(len(_expected)):
-            if round(abs(_expected[i] - _actual[i]), self.findPrecision(allowedDelta)) > allowedDelta:
-                self._raiseFailure(f"output (allowed delta +/- {allowedDelta})", _expected[i], _actual[i], msg)
+            self.assertAlmostEquals(_expected[i], _actual[i], _delta=allowedDelta)
 
     def assertTupleEqual(self, _expected: tuple[any, ...], _actual: tuple[object, ...], msg: object = ...) -> None:
         if not isinstance(_expected, tuple):
@@ -144,8 +149,12 @@ class Assertions(unittest.TestCase):
         self._assertIterableEqual(_expected, _actual, msg)
 
     def assertDictEqual(self, _expected: dict[any, object], _actual: dict[object, object], msg: any = ...) -> None:
-        pass
+        raise NotImplementedError("Use base assert dict equal")
 
-    def assertAlmostEquals(self, _expected: float, _actual: float, _places: int = ..., msg: any = ..., _delta: float = ...) -> None:
-        pass
+    def assertAlmostEquals(self, _expected: float, _actual: float, _places: int = ..., msg: any = ...,
+                           _delta: float = ...) -> None:
+        if _places is None:
+            raise AttributeError("Use _delta not _places for assertAlmostEquals")
 
+        if round(abs(_expected - _actual), self.findPrecision(_delta)) > _delta:
+            self._raiseFailure(f"output (allowed delta +/- {_delta})", _expected, _actual, msg)
