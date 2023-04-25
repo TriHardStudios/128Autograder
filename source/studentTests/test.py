@@ -6,56 +6,50 @@ from StudentSubmission import StudentSubmissionAssertions
 
 class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
-
-    def runStdIOTest(self, input, expectedOutput):
-
+    def runStdIOTest(self, _input, _expectedOutput):
         actual: list[str] = []
-        self.assertSubmissionExecution(self.studentSubmission, input, actual, 1)
+        self.StdIOAssertions.assertSubmissionExecution(self.studentSubmission, _input, actual, 1)
 
-        self.assertCorrectNumberOfOutputLines(expectedOutput, actual)
+        self.StdIOAssertions.assertCorrectNumberOfOutputLines(_expectedOutput, actual)
 
-        self.assertEqual(self.reformatOutput(expectedOutput), self.reformatOutput(actual))
-
+        self.assertEqual(self.reformatOutput(_expectedOutput), self.reformatOutput(actual))
 
     @weight(1.0)
     @number(1.1)
     def test_addition(self):
         """Simple Integer Addition Test"""
 
-        expected: list[str] = [f"{2+2}"]
+        expected: list[str] = [f"{2 + 2}"]
         input: list[str] = ["1", "2", "2"]
 
         self.runStdIOTest(input, expected)
-
 
     @weight(1.0)
     @number(1.2)
     def test_subtraction(self):
         """Simple Integer Subtraction Test"""
 
-        expected: list[str] = [f"{2-2}"]
+        expected: list[str] = [f"{2 - 2}"]
         input: list[str] = ["2", "2", "2"]
 
         self.runStdIOTest(input, expected)
-
 
     @weight(1.0)
     @number(1.3)
     def test_multiplation(self):
         """Simple Integer Multiplcation Test"""
 
-        expected: list[str] = [f"{2*2}"]
+        expected: list[str] = [f"{2 * 2}"]
         input: list[str] = ["3", "2", "2"]
 
         self.runStdIOTest(input, expected)
-
 
     @weight(1.0)
     @number(1.5)
     def test_multiplation(self):
         """Simple Float Division Test"""
 
-        expected: list[str] = [f"{2/2:.02f}"]
+        expected: list[str] = [f"{2 / 2:.02f}"]
         input: list[str] = ["5", "2", "2"]
 
         self.runStdIOTest(input, expected)
@@ -65,7 +59,7 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
     def test_division(self):
         """Simple Integer Division Test"""
 
-        expected: list[str] = [f"{2//2}"]
+        expected: list[str] = [f"{2 // 2}"]
         input: list[str] = ["4", "2", "2"]
 
         self.runStdIOTest(input, expected)
@@ -79,7 +73,6 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
         self.runStdIOTest(input, expected)
 
-
     @weight(1.0)
     @number(2.2)
     def test_intDivisionWithFloats(self):
@@ -89,7 +82,6 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
         self.runStdIOTest(input, expected)
 
-
     @weight(1.0)
     @number(2.3)
     def test_floatDivision(self):
@@ -98,9 +90,3 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
         input: list[str] = ["5", "10", "3"]
 
         self.runStdIOTest(input, expected)
-
-
-
-
-
-
