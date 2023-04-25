@@ -1,2 +1,2 @@
 from .StudentSubmission import StudentSubmission
-from .StudentSubmissionAssertions import StudentSubmissionAssertions, StudentSubmissionStdIOAssertions
+from .StudentSubmissionAssertions import StudentSubmissionAssertions

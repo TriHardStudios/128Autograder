@@ -1,10 +1,10 @@
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
 from TestingFramework import BaseTest
-from StudentSubmission import StudentSubmissionStdIOAssertions
+from StudentSubmission import StudentSubmissionAssertions
 
 
-class TestAssertions(BaseTest, StudentSubmissionStdIOAssertions):
+class TestAssertions(BaseTest, StudentSubmissionAssertions):
 
     def test_list(self):
         self.assertListEqual([1, 1.0, "hello!", None, False], "[1, 1.0, \"hello!\", None, False]")
