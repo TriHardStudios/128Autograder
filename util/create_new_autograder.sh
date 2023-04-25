@@ -1,8 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 2 ]
+
+if [ $# -ne 1 ]
 then
-    echo "Usage: ./util/create_new_autograder.sh <autograder_name> <remote_name>"
+    echo "Usage: ./create_new_autograder.sh <autograder_name>"
     exit 64
 fi
 
@@ -12,31 +13,36 @@ then
     exit 2
 fi
 
-git fetch --all
-
-# Taken from https://git.kernel.org/pub/scm/git/git.git/tree/contrib/completion/git-completion.bash?id=HEAD
-
-currentBranch="$(git symbolic-ref HEAD 2>/dev/null)" ||
-currentBranch="(unnamed branch)"     # detached HEAD
-
-currentBranch=${currentBranch##refs/heads/}
-
-if [ "$currentBranch" != "main" ]
+if [ ! -d "autograder_base" ]
 then
-    if [ "$(git checkout main > /dev/null 2>&1 )" -ne 0 ]
-    then
-        echo "Failed to swtich from $currentBranch to main"
-        exit 2
-    fi
-    echo "Switched to main branch"
+  echo "Autograder base not found. Please ensure that you cloned all submodules"
+  exit 2
 fi
 
-echo "Generating new autograder with name: $1"
+if [ -d "$1" ]
+then
+    echo "Autograder found in $1. Please use ./update_autograder.sh"
+    exit 2
+fi
 
-git checkout -b $1
+# Update autograder base
+pushd autograder_base > /dev/null
+git pull
+popd > /dev/null
 
-echo "Publishing new branch"
+# Copy over the source files
+echo "Generating new autograder in ./$1/ ..."
+mkdir -p "$1"/source "$1"/student/submission "$1"/student/results "$1"/util
 
-git push $2 $1:$1
+cp -r autograder_base/source "$1"/
 
-git branch --set-upstream-to=$2/$1 $1
+# Copy over utilities
+cp autograder_base/util/prepare_for_gradescope.sh "$1"/util/prepare_for_gradescope.sh
+
+cp -r autograder_base/{makefile,Dockerfile,.gitignore} "$1"/
+
+
+
+git add "$1"
+git commit -m "[NEW] Added base autograder for new autograder $1 in ./$1"
+git push
