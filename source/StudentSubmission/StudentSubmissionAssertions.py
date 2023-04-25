@@ -48,6 +48,8 @@ class StudentSubmissionAssertions:
                                      f"Actual number of lines  : {len(actual)}")
 
     class FileIOAssertions:
+        dataFileSource: str = "./data/"
+
         @staticmethod
         def readFromFile(_fileName: str) -> StringIO:
             if not os.path.exists(_fileName):
@@ -65,7 +67,7 @@ class StudentSubmissionAssertions:
 
         @staticmethod
         def assertSubmissionExecution(_studentSubmission: StudentSubmission, _input: StringIO,
-                                      _expected: StringIO, _actual: StringIO, _timeout: int):
+                                      _expected: StringIO, _actualFile: str, _timeout: int):
             pass
 
         @staticmethod
