@@ -5,14 +5,15 @@ from .StudentSubmission import StudentSubmission
 
 
 class StudentSubmissionAssertions:
-    def assertSubmissionValid(self, _studentSubmission: StudentSubmission):
+    @staticmethod
+    def assertSubmissionValid(_studentSubmission: StudentSubmission):
         if not _studentSubmission.isSubmissionValid():
             raise AssertionError(_studentSubmission.getValidationError())
 
-
     class StdIOAssertions:
 
-        def assertSubmissionExecution(self, _studentSubmission: StudentSubmission,
+        @staticmethod
+        def assertSubmissionExecution(_studentSubmission: StudentSubmission,
                                       _stdin: list[str], _stdout: list[str],
                                       _timeout: int):
 
@@ -31,7 +32,8 @@ class StudentSubmissionAssertions:
 
             _stdout.extend(stdout)
 
-        def assertCorrectNumberOfOutputLines(self, expected: list[str], actual: list[str]):
+        @staticmethod
+        def assertCorrectNumberOfOutputLines(expected: list[str], actual: list[str]):
             if len(actual) == 0:
                 raise AssertionError("No OUTPUT lines found. Check OUTPUT formatting.")
 
@@ -44,7 +46,6 @@ class StudentSubmissionAssertions:
                 raise AssertionError(f"Too few OUTPUT lines. Check OUTPUT formatting.\n"
                                      f"Expected number of lines: {len(expected)}\n"
                                      f"Actual number of lines  : {len(actual)}")
-
 
     class FileIOAssertions:
         @staticmethod
@@ -62,8 +63,11 @@ class StudentSubmissionAssertions:
 
             return StringIO(combinedInput)
 
-        def assertSubmissionExecution(self, _studentSubmission: StudentSubmission, _input: StringIO, _expected: StringIO, _actual: StringIO):
+        @staticmethod
+        def assertSubmissionExecution(_studentSubmission: StudentSubmission, _input: StringIO,
+                                      _expected: StringIO, _actual: StringIO, _timeout: int):
             pass
 
-        def assertFileOutput(self, expectedOutput: StringIO, actualOutput: StringIO):
+        @staticmethod
+        def assertFileOutput(_expectedOutput: StringIO, _actualOutput: StringIO):
             pass

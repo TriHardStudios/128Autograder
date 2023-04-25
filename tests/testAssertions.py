@@ -1,10 +1,8 @@
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
-from TestingFramework import BaseTest
-from StudentSubmission import StudentSubmissionAssertions
+from TestingFramework.Assertions import Assertions
 
-
-class TestAssertions(BaseTest, StudentSubmissionAssertions):
+class TestAssertions(Assertions):
 
     def test_list(self):
         self.assertListEqual([1, 1.0, "hello!", None, False], "[1, 1.0, \"hello!\", None, False]")
@@ -16,3 +14,6 @@ class TestAssertions(BaseTest, StudentSubmissionAssertions):
 
     def test_tuple(self):
         self.assertTupleEqual((1, 2), (1, 2))
+
+    def test_almostEquals(self):
+        self.assertAlmostEquals(1, 0.8, _delta=.2)
