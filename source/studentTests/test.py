@@ -1,10 +1,10 @@
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
 from TestingFramework import BaseTest
-from StudentSubmission import StudentSubmissionStdIOAssertions
+from StudentSubmission import StudentSubmissionAssertions
 
 
-class TestStdIO(BaseTest, StudentSubmissionStdIOAssertions):
+class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
 
     def runStdIOTest(self, input, expectedOutput):
