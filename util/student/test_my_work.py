@@ -17,7 +17,7 @@ def printErrorMessage(_errorType: str, _errorText: str) -> None:
     :param _errorText: the text for the error
     :return:
     """
-    print(f"[{RED_COLOR}{_errorText}{RESET_COLOR}]: {_errorText}")
+    print(f"[{RED_COLOR}{_errorType}{RESET_COLOR}]: {_errorText}")
 
 
 def verifyRequiredPackages() -> bool:
