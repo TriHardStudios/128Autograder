@@ -12,7 +12,7 @@ BUILD_DIR=$(ROOT)/bin
 GENERATION_DIR=$(BUILD_DIR)/generation
 GRADESCOPE_GENERATION_DIR=$(GENERATION_DIR)/gradescope
 STUDENT_GENERATION_DIR=$(GENERATION_DIR)/student
-UPLOAD_DIR=$(BUILD_DIR)/gradescope_upload
+UPLOAD_DIR=$(BUILD_DIR)/uploaders
 
 all: 
 	@echo "Usage make <target>"
