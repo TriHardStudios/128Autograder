@@ -53,7 +53,7 @@ class Assertions(unittest.TestCase):
         errorMsg = f"Incorrect {_shortDescription}.\n" + \
                    f"Expected {_shortDescription}: {_expectedObject}\n" + \
                    f"Your {_shortDescription}    : {_actualObject}"
-        if msg:
+        if msg and msg is not ...:
             errorMsg += "\n\n" + str(msg)
 
         raise AssertionError(errorMsg)
