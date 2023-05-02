@@ -32,12 +32,16 @@ popd > /dev/null
 
 # Copy over the source files
 echo "Generating new autograder in ./$1/ ..."
-mkdir -p "$1"/source "$1"/student/submission "$1"/student/results "$1"/util
+mkdir -p "$1"/source "$1"/student/submission "$1"/student/results "$1"/util/student
 
 cp -r autograder_base/source "$1"/
 
-# Copy over utilities
-cp autograder_base/util/prepare_for_gradescope.sh "$1"/util/prepare_for_gradescope.sh
+# Copy over student utils
+cp -r autograder_base/util/student "$1"/util/
+
+# copy over generation utils
+cp autograder_base/util/{prepare_for_student.sh,prepare_for_gradescope.sh} "$1"/util/
+
 
 cp -r autograder_base/{makefile,Dockerfile,.gitignore} "$1"/
 
