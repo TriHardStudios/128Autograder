@@ -43,6 +43,14 @@ def verifyRequiredPackages() -> bool:
                           "Please ensure that you have run 'pip install gradescope-utils'")
         errorOccurred = True
 
+    try:
+        import dill
+    except ModuleNotFoundError:
+        printErrorMessage(PACKAGE_ERROR,
+                          "Dill was not found. "
+                          "Please ensure that you have run 'pip install dill'")
+        errorOccurred = True
+
     return not errorOccurred
 
 

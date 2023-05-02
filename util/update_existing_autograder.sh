@@ -36,6 +36,9 @@ cp -r autograder_base/source/StudentSubmission "$1"/source/
 # Copy over main
 cp autograder_base/source/run.py "$1"/source/run.py
 
+# Copy over requirements
+cp autograder_base/source/requirements.txt "$1"/source/requirements.txt
+
 cp autograder_base/{Dockerfile,makefile} "$1"/
 
 # Copy over student utils
