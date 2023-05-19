@@ -9,8 +9,8 @@ def main(runUnitTestsOnly: bool, _resultsPath: str | None):
     testSuite = TestRegister()
 
     if runUnitTestsOnly:
-        from BetterPyUnitFormat.BetterPyUnitFormat import BetterPyunitFormatResult
-        testRunner = unittest.TextTestRunner(resultclass=BetterPyunitFormatResult)
+        from BetterPyUnitFormat.BetterPyUnitTestRunner import BetterPyUnitTestRunner
+        testRunner = BetterPyUnitTestRunner()
         testRunner.run(testSuite)
         return
 
