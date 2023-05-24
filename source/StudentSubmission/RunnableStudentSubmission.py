@@ -197,8 +197,11 @@ class RunnableStudentSubmission:
     def getTimeoutOccurred(self) -> bool:
         return self.timeoutOccurred
 
-    def getExceptions(self) -> Exception:
+    def getException(self) -> Exception:
         return self.exception
 
     def getReturnData(self) -> object:
         return self.returnData
+
+    def populateResults(self, _resultData: dict[str, any]):
+        pass

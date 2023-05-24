@@ -36,6 +36,12 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
     @weight(1.0)
     @number(1.3)
+    @fileinput("")
+    @stdin([""])
+    @passmock()
+    @execute_main_module
+    @create_class()
+    @execute_function(pattern)
     def test_multiplation(self):
         """Simple Integer Multiplcation Test"""
 
