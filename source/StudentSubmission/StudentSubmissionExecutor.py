@@ -1,4 +1,3 @@
-import abc
 import multiprocessing
 import os.path
 import shutil
@@ -14,58 +13,6 @@ from StudentSubmission.common import PossibleResults, Runner
 # We need to use the dill pickle-ing library to pass functions in the processes
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
-
-@staticmethod
-def _executeMainModule(_compiledPythonProgram, _stdin: list[str], timeout: int = 10) -> StringIO:
-    runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
-
-    submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
-
-    try:
-        submissionProcess.run()
-        # It shouldn't be possible fot this to throw an exception
-    except Exception:
-        raise
-
-    if submissionProcess.getTimeoutOccurred():
-        raise TimeoutError
-
-    if submissionProcess.getException():
-        raise submissionProcess.getException()
-
-    return submissionProcess.getStdOut()
-
-
-def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
-    """
-    @brief This function compiles and runs python code from the AST
-    """
-    if not self.isValid:
-        return False, []
-
-    try:
-        compiledPythonProgram = compile(self.studentMainModule, "<student_submission>", "exec")
-        # TODO explicitly handle some common error types
-    except (SyntaxError, ValueError) as g_ex:
-        return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}", str(g_ex)]
-
-    stdOut: list[str] = []
-
-    try:
-        capturedOutput = StudentSubmission._executeMainModule(compiledPythonProgram, _stdIn, timeoutDuration)
-        capturedOutput.seek(0)
-        stdOut = capturedOutput.getvalue().splitlines()
-    except TimeoutError as to_ex:
-        return False, [f"Submission timed out after {timeoutDuration} seconds."]
-    except RuntimeError as rt_ex:
-        # TODO need to expand this for EOF, stack overflow, and recursion
-        return False, [f"A runtime occurred. {str(rt_ex)}"]
-    except Exception as g_ex:
-        return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception.", str(g_ex)]
-
-    stdOut = StudentSubmission.filterStdOut(stdOut)
-    return True, stdOut
-
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """
@@ -83,9 +30,6 @@ def filterStdOut(_stdOut: list[str]) -> list[str]:
             filteredOutput.append(line[line.lower().find("output ") + 7:])
 
     return filteredOutput
-
-
-
 
 
 class StudentSubmissionExecutor:
@@ -145,8 +89,9 @@ class StudentSubmissionExecutor:
         and preps the mocks to be passed into the actual process.
         :param _environment: the execution environment to execute the submission in.
         :param _runner: the runner that contains the student's code
+
         :return: This function returns the runnable student submission that can be executed
-        :raises: This function will raise a non-assertion error in the event that any of the setup fails.
+        :raise EnvironmentError: This function will raise a non-assertion error in the event that any of the setup fails.
         """
 
         if not os.path.exists(_environment.SANDBOX_LOCATION):
@@ -210,7 +155,8 @@ class StudentSubmissionExecutor:
         This function runs the post-processing needed before we can deliver the results to the unittest.
         For now, it strips the output statements from STDOUT (if present), generates the valid files based on
         the FS diff before and after the runs
-        :param _runnableSubmission:
+        :param _environment: the execution environment
+        :param _runnableSubmission: the students submission that we need to gather data from
         """
         _runnableSubmission.populateResults(cls.resultData)
 
@@ -224,31 +170,62 @@ class StudentSubmissionExecutor:
             # We put them into a set and then eliminate the elements that are the same between the two sets
             diffFiles: list[str] = list(set(curFiles) ^ set(_environment.files.keys()))
 
-            cls.resultData[PossibleResults.FILE_OUT.value] = diffFiles
-
-        # todo handle mocks
+            cls.resultData[PossibleResults.FILE_OUT.value] = \
+                {diffFiles: [_environment.SANDBOX_LOCATION + file for file in diffFiles]}
 
     @classmethod
-    def getOrAssert(cls, _field: PossibleResults, file: str | None = None, mock: unittest.mock.Mock | None = None) -> any:
+    def getOrAssert(cls, _field: PossibleResults, file: str | None = None, mock: str | None = None) -> any:
+        """
+        This function gets the requested field from the results or will raise an assertion error.
+
+        If a file is requested, the file name must be specified with the ``file`` parameter. The contents of the file
+        will be returned.
+        If a mock is requested, the mocked method's name must `also` be requested. The mocked method will be returned.
+        :param _field: the field to get data from in the results file. Must be a ``PossibleResult``
+        :param file: if ``PossibleResults.FILE_OUT`` is specified, ``file`` must also be specified. This is the file
+        name to load from.
+        :param mock: if ``PossibleResults.MOCK_SIDE_EFFECT`` is specified, ``mock`` must also be specified. This is the
+        mocked method name (usually from ``method.__name__``)
+
+        :return: The requested data if it exists
+        :raises AssertionError: if the data cannot be retrieved for whatever reason
+        """
         if _field.value not in cls.resultData.keys():
             raise AssertionError(f"Missing result data. Expected: {_field.value}.")
 
         if _field is PossibleResults.FILE_OUT and not file:
             raise AttributeError("File must be defined.")
 
-        if _field is PossibleResults.FILE_OUT and file:
-            pass
+        if _field is PossibleResults.FILE_OUT and file not in cls.resultData[PossibleResults.FILE_OUT.value].keys():
+            raise AssertionError(f"File '{file}' was not created by the student's submission")
 
-        # todo add support for getting mocks
+        if _field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
+            raise AttributeError("Mock most be defined.")
+
+        if _field is PossibleResults.MOCK_SIDE_EFFECTS \
+                and mock not in cls.resultData[PossibleResults.MOCK_SIDE_EFFECTS.value].keys():
+            raise AttributeError(
+                f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
+
+        # now that all that validation is done, we can actually give the data requested lol
+
+        if _field is PossibleResults.FILE_OUT:
+            # load the file from disk and return it
+            return open(cls.resultData[_field.value][file], 'r').read()
+
+        if _field is PossibleResults.MOCK_SIDE_EFFECTS:
+            return cls.resultData[_field.value][mock]
 
         return cls.resultData[_field.value]
 
     @classmethod
-    def cleanup(cls) -> None:
+    def cleanup(cls, _environment: ExecutionEnvironment) -> None:
         """
         This function cleans out any persistent data between tests. There should be *very* little in
-        this function as very little should be persisted. This function should only be classed in the after
+        this function as very little should be persisted. This function should only be called in the after
         each function
         """
 
         cls.resultData = {}
+
+        shutil.rmtree(_environment.SANDBOX_LOCATION)

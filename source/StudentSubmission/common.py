@@ -8,6 +8,7 @@ class PossibleResults(Enum):
     FILE_OUT = "file_out"
     MOCK_SIDE_EFFECTS = "mock"
 
+
 class Runner:
     def __init__(self):
         pass
