@@ -1,4 +1,4 @@
-import abc
+from abc import ABC, abstractmethod
 from enum import Enum
 
 
@@ -9,10 +9,19 @@ class PossibleResults(Enum):
     MOCK_SIDE_EFFECTS = "mock"
 
 
-class Runner:
+class Runner(ABC):
     def __init__(self):
+        self.studentSubmissionCode = None
+
+    def setSubmission(self):
         pass
 
-    @abc.abstractmethod
-    def __call__(self):
+    def setMocks(self):
+        pass
+
+    @abstractmethod
+    def run(self):
         raise NotImplementedError("Must use implementation of runner.")
+
+    def __call__(self):
+        pass

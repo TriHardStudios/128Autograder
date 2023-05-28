@@ -1,13 +1,30 @@
+"""
+This file provides the executor for the student submissions.
+
+The executor is responsible for setting up and tearing down the execution environment, running the submission, and
+providing an interface for reading the artifacts from a student submission.
+
+This allows the execution environment to be a lot more flexible in terms of what can actually be tested, and with the
+generic runner class, a great deal of flexibility is afforded to the unit test authors.
+
+This class also means that less work is needed ot actually write unit tests and less custom assertions need to be used,
+which is nice.
+
+:author: Gregory Bell
+:date: 6/24/23
+"""
+
+
+import dataclasses
 import multiprocessing
 import os.path
 import shutil
 import unittest.mock
-import dataclasses
 
-from StudentSubmission import StudentSubmission
-from RunnableStudentSubmission import RunnableStudentSubmission
 import dill
 
+from RunnableStudentSubmission import RunnableStudentSubmission
+from StudentSubmission import StudentSubmission
 from StudentSubmission.common import PossibleResults, Runner
 
 # We need to use the dill pickle-ing library to pass functions in the processes
@@ -61,7 +78,7 @@ class StudentSubmissionExecutor:
         mocks: dict[str, unittest.mock.Mock] | None = None
         """What mocks have been defined for this run of the student's submission"""
         timeout: int = 10
-        """What timeout has been defined for this run of the student's submission"""
+        """What _timeout has been defined for this run of the student's submission"""
 
         SANDBOX_LOCATION: str = "./sandbox"
 

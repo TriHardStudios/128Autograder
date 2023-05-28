@@ -12,9 +12,12 @@ before attempting to even connect to the object.
 import multiprocessing
 import multiprocessing.shared_memory
 import sys
+import unittest
 from io import StringIO
 
 import dill
+
+from common import Runner, PossibleResults
 
 
 class StudentSubmissionProcess(multiprocessing.Process):
@@ -59,7 +62,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         :param _otherDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
         return values. This is created by the child and will be connected to by the parent once the child exits.
 
-        :param timeout: The timeout for join. Basically, it will wait *at most* this amount of time for the child to
+        :param timeout: The _timeout for join. Basically, it will wait *at most* this amount of time for the child to
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
@@ -147,7 +150,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: list[str], _runner: callable, timeout: int = 10):
+    def __init__(self, _stdin: list[str], _runner: Runner, _timeout: int, _mocks: list[unittest.mock.Mock]):
         self.stdin: list[str] = _stdin
         self.stdout: StringIO = StringIO()
         self.stdoutSharedName = "sub_stdout"
@@ -156,7 +159,7 @@ class RunnableStudentSubmission:
         self.studentSubmissionProcess = StudentSubmissionProcess(
             _runner,
             self.stdinSharedName, self.stdoutSharedName, self.otherDataMemName,
-            timeout)
+            _timeout)
 
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
@@ -191,17 +194,11 @@ class RunnableStudentSubmission:
         capturedOtherData.shm.close()
         capturedOtherData.shm.unlink()
 
-    def getStdOut(self) -> StringIO:
-        return self.stdout
-
     def getTimeoutOccurred(self) -> bool:
         return self.timeoutOccurred
 
     def getException(self) -> Exception:
         return self.exception
 
-    def getReturnData(self) -> object:
-        return self.returnData
-
-    def populateResults(self, _resultData: dict[str, any]):
+    def populateResults(self, _resultData: dict[PossibleResults, any]):
         pass
