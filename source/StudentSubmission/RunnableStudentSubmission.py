@@ -12,12 +12,14 @@ before attempting to even connect to the object.
 import multiprocessing
 import multiprocessing.shared_memory
 import sys
-import unittest
 from io import StringIO
 
 import dill
 
-from common import Runner, PossibleResults
+from StudentSubmission.common import PossibleResults
+from StudentSubmission.Runners import Runner
+
+
 
 
 class StudentSubmissionProcess(multiprocessing.Process):
@@ -45,7 +47,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     wanted to avoid the hodgepodge of unmaintainable that was the original autograder while still affording the
     flexibility required by the classes that will utilize it.
     """
-    def __init__(self, _runner: callable, _stdinSharedMemName: str, _stdoutSharedMemName: str, _otherDataMemName: str, timeout: int = 10):
+    def __init__(self, _runner: Runner, _stdinSharedMemName: str, _stdoutSharedMemName: str, _otherDataMemName: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -66,7 +68,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
-        self.runner: callable = _runner
+        self.runner: Runner = _runner
         self.stdinSharedMemName: str = _stdinSharedMemName
         self.stdoutSharedMemName: str = _stdoutSharedMemName
         self.otherDataMemName: str = _otherDataMemName
@@ -150,7 +152,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: list[str], _runner: Runner, _timeout: int, _mocks: list[unittest.mock.Mock]):
+    def __init__(self, _stdin: list[str], _runner: Runner, _timeout: int):
         self.stdin: list[str] = _stdin
         self.stdout: StringIO = StringIO()
         self.stdoutSharedName = "sub_stdout"
@@ -200,5 +202,14 @@ class RunnableStudentSubmission:
     def getException(self) -> Exception:
         return self.exception
 
-    def populateResults(self, _resultData: dict[PossibleResults, any]):
-        pass
+    def createResults(self) -> dict[PossibleResults, any]:
+        resultData: [PossibleResults, any] = dict()
+
+        if self.stdout:
+            self.stdout.seek(0)
+            resultData[PossibleResults.STDOUT] = self.stdout.getvalue().splitlines()
+
+        if self.returnData:
+            resultData[PossibleResults.RETURN_VAL] = self.returnData
+
+        return resultData

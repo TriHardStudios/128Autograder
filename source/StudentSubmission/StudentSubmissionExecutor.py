@@ -14,7 +14,6 @@ which is nice.
 :date: 6/24/23
 """
 
-
 import dataclasses
 import multiprocessing
 import os.path
@@ -23,13 +22,15 @@ import unittest.mock
 
 import dill
 
-from RunnableStudentSubmission import RunnableStudentSubmission
+from StudentSubmission import RunnableStudentSubmission
 from StudentSubmission import StudentSubmission
-from StudentSubmission.common import PossibleResults, Runner
+from StudentSubmission.common import PossibleResults
+from StudentSubmission.Runners import Runner
 
 # We need to use the dill pickle-ing library to pass functions in the processes
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
+
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """
@@ -53,7 +54,7 @@ class StudentSubmissionExecutor:
     dataDirectory: str | None = None
     """The directory where all the data for tests lives"""
 
-    resultData: dict[str, any] = {}
+    resultData: dict[PossibleResults, any] = {}
     """
     This dict contains the data that was generated from the student's submission. This should not be accessed
     directly, rather, use getOrAssert method
@@ -129,8 +130,9 @@ class StudentSubmissionExecutor:
 
                 shutil.copyfile(cls.dataDirectory + key, value)
 
-        runnableSubmission: RunnableStudentSubmission = RunnableStudentSubmission(_environment.stdin, _runner,
-                                                                                  _environment.timeout)
+        runnableSubmission: RunnableStudentSubmission = RunnableStudentSubmission.RunnableStudentSubmission(
+            _environment.stdin, _runner,
+            _environment.timeout)
         return runnableSubmission
 
     @staticmethod
@@ -152,6 +154,7 @@ class StudentSubmissionExecutor:
 
     @classmethod
     def execute(cls, _environment: ExecutionEnvironment, _runner: Runner) -> None:
+        _runner.setSubmission(_environment.submission.getStudentSubmissionCode())
         runnableSubmission: RunnableStudentSubmission = cls._setup(_environment, _runner)
         runnableSubmission.run()
 
@@ -175,10 +178,10 @@ class StudentSubmissionExecutor:
         :param _environment: the execution environment
         :param _runnableSubmission: the students submission that we need to gather data from
         """
-        _runnableSubmission.populateResults(cls.resultData)
+        cls.resultData = _runnableSubmission.createResults()
 
-        if PossibleResults.STDOUT.value in cls.resultData.keys():
-            cls.resultData[PossibleResults.STDOUT.value] = filterStdOut(cls.resultData[PossibleResults.STDOUT.value])
+        if PossibleResults.STDOUT in cls.resultData.keys():
+            cls.resultData[PossibleResults.STDOUT] = filterStdOut(cls.resultData[PossibleResults.STDOUT])
 
         if _environment.files is not None:
             # this approach means that nested fs changes aren't detected, but I don't see that coming up.
@@ -207,20 +210,22 @@ class StudentSubmissionExecutor:
         :return: The requested data if it exists
         :raises AssertionError: if the data cannot be retrieved for whatever reason
         """
-        if _field.value not in cls.resultData.keys():
+        if _field not in cls.resultData.keys():
+            print(cls.resultData.keys())
+            print(_field)
             raise AssertionError(f"Missing result data. Expected: {_field.value}.")
 
         if _field is PossibleResults.FILE_OUT and not file:
             raise AttributeError("File must be defined.")
 
-        if _field is PossibleResults.FILE_OUT and file not in cls.resultData[PossibleResults.FILE_OUT.value].keys():
+        if _field is PossibleResults.FILE_OUT and file not in cls.resultData[PossibleResults.FILE_OUT].keys():
             raise AssertionError(f"File '{file}' was not created by the student's submission")
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
             raise AttributeError("Mock most be defined.")
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS \
-                and mock not in cls.resultData[PossibleResults.MOCK_SIDE_EFFECTS.value].keys():
+                and mock not in cls.resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
             raise AttributeError(
                 f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
 
@@ -233,7 +238,7 @@ class StudentSubmissionExecutor:
         if _field is PossibleResults.MOCK_SIDE_EFFECTS:
             return cls.resultData[_field.value][mock]
 
-        return cls.resultData[_field.value]
+        return cls.resultData[_field]
 
     @classmethod
     def cleanup(cls, _environment: ExecutionEnvironment) -> None:

@@ -196,3 +196,7 @@ class StudentSubmission:
     def getValidationError(self) -> str:
         return self.validationError
 
+    def getStudentSubmissionCode(self):
+        return compile(self.studentMainModule, "student_submission", "exec")
+
+

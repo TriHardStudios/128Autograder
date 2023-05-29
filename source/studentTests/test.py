@@ -2,15 +2,30 @@ from gradescope_utils.autograder_utils.decorators import weight, number, visibil
 
 from TestingFramework import BaseTest
 from StudentSubmission import StudentSubmissionAssertions
+from StudentSubmission.StudentSubmissionExecutor import StudentSubmissionExecutor
+from StudentSubmission.Runners import MainModuleRunner
+from StudentSubmission.common import PossibleResults
 
 
 class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
+    def setUp(self):
+        self.environment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)
+        self.runner = MainModuleRunner()
+
+    def tearDown(self):
+        StudentSubmissionExecutor.cleanup(self.environment)
+
     def runStdIOTest(self, _input, _expectedOutput):
         actual: list[str] = []
-        self.StdIOAssertions.assertSubmissionExecution(self.studentSubmission, _input, actual, 1)
+        self.environment.stdin = _input
 
-        self.StdIOAssertions.assertCorrectNumberOfOutputLines(_expectedOutput, actual)
+        StudentSubmissionExecutor.execute(self.environment, self.runner)
+
+        actual = StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+
+        self.assertCorrectNumberOfOutputLines(_expectedOutput, actual)
+
 
         self.assertEqual(self.reformatOutput(_expectedOutput), self.reformatOutput(actual))
 
@@ -36,12 +51,6 @@ class TestStdIO(BaseTest, StudentSubmissionAssertions):
 
     @weight(1.0)
     @number(1.3)
-    @fileinput("")
-    @stdin([""])
-    @passmock()
-    @execute_main_module
-    @create_class()
-    @execute_function(pattern)
     def test_multiplation(self):
         """Simple Integer Multiplcation Test"""
 

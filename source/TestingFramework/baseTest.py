@@ -1,9 +1,7 @@
 import sys
 import unittest
 
-# noinspection PyUnresolvedReferences
 from StudentSubmission import StudentSubmission
-# noinspection PyUnresolvedReferences
 from StudentSubmission import StudentSubmissionAssertions
 from .Assertions import Assertions
 
@@ -23,6 +21,3 @@ class BaseTest(Assertions, StudentSubmissionAssertions):
     @classmethod
     def tearDownClass(cls):
         pass
-
-    def setUp(self):
-        self.assertSubmissionValid(self.studentSubmission)
