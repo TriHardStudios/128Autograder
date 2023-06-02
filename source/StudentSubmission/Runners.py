@@ -1,4 +1,4 @@
-import unittest.mock
+import sys
 from abc import ABC, abstractmethod
 
 
@@ -18,35 +18,30 @@ class Runner(ABC):
 
     def __init__(self):
         self.studentSubmissionCode = None
-        self.mocks: dict[str, unittest.mock.Mock] | None = None
+        self.mocks: dict[str, object] | None = None
 
     def setSubmission(self, _code):
         self.studentSubmissionCode = _code
 
-    def setMocks(self, _mocks: dict[str, unittest.mock.Mock]):
+    def setMocks(self, _mocks: dict[str, object]):
         self.mocks = _mocks
+
+    def getMocks(self) -> dict[str, dict[str, object]] | None:
+        return self.mocks
 
     def applyMocks(self) -> None:
         """
-        This function applies the mocks in the student's submission by using reflection
-        on the locals and globals. Overriding locals is preferred to globals.
-        If the mock name cannot be resolved, then an attribute error is raised
+        This function applies the mocks to the student's submission at the module level.
 
-        :raises AttributeError: If a mock name cannot be resolved in either the globals in locals
+        :raises AttributeError: If a mock name cannot be resolved
         """
         if not self.mocks:
             return
 
-        for [mockName, mock] in self.mocks.items():
-            # Might need to use setattr here for fully qualified names
-            if mockName in locals().keys():
-                locals()[mockName] = mock
-                continue
-            if mockName in globals().keys():
-                globals()[mockName] = mock
-                continue
+        currentModule = sys.modules[__name__]
 
-            raise AttributeError(f"Failed to resolve mock '{mockName}' in locals or globals")
+        for mockName, mock in self.mocks.items():
+            setattr(currentModule, mockName, mock)
 
     @abstractmethod
     def run(self):

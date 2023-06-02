@@ -93,7 +93,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, _stdout: StringIO, _exception: Exception | None, _returnValue: object | None) -> None:
+    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None, _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
         """
 .       This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
@@ -101,13 +101,15 @@ class StudentSubmissionProcess(multiprocessing.Process):
         :param _stdout: The raw io from the stdout.
         :param _exception: Any exceptions that were thrown
         :param _returnValue: The return value from the function
+        :param _mocks: The mocks from the submission after they have been hydrated
         """
 
         # Pickle both the exceptions and the return value
         dataToSerialize: dict[PossibleResults, object] = {
             PossibleResults.STDOUT: _stdout.getvalue().splitlines(),
             PossibleResults.EXCEPTION: _exception,
-            PossibleResults.RETURN_VAL: _returnValue
+            PossibleResults.RETURN_VAL: _returnValue,
+            PossibleResults.MOCK_SIDE_EFFECTS: _mocks
         }
 
         serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
@@ -128,7 +130,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         except Exception as g_ex:
             exception = g_ex
 
-        self._teardown(sys.stdout, exception, returnValue)
+        self._teardown(sys.stdout, exception, returnValue, self.runner.getMocks())
 
     def join(self, **kwargs):
         multiprocessing.Process.join(self, timeout=self.timeout)
@@ -174,7 +176,7 @@ class RunnableStudentSubmission:
 
         self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=memorySize)
         self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=memorySize)
-
+        
     def run(self):
         self.setup()
 
