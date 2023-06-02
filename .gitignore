@@ -4,3 +4,4 @@ bin
 __pycache__
 *.pyc
 .ycm_extra_conf.py
+.DS_Store

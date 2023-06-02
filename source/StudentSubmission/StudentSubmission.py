@@ -13,17 +13,7 @@ MUST SUPPORT:
 
 """
 import ast
-import multiprocessing
 import os
-from io import StringIO
-
-import dill
-
-from .RunnableStudentSubmission import RunnableStudentSubmission
-
-# We need to use the dill pickle-ing library to pass functions in the processes
-dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
-multiprocessing.reduction.dump = dill.dump
 
 
 class StudentSubmission:
@@ -70,6 +60,7 @@ class StudentSubmission:
             return pythonProgramText, f"IO Error: {type(ex_g).__qualname__}"
 
         parsedPythonProgram: ast.Module | None = None
+        # TODO need to implement walker to parse entire program
 
         try:
             parsedPythonProgram = ast.parse(pythonProgramText)
@@ -205,70 +196,7 @@ class StudentSubmission:
     def getValidationError(self) -> str:
         return self.validationError
 
-    class TimeoutError(Exception):
-        pass
+    def getStudentSubmissionCode(self):
+        return compile(self.studentMainModule, "student_submission", "exec")
 
-    @staticmethod
-    def _executeMainModule(_compiledPythonProgram, _stdin: list[str], timeout: int = 10) -> StringIO:
-        runner: callable = lambda: exec(_compiledPythonProgram, {'__name__': "__main__"})
 
-        submissionProcess: RunnableStudentSubmission = RunnableStudentSubmission(_stdin, runner, timeout)
-
-        try:
-            submissionProcess.run()
-            # It shouldn't be possible fot this to throw an exception
-        except Exception:
-            raise
-
-        if submissionProcess.getTimeoutOccurred():
-            raise TimeoutError
-
-        if submissionProcess.getExceptions():
-            raise submissionProcess.getExceptions()
-
-        return submissionProcess.getStdOut()
-
-    def runMainModule(self, _stdIn: list[str], timeoutDuration: int = 10) -> (bool, list[str]):
-        """
-        @brief This function compiles and runs python code from the AST
-        """
-        if not self.isValid:
-            return False, []
-
-        try:
-            compiledPythonProgram = compile(self.studentMainModule, "<student_submission>", "exec")
-            # TODO explicitly handle some common error types
-        except (SyntaxError, ValueError) as g_ex:
-            return False, [f"A compile time error occurred. Execution type is {type(g_ex).__qualname__}", str(g_ex)]
-
-        stdOut: list[str] = []
-
-        try:
-            capturedOutput = StudentSubmission._executeMainModule(compiledPythonProgram, _stdIn, timeoutDuration)
-            capturedOutput.seek(0)
-            stdOut = capturedOutput.getvalue().splitlines()
-        except TimeoutError as to_ex:
-            return False, [f"Submission timed out after {timeoutDuration} seconds."]
-        except RuntimeError as rt_ex:
-            # TODO need to expand this for EOF, stack overflow, and recursion
-            return False, [f"A runtime occurred. {str(rt_ex)}"]
-        except Exception as g_ex:
-            return False, [f"Submission execution failed due to an {type(g_ex).__qualname__} exception.", str(g_ex)]
-
-        stdOut = StudentSubmission.filterStdOut(stdOut)
-        return True, stdOut
-
-    @staticmethod
-    def filterStdOut(_stdOut: list[str]) -> list[str]:
-        """
-        @brief This function takes in a list representing the output from the program. It includes ALL output,
-        so lines may appear as 'NUMBER> OUTPUT 3' where we only care about what is right after the OUTPUT statement
-        This is adapted from John Henke's implementation
-        """
-
-        filteredOutput: list[str] = []
-        for line in _stdOut:
-            if "output " in line.lower():
-                filteredOutput.append(line[line.lower().find("output ") + 7:])
-
-        return filteredOutput
