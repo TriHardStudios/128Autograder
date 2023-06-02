@@ -6,3 +6,4 @@ class PossibleResults(Enum):
     RETURN_VAL = "return_val"
     FILE_OUT = "file_out"
     MOCK_SIDE_EFFECTS = "mock"
+    EXCEPTION = "exception"

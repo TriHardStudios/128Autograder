@@ -178,7 +178,7 @@ class StudentSubmissionExecutor:
         :param _environment: the execution environment
         :param _runnableSubmission: the students submission that we need to gather data from
         """
-        cls.resultData = _runnableSubmission.createResults()
+        cls.resultData = _runnableSubmission.getOutputData()
 
         if PossibleResults.STDOUT in cls.resultData.keys():
             cls.resultData[PossibleResults.STDOUT] = filterStdOut(cls.resultData[PossibleResults.STDOUT])

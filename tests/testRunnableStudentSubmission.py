@@ -20,7 +20,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runnableSubmission = RunnableStudentSubmission(strInput, runner, 1)
         runnableSubmission.run()
 
-        results = runnableSubmission.createResults()
+        results = runnableSubmission.getOutputData()
 
         self.assertEqual(strInput, results[PossibleResults.STDOUT])
 
@@ -38,7 +38,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runnableSubmission = RunnableStudentSubmission(strInput, runner, 1)
         runnableSubmission.run()
 
-        results = runnableSubmission.createResults()
+        results = runnableSubmission.getOutputData()
 
         self.assertEqual(strInput, results[PossibleResults.STDOUT])
 
@@ -56,7 +56,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runnableSubmission = RunnableStudentSubmission([], runner, 1)
         runnableSubmission.run()
 
-        results = runnableSubmission.createResults()
+        results = runnableSubmission.getOutputData()
 
         self.assertEqual([strInput], results[PossibleResults.STDOUT])
 
@@ -73,7 +73,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runnableSubmission = RunnableStudentSubmission([], runner, 1)
         runnableSubmission.run()
 
-        results = runnableSubmission.createResults()
+        results = runnableSubmission.getOutputData()
 
         self.assertEqual(intInput, results[PossibleResults.RETURN_VAL])
 

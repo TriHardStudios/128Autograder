@@ -10,7 +10,7 @@ before attempting to even connect to the object.
 """
 
 import multiprocessing
-import multiprocessing.shared_memory
+import multiprocessing.shared_memory as shared_memory
 import sys
 from io import StringIO
 
@@ -20,7 +20,9 @@ from StudentSubmission.common import PossibleResults
 from StudentSubmission.Runners import Runner
 
 
-
+SHARED_STDIN_NAME: str = "sub_stdin"
+SHARED_STDOUT_NAME: str = "sub_stdout"
+SHARED_GENERAL_NAME: str =  "sub_stdout"
 
 class StudentSubmissionProcess(multiprocessing.Process):
     """
@@ -47,21 +49,20 @@ class StudentSubmissionProcess(multiprocessing.Process):
     wanted to avoid the hodgepodge of unmaintainable that was the original autograder while still affording the
     flexibility required by the classes that will utilize it.
     """
-    def __init__(self, _runner: Runner, _stdinSharedMemName: str, _stdoutSharedMemName: str, _otherDataMemName: str, timeout: int = 10):
+
+    def __init__(self, _runner: Runner, _inputSharedMemName: str, _outputDataMemName: str,
+                 timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
         :param _runner: The submission runner to be run in a new process. Can be any callable object (lamda, function,
         etc). If there is a return value it will be shared with the parent.
 
-        :param _stdinSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin. The
+        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin. The
         data at this location is stored as a list and must be processed into a format understood by ``StringIO``. The
         data here must exist before the child is started.
 
-        :param _stdoutSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdout. This
-        is created by the child and will be connected to by the parent once the child exits.
-
-        :param _otherDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
+        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
         return values. This is created by the child and will be connected to by the parent once the child exits.
 
         :param timeout: The _timeout for join. Basically, it will wait *at most* this amount of time for the child to
@@ -69,15 +70,14 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         super().__init__(name="Student Submission")
         self.runner: Runner = _runner
-        self.stdinSharedMemName: str = _stdinSharedMemName
-        self.stdoutSharedMemName: str = _stdoutSharedMemName
-        self.otherDataMemName: str = _otherDataMemName
+        self.inputDataMemName: str = _inputSharedMemName
+        self.outputDataMemName: str = _outputDataMemName
         self.timeout: int = timeout
 
     def _setup(self) -> None:
         """
         Sets up the child input output redirection. The stdin is read from the shared memory object defined in the parent
-        with the name ``self.stdinSharedMemName``. The stdin is formatted with newlines so that ``StringIO`` is able to
+        with the name ``self.inputDataMemName``. The stdin is formatted with newlines so that ``StringIO`` is able to
         work with it.
 
         The shared stdin object is destroyed after reading and is cleaned up from disk.
@@ -86,27 +86,17 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         stdout is also redirected here, but because we don't care about its contents, we just overwrite it completely.
         """
-        sharedStdin = multiprocessing.shared_memory.ShareableList(name=self.stdinSharedMemName)
+        sharedInput = multiprocessing.shared_memory.SharedMemory(self.inputDataMemName)
+        deserializedData = dill.loads(sharedInput.buf.tobytes())
         # Reformat the stdin so that we
-        sys.stdin = StringIO("".join([line + "\n" for line in sharedStdin]))
+        sys.stdin = StringIO("".join([line + "\n" for line in deserializedData]))
 
         sys.stdout = StringIO()
 
-        sharedStdin.shm.close()
-        sharedStdin.shm.unlink()
-
     def _teardown(self, _stdout: StringIO, _exception: Exception | None, _returnValue: object | None) -> None:
         """
-        This function tears down the process after the runner exits. It pickles the exceptions that were raised and the
-        return values from the runner. They are stored in the shared memory with the name ``self.otherDataMemName``.
-
-        stdout is passed in to its shared memory with the name ``self.stdoutSharedMemName``.
-
-        This function uses the dill library for pickle-ing as it supports almost everything out of the box. This means
-        that no special code is needed to handle even complex return types.
-
-        Pickle-ing in python is just a fancy way of saying converting to string. Pickle-ing is a form of serialization,
-        and is easily reversible.
+.       This function takes the results from the child process and serializes them.
+        Then is stored in the shared memory object that the parent is able to access.
 
         :param _stdout: The raw io from the stdout.
         :param _exception: Any exceptions that were thrown
@@ -114,15 +104,17 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
 
         # Pickle both the exceptions and the return value
-        otherData: list[str] = [dill.dumps(_exception), dill.dumps(_returnValue)]
+        dataToSerialize: dict[PossibleResults, object] = {
+            PossibleResults.STDOUT: _stdout.getvalue().splitlines(),
+            PossibleResults.EXCEPTION: _exception,
+            PossibleResults.RETURN_VAL: _returnValue
+        }
 
-        sharedOtherData = multiprocessing.shared_memory.ShareableList(otherData, name=self.otherDataMemName)
-        sharedOtherData.shm.close()
+        serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
+        sharedOutput = shared_memory.SharedMemory(self.outputDataMemName)
 
-        # Need to go to top of the buffer to read
-        _stdout.seek(0)
-        sharedStdout = multiprocessing.shared_memory.ShareableList(_stdout.getvalue().splitlines(), name=self.stdoutSharedMemName)
-        sharedStdout.shm.close()
+        sharedOutput.buf[:len(serializedData)] = serializedData
+        sharedOutput.close()
 
     def run(self):
         self._setup()
@@ -154,23 +146,42 @@ class RunnableStudentSubmission:
 
     def __init__(self, _stdin: list[str], _runner: Runner, _timeout: int):
         self.stdin: list[str] = _stdin
-        self.stdout: StringIO = StringIO()
-        self.stdoutSharedName = "sub_stdout"
-        self.stdinSharedName = "sub_stdin"
-        self.otherDataMemName = "sub_other"
+        self.inputDataMemName = "input_data"
+        self.outputDataMemName = "output_data"
+
+        self.inputSharedMem: shared_memory.SharedMemory | None = None
+        self.outputSharedMem: shared_memory.SharedMemory | None = None
+
         self.studentSubmissionProcess = StudentSubmissionProcess(
             _runner,
-            self.stdinSharedName, self.stdoutSharedName, self.otherDataMemName,
+            self.inputDataMemName, self.outputDataMemName,
             _timeout)
 
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
-        self.returnData: object | None = None
+        self.outputData: dict[PossibleResults, object] = {}
+
+    def setup(self, memorySize: int = 2 ** 20):
+        """
+        This function sets up the data that will be shared between the two processes.
+
+        Setting up the data here then tearing it down in the ref:`RunnableStudentSubmission.cleanup` fixes
+        the issue with windows GC cleaning up the memory before we are done with it as there will be at least one
+        active hook for each memory resource til ``cleanup`` is called.
+
+        :param memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
+        """
+
+        self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=memorySize)
+        self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=memorySize)
 
     def run(self):
+        self.setup()
 
-        sharedStdin = multiprocessing.shared_memory.ShareableList(self.stdin, name=self.stdinSharedName)
-        sharedStdin.shm.close()
+        # allocate 1 mb for the shared memory
+        serializedStdin = dill.dumps(self.stdin, dill.HIGHEST_PROTOCOL)
+
+        self.inputSharedMem.buf[:len(serializedStdin)] = serializedStdin
 
         self.studentSubmissionProcess.start()
 
@@ -181,20 +192,31 @@ class RunnableStudentSubmission:
             self.timeoutOccurred = True
             # If a timeout occurred, we can't trust any of the data in the shared memory. So don't even bother trying to
             #  read it. Esp as the student already failed
+            self.cleanup()
             return
 
-        capturedStdoutFromChild = multiprocessing.shared_memory.ShareableList(name=self.stdoutSharedName)
-        for el in capturedStdoutFromChild:
-            self.stdout.write(el + "\n")
+        deserializedData: dict[PossibleResults, object] = dill.loads(self.outputSharedMem.buf.tobytes())
 
-        capturedStdoutFromChild.shm.close()
-        capturedStdoutFromChild.shm.unlink()
+        self.exception = deserializedData[PossibleResults.EXCEPTION]
+        self.outputData = deserializedData
 
-        capturedOtherData = multiprocessing.shared_memory.ShareableList(name=self.otherDataMemName)
-        self.exception = dill.loads(capturedOtherData[0])
-        self.returnData = dill.loads(capturedOtherData[1])
-        capturedOtherData.shm.close()
-        capturedOtherData.shm.unlink()
+        self.cleanup()
+
+    def cleanup(self):
+        """
+        This function cleans up the shared memory object by closing the parent hook and then unlinking it.
+
+        After it is unlinked, the python garbage collector cleans it up.
+        On windows, the GC runs as soon as the last hook is closed and `unlink` is a noop
+        """
+        # `close` closes the current hook
+        self.inputSharedMem.close()
+        # `unlink` tells the gc that it is ok to clean up this resource
+        #  On windows, `unlink` is a noop
+        self.inputSharedMem.unlink()
+
+        self.outputSharedMem.close()
+        self.outputSharedMem.unlink()
 
     def getTimeoutOccurred(self) -> bool:
         return self.timeoutOccurred
@@ -202,14 +224,5 @@ class RunnableStudentSubmission:
     def getException(self) -> Exception:
         return self.exception
 
-    def createResults(self) -> dict[PossibleResults, any]:
-        resultData: [PossibleResults, any] = dict()
-
-        if self.stdout:
-            self.stdout.seek(0)
-            resultData[PossibleResults.STDOUT] = self.stdout.getvalue().splitlines()
-
-        if self.returnData:
-            resultData[PossibleResults.RETURN_VAL] = self.returnData
-
-        return resultData
+    def getOutputData(self) -> dict[PossibleResults, any]:
+        return self.outputData
