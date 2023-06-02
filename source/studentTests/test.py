@@ -7,4 +7,9 @@ from StudentSubmission.Runners import MainModuleRunner
 from StudentSubmission.common import PossibleResults
 
 class EmptyTestSuite(BaseTest, StudentSubmissionAssertions):
-    pass
+
+    def testCode(self):
+        enviroment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)
+        runner = MainModuleRunner()
+
+        StudentSubmissionExecutor.execute(enviroment, runner)
