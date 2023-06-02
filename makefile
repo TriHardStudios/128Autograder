@@ -6,15 +6,17 @@ SUBMISSION_DIR=$(ROOT)/student/submission
 RESULTS_DIR=$(ROOT)/student/results
 
 SRC_DIR=$(ROOT)/source
+UTIL_DIR=$(ROOT)/util
 
 BUILD_DIR=$(ROOT)/bin
-GENERATION_DIR=$(BUILD_DIR)/gradescope_generation
-UPLOAD_DIR=$(BUILD_DIR)/gradescope_upload
+GENERATION_DIR=$(BUILD_DIR)/generation
+GRADESCOPE_GENERATION_DIR=$(GENERATION_DIR)/gradescope
+STUDENT_GENERATION_DIR=$(GENERATION_DIR)/student
+UPLOAD_DIR=$(BUILD_DIR)/uploaders
 
 all: 
 	@echo "Usage make <target>"
 	@echo "Available targets:"
-	# I stole this from stackoverflow - it prints out all the targets in a makefile
 	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/(^|\n)# Files(\n|$$)/,/(^|\n)# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
 
 build-docker: 
@@ -35,14 +37,21 @@ build: clean
 	)
 	@echo "Preparing autograder: $(autograder_name) for upload..."
 	@echo "	Generating autograder source in $(GENERATION_DIR) from $(SRC_DIR)..."
-	@mkdir -p $(GENERATION_DIR)
-	@bash util/prepare_for_gradescope.sh $(GENERATION_DIR) $(SRC_DIR)
-	@echo "	Building autograder in $(UPLOAD_DIR)/$(autograder_name).zip..."
+	@mkdir -p $(GRADESCOPE_GENERATION_DIR)
+	@mkdir -p $(STUDENT_GENERATION_DIR)
+	@bash util/prepare_for_gradescope.sh $(GRADESCOPE_GENERATION_DIR) $(SRC_DIR)
+	@bash util/prepare_for_student.sh $(STUDENT_GENERATION_DIR) $(UTIL_DIR) $(SRC_DIR)
+	@echo "	Building Gradescope autograder in $(UPLOAD_DIR)/$(autograder_name).zip..."
 	@mkdir -p $(UPLOAD_DIR)
 	@echo "		Creating zip..."
-	@pushd $(GENERATION_DIR) > /dev/null ; zip -r $(autograder_name) . -x .* > /dev/null ; popd > /dev/null 
+	@pushd $(GRADESCOPE_GENERATION_DIR) > /dev/null ; zip -r $(autograder_name) . -x .* > /dev/null ; popd > /dev/null 
 	@echo "		Moving zip to output directory..."
-	@mv $(GENERATION_DIR)/$(autograder_name).zip $(UPLOAD_DIR)/$(autograder_name).zip
+	@mv $(GRADESCOPE_GENERATION_DIR)/$(autograder_name).zip $(UPLOAD_DIR)/$(autograder_name).zip
+	@echo "	Building student autograder in $(UPLOAD_DIR)/$(autograder_name)-student.zip..."
+	@echo "		Creating student zip..."
+	@pushd $(STUDENT_GENERATION_DIR) > /dev/null ; zip -r $(autograder_name) . -x .* > /dev/null ; popd > /dev/null 
+	@echo "		Moving zip to output directory..."
+	@mv $(STUDENT_GENERATION_DIR)/$(autograder_name).zip $(UPLOAD_DIR)/$(autograder_name)-student.zip
 	@echo "Done."
 
 clean: 
