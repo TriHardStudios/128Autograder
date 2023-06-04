@@ -14,10 +14,10 @@ class TestRunnableStudentSubmission(unittest.TestCase):
              "print(userIn)\n")
 
         runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_program", "exec"))
+        runner.setSubmission(compile(program, "test_code", "exec"))
 
         strInput = ["this is input"]
-        runnableSubmission = RunnableStudentSubmission(strInput, runner, 1)
+        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
         runnableSubmission.run()
 
         results = runnableSubmission.getOutputData()
@@ -35,7 +35,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
         strInput = ["this is input"]
-        runnableSubmission = RunnableStudentSubmission(strInput, runner, 1)
+        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
         runnableSubmission.run()
 
         results = runnableSubmission.getOutputData()
@@ -53,7 +53,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = FunctionRunner("runMe", strInput)
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, 1)
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
         runnableSubmission.run()
 
         results = runnableSubmission.getOutputData()
@@ -70,7 +70,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         intInput = 128
         runner = FunctionRunner("runMe", intInput)
         runner.setSubmission(compile(program, "test_code", "exec"))
-        runnableSubmission = RunnableStudentSubmission([], runner, 1)
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
         runnableSubmission.run()
 
         results = runnableSubmission.getOutputData()
@@ -93,7 +93,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setMocks({"mockMe": SingleFunctionMock("mockMe", None)})
 
-        runnableSubmission = RunnableStudentSubmission([], runner, 1)
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
         runnableSubmission.run()
 
         results = runnableSubmission.getOutputData()
@@ -114,7 +114,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner.setSubmission(compile(program, "test_code", "exec"))
 
         # run for 10 sec to overflow write buffer
-        runnableSubmission = RunnableStudentSubmission([], runner, 10)
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 10)
         runnableSubmission.run()
 
         self.assertDictEqual({}, runnableSubmission.getOutputData())
@@ -135,7 +135,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission(("hello\n" * 9999).splitlines(), runner, 5)
+        runnableSubmission = RunnableStudentSubmission(("hello\n" * 9999).splitlines(), runner, ".", 5)
         runnableSubmission.run()
 
         self.assertDictEqual({}, runnableSubmission.getOutputData())
@@ -155,7 +155,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, 5)
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 5)
         runnableSubmission.run()
 
         with self.assertRaises(RecursionError):
@@ -173,7 +173,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission(["1"], runner, 5)
+        runnableSubmission = RunnableStudentSubmission(["1"], runner, ".", 5)
         runnableSubmission.run()
 
         with self.assertRaises(EOFError):

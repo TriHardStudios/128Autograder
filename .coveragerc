@@ -1,0 +1,22 @@
+[run]
+command_line = -m unittest
+concurrency = multiprocessing
+
+[report]
+fail_under = 75
+skip_empty = True
+
+exclude_also =
+    # Dont flag error conditions that cant be reached
+    raise AssertionError
+    raise NotImplementedError
+    raise EnvironmentError
+    raise AttributeError
+
+    if __name__ == .__main__.:
+
+    # Don't complain about abstract methods, they aren't run:
+    @(abc\.)?abstractmethod
+
+# Ignore dynamic files. Ignore non API files. Ignore actual test files
+omit = sandbox/*, test_code, TestRegister.py, baseTest.py, studentTests/*, tests/*,

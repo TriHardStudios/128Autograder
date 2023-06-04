@@ -24,30 +24,12 @@ import dill
 
 from StudentSubmission import RunnableStudentSubmission
 from StudentSubmission import StudentSubmission
-from StudentSubmission.common import PossibleResults
+from StudentSubmission.common import PossibleResults, filterStdOut
 from StudentSubmission.Runners import Runner
 
 # We need to use the dill pickle-ing library to pass functions in the processes
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
-
-
-def filterStdOut(_stdOut: list[str]) -> list[str]:
-    """
-    This function takes in a list representing the output from the program. It includes ALL output,
-    so lines may appear as 'NUMBER> OUTPUT 3' where we only care about what is right after the OUTPUT statement
-    This is adapted from John Henke's implementation
-
-    :param _stdOut: The raw stdout from the program
-    :returns: the same output with the garbage removed
-    """
-
-    filteredOutput: list[str] = []
-    for line in _stdOut:
-        if "output " in line.lower():
-            filteredOutput.append(line[line.lower().find("output ") + 7:])
-
-    return filteredOutput
 
 
 class StudentSubmissionExecutor:
@@ -115,24 +97,28 @@ class StudentSubmissionExecutor:
         if not os.path.exists(_environment.SANDBOX_LOCATION):
             try:
                 # create the sandbox and ensure that we have RWX permissions
-                os.mkdir(_environment.SANDBOX_LOCATION, 777)
+                os.mkdir(_environment.SANDBOX_LOCATION)
             except OSError as os_ex:
                 raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {os_ex}")
 
         if _environment.files is not None:
             # this moves all required files over to the sandbox for testing
-            for key, value in _environment.files:
-                if not os.path.exists(cls.dataDirectory + key):
+            for key, value in _environment.files.items():
+                srcPath = os.path.join(cls.dataDirectory, key)
+                destPath = os.path.join(_environment.SANDBOX_LOCATION, value)
+                if not os.path.exists(srcPath):
                     raise EnvironmentError(f"Failed to locate file: '{key}'. '{key}' is required for this environment.")
-                if not os.path.exists(os.path.dirname(_environment.SANDBOX_LOCATION + value)):
+                if not os.path.exists(os.path.dirname(destPath)):
                     # This is not super likely to throw an error bc we already created the folder above
-                    os.mkdir(os.path.dirname(_environment.SANDBOX_LOCATION + value))
+                    os.mkdir(os.path.dirname(destPath))
 
-                shutil.copyfile(cls.dataDirectory + key, value)
+                shutil.copyfile(srcPath, destPath)
 
         runnableSubmission: RunnableStudentSubmission = RunnableStudentSubmission.RunnableStudentSubmission(
             _environment.stdin, _runner,
+            _environment.SANDBOX_LOCATION,
             _environment.timeout)
+
         return runnableSubmission
 
     @staticmethod
@@ -187,11 +173,14 @@ class StudentSubmissionExecutor:
             # this approach means that nested fs changes aren't detected, but I don't see that coming up.
             curFiles = os.listdir(_environment.SANDBOX_LOCATION)
 
+            cls.resultData[PossibleResults.FILE_OUT] = {}
+
             # We put them into a set and then eliminate the elements that are the same between the two sets
             diffFiles: list[str] = list(set(curFiles) ^ set(_environment.files.keys()))
 
-            cls.resultData[PossibleResults.FILE_OUT.value] = \
-                {diffFiles: [_environment.SANDBOX_LOCATION + file for file in diffFiles]}
+            for file in diffFiles:
+                cls.resultData[PossibleResults.FILE_OUT][file] = \
+                    os.path.join(_environment.SANDBOX_LOCATION, file)
 
     @classmethod
     def getOrAssert(cls, _field: PossibleResults, file: str | None = None, mock: str | None = None) -> any:
@@ -211,8 +200,6 @@ class StudentSubmissionExecutor:
         :raises AssertionError: if the data cannot be retrieved for whatever reason
         """
         if _field not in cls.resultData.keys():
-            print(cls.resultData.keys())
-            print(_field)
             raise AssertionError(f"Missing result data. Expected: {_field.value}.")
 
         if _field is PossibleResults.FILE_OUT and not file:
@@ -233,10 +220,10 @@ class StudentSubmissionExecutor:
 
         if _field is PossibleResults.FILE_OUT:
             # load the file from disk and return it
-            return open(cls.resultData[_field.value][file], 'r').read()
+            return open(cls.resultData[_field][file], 'r').read()
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS:
-            return cls.resultData[_field.value][mock]
+            return cls.resultData[_field][mock]
 
         return cls.resultData[_field]
 
