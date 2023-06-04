@@ -11,6 +11,7 @@ before attempting to even connect to the object.
 
 import multiprocessing
 import multiprocessing.shared_memory as shared_memory
+import os
 import sys
 from io import StringIO
 
@@ -51,7 +52,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     """
 
     def __init__(self, _runner: Runner, _inputSharedMemName: str, _outputDataMemName: str,
-                 timeout: int = 10):
+                 _executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -65,6 +66,9 @@ class StudentSubmissionProcess(multiprocessing.Process):
         :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
         return values. This is created by the child and will be connected to by the parent once the child exits.
 
+        :param _executionDirectory: The directory that this process should be running in. This is to make sure that all
+        data is isolated for each run of the autograder.
+
         :param timeout: The _timeout for join. Basically, it will wait *at most* this amount of time for the child to
         terminate. After this period passes, the child must be killed by the parent.
         """
@@ -72,6 +76,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         self.runner: Runner = _runner
         self.inputDataMemName: str = _inputSharedMemName
         self.outputDataMemName: str = _outputDataMemName
+        self.executionDirectory: str = _executionDirectory
         self.timeout: int = timeout
 
     def _setup(self) -> None:
@@ -80,12 +85,12 @@ class StudentSubmissionProcess(multiprocessing.Process):
         with the name ``self.inputDataMemName``. The stdin is formatted with newlines so that ``StringIO`` is able to
         work with it.
 
-        The shared stdin object is destroyed after reading and is cleaned up from disk.
-
-        .. warning: The shared stdin object is not accessible after this runs.
+        This method also moves the process to the execution directory
 
         stdout is also redirected here, but because we don't care about its contents, we just overwrite it completely.
         """
+        os.chdir(self.executionDirectory)
+
         sharedInput = multiprocessing.shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())
         # Reformat the stdin so that we
@@ -146,7 +151,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: list[str], _runner: Runner, _timeout: int):
+    def __init__(self, _stdin: list[str], _runner: Runner,  _executionDirectory: str, _timeout: int):
         self.stdin: list[str] = _stdin
         self.inputDataMemName = "input_data"
         self.outputDataMemName = "output_data"
@@ -156,7 +161,7 @@ class RunnableStudentSubmission:
 
         self.studentSubmissionProcess = StudentSubmissionProcess(
             _runner,
-            self.inputDataMemName, self.outputDataMemName,
+            self.inputDataMemName, self.outputDataMemName, _executionDirectory,
             _timeout)
 
         self.timeoutOccurred: bool = False
