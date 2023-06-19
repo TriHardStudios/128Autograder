@@ -19,4 +19,4 @@ exclude_also =
     @(abc\.)?abstractmethod
 
 # Ignore dynamic files. Ignore non API files. Ignore actual test files
-omit = sandbox/*, test_code, TestRegister.py, baseTest.py, studentTests/*, tests/*,
+omit = sandbox/*, test_code, TestRegister.py, baseTest.py, studentTests/*, tests/*, */student_submission

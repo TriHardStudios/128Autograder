@@ -42,12 +42,12 @@ class StudentSubmission:
         fileName: str = ""
 
         if len(fileNames) == 1:
-            fileName = _submissionDirectory + fileNames[0]
+            fileName = os.path.join(_submissionDirectory, fileNames[0])
         else:
             # If using multiple files, must have one called main.py
             filteredFiles: list[str] = [file for file in fileNames if file == "main.py"]
             if len(filteredFiles) == 1:
-                fileName = _submissionDirectory + filteredFiles[0]
+                fileName = os.path.join(_submissionDirectory, filteredFiles[0])
 
         if not fileName:
             return None, "Validation Error: Unable to find main file"
