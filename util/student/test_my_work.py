@@ -79,6 +79,7 @@ def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
 
 
 if __name__ == "__main__":
+    # todo clear out old .zip file before run
     submissionDirectory = "student_work/"
 
     if len(sys.argv) == 2:
