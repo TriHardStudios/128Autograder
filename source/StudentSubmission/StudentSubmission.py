@@ -14,61 +14,40 @@ MUST SUPPORT:
 """
 import ast
 import os
+import sys
+from typing import *
+import re
+from importlib.util import find_spec
 
 
 class StudentSubmission:
-    def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: list[str] | None):
-        mainModuleTuple = StudentSubmission._discoverMainModule(_submissionDirectory)
-        self.studentMainModule: ast.Module = mainModuleTuple[0]
-        self.validationError: str = mainModuleTuple[1]
-        self.isValid: bool = True if self.studentMainModule else False
-
-        self.disallowedFunctionCalls: list[ast.Call] = \
-            StudentSubmission._generateDisallowedFunctionCalls(_disallowedFunctionSignatures) \
-                if _disallowedFunctionSignatures else []
-
     @staticmethod
-    def _discoverMainModule(_submissionDirectory: str) -> (ast.Module, str):
+    def _generateImportList(_programAST: ast.Module, _currentlyImportedFiles: Set[str]) -> Set[str]:
         """
-        @brief This function locates the main module
+        This file generates the list of imports that the student used
+        :param _programAST: The AST of the program currently being processed
+        :param _currentlyImportedFiles: The list of imported files
+        :returns A list of the new imported files
         """
-        if not (os.path.exists(_submissionDirectory) and not os.path.isfile(_submissionDirectory)):
-            return None, "Validation Error: Invalid student submission path"
+        newImportedFiles: Set[str] = set()
 
-        fileNames: list[str] = [file for file in os.listdir(_submissionDirectory) if file[-3:] == ".py"]
+        for node in ast.walk(_programAST):
+            if not isinstance(node, ast.Import) and not isinstance(node, ast.ImportFrom):
+                continue
 
-        if len(fileNames) == 0:
-            return None, "Validation Error: No .py files were found"
-        fileName: str = ""
+            importName: str = node.names[0].name if isinstance(node, ast.Import) else node.module
 
-        if len(fileNames) == 1:
-            fileName = os.path.join(_submissionDirectory, fileNames[0])
-        else:
-            # If using multiple files, must have one called main.py
-            filteredFiles: list[str] = [file for file in fileNames if file == "main.py"]
-            if len(filteredFiles) == 1:
-                fileName = os.path.join(_submissionDirectory, filteredFiles[0])
+            # If the module we are currently looking is importable, then we know that it is either an
+            #  installed library or and Python standard library and no extra handling is needed
+            if find_spec(importName) is not None:
+                continue
 
-        if not fileName:
-            return None, "Validation Error: Unable to find main file"
+            fileName = importName.replace('.', '/') + ".py"
 
-        pythonProgramText: str | None = None
+            if fileName not in _currentlyImportedFiles:
+                newImportedFiles.add(fileName)
 
-        try:
-            pythonProgramText = open(fileName, 'r').read()
-        except Exception as ex_g:
-            return pythonProgramText, f"IO Error: {type(ex_g).__qualname__}"
-
-        parsedPythonProgram: ast.Module | None = None
-        # TODO need to implement walker to parse entire program
-
-        try:
-            parsedPythonProgram = ast.parse(pythonProgramText)
-
-        except SyntaxError as ex_se:
-            return parsedPythonProgram, f"Syntax Error: {ex_se.msg} on line {ex_se.lineno}"
-
-        return parsedPythonProgram, ""
+        return newImportedFiles
 
     @staticmethod
     def _generateDisallowedFunctionCalls(_disallowedFunctionSignatures: list[str]) -> list[ast.Call]:
@@ -178,25 +157,166 @@ class StudentSubmission:
         # TODO need to expand this to include the number of invalid calls
         return False, f"Invalid Function Calls\n{stringedCalls}"
 
+    def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: List[str] | None):
+        self.testFiles: List[str] = []
+        self.pythonFiles: List[str] = []
+        self.requirements: str = ""
+        self.studentProgram: Dict[str, ast.Module] = {}
+        self.errors: str = ""
+        self.importedFiles: Set[str] = set()
+        self.submissionDirectory: str = _submissionDirectory
+
+        self._discoverAvailableFiles(_submissionDirectory)
+        mainProgramFile: str = self._discoverMainModule(_submissionDirectory)
+        self._loadProgram(_submissionDirectory, mainProgramFile, self.importedFiles, programAlais="main")
+
+        self.isValid: bool = len(self.studentProgram) > 0
+
+        self.disallowedFunctionCalls: List[ast.Call] = \
+            StudentSubmission._generateDisallowedFunctionCalls(_disallowedFunctionSignatures) \
+                if _disallowedFunctionSignatures else []
+
+    def addError(self, _errorName: str, _errorText: str):
+        if not _errorName:
+            _errorName = "Error"
+
+        if not _errorText:
+            return
+        self.errors += f"{_errorName}: {_errorText}\n"
+
+    def addValidationError(self, _error: str):
+        self.addError("Validation Error", _error)
+
+    def _discoverAvailableFiles(self, _submissionDirectory: str) -> None:
+        """
+        This function locates the available files in the student's submission.
+
+        It is able to detect
+        - test files: ``$^test\w*\.py$``
+        - python code files: ``^\w+\.py$``
+        - requirements files: ``^requirements\.txt$``
+
+        :param _submissionDirectory: the directory to run discovery in
+        """
+        if not (os.path.exists(_submissionDirectory) and not os.path.isfile(_submissionDirectory)):
+            self.addValidationError("Invalid student submission path")
+            return
+
+        testFileRegex: Pattern = re.compile(r"^test\w*\.py$")
+        requirementsFileRegex: Pattern = re.compile(r"^requirements.txt$")
+        pythonFileRegex: Pattern = re.compile(r"^\w+\.py$")
+
+        # TODO: implement ability to traverse sub folders
+        for file in os.listdir(_submissionDirectory):
+            if not os.path.isfile(os.path.join(_submissionDirectory, file)):
+                continue
+
+            if re.match(testFileRegex, file):
+                self.testFiles.append(file)
+                continue
+
+            if re.match(pythonFileRegex, file):
+                self.pythonFiles.append(file)
+                continue
+
+            if re.match(requirementsFileRegex, file):
+                self.requirementsFile = file
+                continue
+
+    def _discoverMainModule(self, _submissionDirectory: str) -> str:
+        """
+        @brief This function locates the main module
+        """
+        mainProgramFile: str = ""
+        if len(self.pythonFiles) == 0:
+            self.addValidationError("No .py files were found")
+            return ""
+
+        if len(self.pythonFiles) == 1:
+            mainProgramFile = self.pythonFiles[0]
+        else:
+            # If using multiple files, must have one called main.py
+            filteredFiles: List[str] = [file for file in self.pythonFiles if file == "main.py"]
+            if len(filteredFiles) == 1:
+                mainProgramFile = filteredFiles[0]
+
+        if not mainProgramFile:
+            self.addValidationError("Unable to find main file")
+
+        return mainProgramFile
+
+    def _loadProgram(self, _submissionDirectory: str, _programFileName: str, _importList: Set[str],
+                     programAlais: str = None):
+        fileToOpen: os.path = os.path.join(_submissionDirectory, _programFileName)
+        try:
+            with open(fileToOpen, 'r') as r:
+                programText = r.read()
+
+        except Exception as exG:
+            self.addError("IO Error", type(exG).__qualname__)
+            return
+
+        try:
+            if programAlais is not None:
+                _programFileName = programAlais
+            self.studentProgram[_programFileName] = ast.parse(programText)
+        except SyntaxError as exSe:
+            self.addError("Syntax Error", f"{fileToOpen}:{exSe.lineno}: {exSe.msg}: {exSe.text}")
+            return
+
+        newImportedFiles: Set[str] = \
+            self._generateImportList(self.studentProgram[_programFileName], _importList)
+
+        _importList.update(newImportedFiles)
+
+        for file in newImportedFiles:
+            self._loadProgram(_submissionDirectory, file, _importList)
+
+        self.importedFiles = _importList
+
+    def installRequirements(self):
+        if not self.requirementsFile:
+            return
+
+        import subprocess
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install',
+                               '-r', f'{os.path.join(self.submissionDirectory, self.requirementsFile)}'])
+
+    def removeRequirements(self):
+        if not self.requirementsFile:
+            return
+
+        import subprocess
+        subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall',
+                               '-r', f'{os.path.join(self.submissionDirectory, self.requirementsFile)}', '-y'])
+
     def validateSubmission(self):
         # If we already ran into a validation error when loading submission
 
         if not self.isValid:
             return
 
-        validationTuple: (bool, str) = StudentSubmission._validateStudentSubmission(self.studentMainModule,
-                                                                                    self.disallowedFunctionCalls)
+        for file in self.studentProgram.values():
+            validationTuple: (bool, str) = \
+                StudentSubmission._validateStudentSubmission(file, self.disallowedFunctionCalls)
 
-        self.isValid = validationTuple[0]
-        self.validationError = validationTuple[1]
+            self.isValid = self.isValid & validationTuple[0]
+            self.addValidationError(validationTuple[1])
 
     def isSubmissionValid(self) -> bool:
         return self.isValid
 
     def getValidationError(self) -> str:
-        return self.validationError
+        return self.errors
+
+    def getImports(self):
+        return dict(zip(
+            [f"{os.path.join(self.submissionDirectory, file)}" for file in self.importedFiles],
+            [file for file in self.importedFiles]
+        ))
+
+    def getTestFiles(self):
+        return [f"{os.path.join(self.submissionDirectory, file)}" for file in self.testFiles]
 
     def getStudentSubmissionCode(self):
-        return compile(self.studentMainModule, "student_submission", "exec")
-
-
+        return compile(self.studentProgram["main"], "student_submission", "exec")

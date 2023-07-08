@@ -20,10 +20,13 @@ class TestStudentSubmission(unittest.TestCase):
                               "print('TEST_FILE_NON_MAIN')\n"
 
     def setUp(self) -> None:
+        if os.path.exists(self.TEST_FILE_DIRECTORY):
+            shutil.rmtree(self.TEST_FILE_DIRECTORY)
         os.mkdir(self.TEST_FILE_DIRECTORY)
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.TEST_FILE_DIRECTORY)
+        if os.path.exists(self.TEST_FILE_DIRECTORY):
+            shutil.rmtree(self.TEST_FILE_DIRECTORY)
 
     def testDiscoverMainModuleSinglePy(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
@@ -81,7 +84,7 @@ class TestStudentSubmission(unittest.TestCase):
             w.writelines(self.TEST_FILE_NON_MAIN)
 
         for i in range(10):
-            fileName = str([random.choice(string.ascii_letters) for i in range(10)]) + ".py"
+            fileName = "".join([random.choice(string.ascii_letters) for i in range(10)]) + ".py"
 
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
@@ -91,6 +94,52 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertFalse(submission.isSubmissionValid())
 
         self.assertIn("Unable to find main file", submission.getValidationError())
+
+    def testDiscoverTestFiles(self):
+        testFileNames: list[str] = [
+            "test.py",
+            "testFile.py",
+            "test_file.py",
+            "test_FileWith_longName.py"
+        ]
+
+        for file in testFileNames:
+            with open(os.path.join(self.TEST_FILE_DIRECTORY, file), 'w') as w:
+                w.writelines("pass")
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission.validateSubmission()
+
+        self.assertTrue(submission.isSubmissionValid())
+
+        self.assertFalse(submission.getImports())
+
+        testFileNames = [f"{os.path.join(self.TEST_FILE_DIRECTORY, file)}" for file in testFileNames]
+
+        self.assertCountEqual(testFileNames, submission.getTestFiles())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def testDiscoverRequirementsFile(self, capturedStdout):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "requirements.txt"), 'w') as w:
+            w.writelines("pip-install-test==0.5\n")
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines("import pip_install_test")
+
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission.validateSubmission()
+
+        submission.installRequirements()
+
+        self.assertTrue(submission.isSubmissionValid())
+        exec(submission.getStudentSubmissionCode())
+
+        self.assertIn("You installed a pip module.", capturedStdout.getvalue())
+
+        submission.removeRequirements()
 
     def testDisallowedFunctionPresent(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
@@ -121,7 +170,7 @@ class TestStudentSubmission(unittest.TestCase):
                          "int(8, 8)\n"
                          )
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["int(_,4)"])
 
         submission.validateSubmission()
 
@@ -145,8 +194,7 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertTrue(submission.isSubmissionValid())
 
-    @patch('sys.stdout', new_callable=StringIO)
-    def testModules(self, capturedStdout):
+    def testModules(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "mod1.py"), 'w') as w:
             w.writelines("\n"
                          "def fun1():\n"
@@ -164,8 +212,4 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertTrue(submission.isSubmissionValid())
 
-        exec(submission.getStudentSubmissionCode())
-
-        self.assertEqual("fun1\n", capturedStdout)
-
-
+        self.assertEqual({os.path.join(self.TEST_FILE_DIRECTORY, "mod1.py"): "mod1.py"}, submission.getImports())

@@ -83,7 +83,32 @@ class StudentSubmissionExecutor:
         return StudentSubmissionExecutor.ExecutionEnvironment(_submission)
 
     @classmethod
-    def _setup(cls, _environment: ExecutionEnvironment, _runner: Runner) -> RunnableStudentSubmission:
+    def _getUpdatedFilePaths(cls, _environment: ExecutionEnvironment) -> dict[os.PathLike, os.PathLike]:
+
+        filesToMove = _environment.files
+        if filesToMove is not None:
+            filesToMove = dict(zip(
+                [os.path.join(cls.dataDirectory, srcFile) for srcFile in filesToMove.keys()],
+                [os.path.join(_environment.SANDBOX_LOCATION, destFile) for destFile in filesToMove.values()]
+            ))
+
+        # add imported files if they exist
+        importedFiles = _environment.submission.getImports()
+        if importedFiles:
+            importedFiles = dict(zip(
+                [srcFile for srcFile in importedFiles.keys()],
+                [os.path.join(_environment.SANDBOX_LOCATION, destFile) for destFile in importedFiles.values()]
+            ))
+
+            if filesToMove is not None:
+                filesToMove.update(importedFiles)
+            else:
+                filesToMove = importedFiles
+
+        return filesToMove
+
+    @classmethod
+    def setup(cls, _environment: ExecutionEnvironment, _runner: Runner) -> RunnableStudentSubmission:
         """
         This function sets up the environment to run the submission in. It pulls in all the files that are requested
         and preps the mocks to be passed into the actual process.
@@ -101,13 +126,15 @@ class StudentSubmissionExecutor:
             except OSError as os_ex:
                 raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {os_ex}")
 
-        if _environment.files is not None:
+        filesToMove = cls._getUpdatedFilePaths(_environment)
+
+        if filesToMove:
             # this moves all required files over to the sandbox for testing
-            for key, value in _environment.files.items():
-                srcPath = os.path.join(cls.dataDirectory, key)
-                destPath = os.path.join(_environment.SANDBOX_LOCATION, value)
+            for srcPath, destPath in filesToMove.items():
                 if not os.path.exists(srcPath):
-                    raise EnvironmentError(f"Failed to locate file: '{key}'. '{key}' is required for this environment.")
+                    raise EnvironmentError(
+                        f"Failed to locate file: '{srcPath}'. '{srcPath}' is required for this environment."
+                    )
                 if not os.path.exists(os.path.dirname(destPath)):
                     # This is not super likely to throw an error bc we already created the folder above
                     os.mkdir(os.path.dirname(destPath))
@@ -141,7 +168,7 @@ class StudentSubmissionExecutor:
     @classmethod
     def execute(cls, _environment: ExecutionEnvironment, _runner: Runner) -> None:
         _runner.setSubmission(_environment.submission.getStudentSubmissionCode())
-        runnableSubmission: RunnableStudentSubmission = cls._setup(_environment, _runner)
+        runnableSubmission: RunnableStudentSubmission = cls.setup(_environment, _runner)
         runnableSubmission.run()
 
         # Doing this, this way is *much* better than re throwing the exceptions. It also gets rid of the need
@@ -153,10 +180,10 @@ class StudentSubmissionExecutor:
         if runnableSubmission.getTimeoutOccurred():
             raise AssertionError(f"Submission timed out after {_environment.timeout} seconds.")
 
-        cls._postRun(_environment, runnableSubmission)
+        cls.postRun(_environment, runnableSubmission)
 
     @classmethod
-    def _postRun(cls, _environment: ExecutionEnvironment, _runnableSubmission: RunnableStudentSubmission) -> None:
+    def postRun(cls, _environment: ExecutionEnvironment, _runnableSubmission: RunnableStudentSubmission) -> None:
         """
         This function runs the post-processing needed before we can deliver the results to the unittest.
         For now, it strips the output statements from STDOUT (if present), generates the valid files based on

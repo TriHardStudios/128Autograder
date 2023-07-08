@@ -5,6 +5,7 @@ from StudentSubmission import StudentSubmission
 from StudentSubmission import StudentSubmissionAssertions
 from .Assertions import Assertions
 
+
 class BaseTest(Assertions, StudentSubmissionAssertions):
     studentSubmission: StudentSubmission | None = None
     submissionDirectory: str | None = None
@@ -13,6 +14,7 @@ class BaseTest(Assertions, StudentSubmissionAssertions):
     def setUpClass(cls):
         cls.studentSubmission = StudentSubmission(cls.submissionDirectory, ["eval()"])
         cls.studentSubmission.validateSubmission()
+        cls.studentSubmission.installRequirements()
 
     @classmethod
     def reformatOutput(cls, _output: list[str]) -> str:
@@ -20,4 +22,4 @@ class BaseTest(Assertions, StudentSubmissionAssertions):
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        cls.studentSubmission.removeRequirements()
