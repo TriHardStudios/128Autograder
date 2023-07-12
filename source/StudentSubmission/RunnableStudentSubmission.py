@@ -90,6 +90,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         stdout is also redirected here, but because we don't care about its contents, we just overwrite it completely.
         """
         os.chdir(self.executionDirectory)
+        sys.path.append(os.getcwd())
 
         sharedInput = multiprocessing.shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())

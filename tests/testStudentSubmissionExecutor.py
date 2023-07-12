@@ -14,6 +14,8 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         StudentSubmissionExecutor.ExecutionEnvironment.SANDBOX_LOCATION,
         "outputFile.txt"
     )
+    PYTHON_PROGRAM_DIRECTORY: str = "./testPrograms"
+    TEST_IMPORT_NAME: os.path = os.path.join(PYTHON_PROGRAM_DIRECTORY, "mod1.py")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -22,10 +24,16 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
     def setUp(self) -> None:
         self.submission: mock = mock.Mock(spec_set=StudentSubmission)
+        self.submission.getImports = lambda: None
         self.runner: MainModuleRunner = MainModuleRunner()
 
         self.environment: StudentSubmissionExecutor.ExecutionEnvironment = \
             StudentSubmissionExecutor.generateNewExecutionEnvironment(self.submission)
+
+        if os.path.exists(self.PYTHON_PROGRAM_DIRECTORY):
+            shutil.rmtree(self.PYTHON_PROGRAM_DIRECTORY)
+
+        os.mkdir(self.PYTHON_PROGRAM_DIRECTORY)
 
     def tearDown(self) -> None:
         if "sandbox" in os.listdir("."):
@@ -33,14 +41,17 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         StudentSubmissionExecutor.resultData = {}
 
+        if os.path.exists(self.PYTHON_PROGRAM_DIRECTORY):
+            shutil.rmtree(self.PYTHON_PROGRAM_DIRECTORY)
+
     @classmethod
     def tearDownClass(cls) -> None:
         shutil.rmtree(cls.DATA_DIRECTORY)
 
     def testCreateSandbox(self):
-        StudentSubmissionExecutor._setup(self.environment, self.runner)
+        StudentSubmissionExecutor.setup(self.environment, self.runner)
 
-        self.assertIn("sandbox", os.listdir("."))
+        self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("."))
 
     def testMoveFiles(self):
         self.environment.files = {
@@ -52,9 +63,20 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         self.assertIn(os.path.basename(self.TEST_FILE_LOCATION), os.listdir(self.DATA_DIRECTORY))
 
-        StudentSubmissionExecutor._setup(self.environment, self.runner)
+        StudentSubmissionExecutor.setup(self.environment, self.runner)
 
         self.assertIn(os.path.basename(self.TEST_FILE_LOCATION), os.listdir(self.environment.SANDBOX_LOCATION))
+
+    def testMoveFilesImports(self):
+        with open(self.TEST_IMPORT_NAME, "w") as w:
+            w.writelines("pass")
+
+        self.environment.submission.getImports = \
+            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
+
+        StudentSubmissionExecutor.setup(self.environment, self.runner)
+
+        self.assertIn(os.path.basename(self.TEST_IMPORT_NAME), os.listdir(self.environment.SANDBOX_LOCATION))
 
     def testExceptionRaised(self):
         program = \
@@ -79,12 +101,12 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         with open(self.TEST_FILE_LOCATION, 'w') as w:
             w.write("this is a line in the file")
 
-        StudentSubmissionExecutor._setup(self.environment, self.runner)
+        StudentSubmissionExecutor.setup(self.environment, self.runner)
 
         with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
             w.write("this is a line in the file")
 
-        StudentSubmissionExecutor._postRun(self.environment, runnableSubmission)
+        StudentSubmissionExecutor.postRun(self.environment, runnableSubmission)
 
         self.assertIn(PossibleResults.FILE_OUT, StudentSubmissionExecutor.resultData.keys())
 
@@ -161,5 +183,29 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         self.assertEqual(expectedOutput, actualOutput)
 
+    def testImportFullExecution(self):
+        # Because imports rely on the executor to move the files over,
+        #  I am testing as part of the executor tests
 
+        expectedOutput = "Called from a different file!!"
+        with open(self.TEST_IMPORT_NAME, 'w') as w:
+            w.writelines("def fun1():\n"
+                         f"  print('OUTPUT {expectedOutput}')\n"
+                         "\n")
 
+        program = \
+            (
+                "from mod1 import fun1\n"
+                "fun1()\n"
+            )
+
+        self.environment.submission.getImports = \
+            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
+
+        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+
+        StudentSubmissionExecutor.execute(self.environment, self.runner)
+
+        actualOutput = StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+
+        self.assertEqual(expectedOutput, actualOutput[0])
