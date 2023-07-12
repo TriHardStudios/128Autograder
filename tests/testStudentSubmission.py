@@ -177,6 +177,22 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertFalse(submission.isSubmissionValid())
 
         self.assertIn("Invalid Function Calls", submission.getValidationError())
+        self.assertIn("int: called 1 times", submission.getValidationError())
+
+    def testDisallowedFunctionNamePresent(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines("\n"
+                         "eval('Hello', 16, 'wheeeee')\n"
+                         "eval('different parameters!')\n"
+                         )
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["eval()"])
+
+        submission.validateSubmission()
+
+        self.assertFalse(submission.isSubmissionValid())
+
+        self.assertIn("Invalid Function Calls", submission.getValidationError())
+        self.assertIn("eval: called 2 times", submission.getValidationError())
 
     def testDisallowedFunctionNotPresent(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
@@ -193,6 +209,24 @@ class TestStudentSubmission(unittest.TestCase):
         submission.validateSubmission()
 
         self.assertTrue(submission.isSubmissionValid())
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def testImportLibrary(self, capturedStdout):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "file.py"), 'w') as w:
+            w.writelines("\n"
+                         "import math\n"
+                         "print(math.floor(3.999))\n"
+                        )
+
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission.validateSubmission()
+
+        self.assertTrue(submission.isSubmissionValid())
+        self.assertEqual({}, submission.getImports())
+
+        exec(submission.getStudentSubmissionCode())
+
+        self.assertEqual("3\n", capturedStdout.getvalue())
 
     def testModules(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "mod1.py"), 'w') as w:
