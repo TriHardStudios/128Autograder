@@ -2,7 +2,7 @@ import os.path
 import sys
 from unittest import TestSuite
 from unittest import loader
-from .baseTest import BaseTest
+from .BaseTest import BaseTest
 
 
 class TestRegister(TestSuite):

@@ -6,10 +6,15 @@ from StudentSubmission.StudentSubmissionExecutor import StudentSubmissionExecuto
 from StudentSubmission.Runners import MainModuleRunner
 from StudentSubmission.common import PossibleResults
 
+
 class EmptyTestSuite(BaseTest, StudentSubmissionAssertions):
 
+    @weight(10)
     def testCode(self):
-        enviroment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)
+        environment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)
         runner = MainModuleRunner()
 
-        StudentSubmissionExecutor.execute(enviroment, runner)
+        StudentSubmissionExecutor.execute(environment, runner)
+
+        actualOutput = StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+        self.assertEqual("Hello World", actualOutput)
