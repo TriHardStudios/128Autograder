@@ -20,11 +20,11 @@ jobs:
       run: docker compose -f docker-compose-test.yaml build
 
     - name: Run tests
-      run: docker compose --profile test up
+      run: docker compose -f docker-compose-test.yaml --profile test up
 
     - name: Verify test outputs
       run: |
-        pushd integration
+        cd integration
         for f in *; do 
           if [ -d $f  -a ! -h $f ];  
           then  
