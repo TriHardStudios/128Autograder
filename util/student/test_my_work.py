@@ -79,7 +79,13 @@ def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
 
 
 if __name__ == "__main__":
-    # todo clear out old .zip file before run
+    zipFiles = [file for file in os.listdir('.') if file[:-4] == ".zip"]
+    if len(zipFiles) > 0:
+        print("Previous submissions found. Cleaning out old submission files...")
+        for file in zipFiles:
+            print(f"\tRemoving {file}...")
+            os.remove(file)
+
     submissionDirectory = "student_work/"
 
     if len(sys.argv) == 2:
