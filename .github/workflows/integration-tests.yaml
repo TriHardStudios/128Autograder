@@ -29,6 +29,7 @@ jobs:
           if [ -d $f  -a ! -h $f ];  
           then  
               cd -- "$f";  
+              echo "Running verify.py for $f";
               python3 verify.py;
               if [ $? -ne 0 ];
               then 
