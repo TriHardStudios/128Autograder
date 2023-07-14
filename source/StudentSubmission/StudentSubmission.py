@@ -160,7 +160,7 @@ class StudentSubmission:
     def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: List[str] | None):
         self.testFiles: List[str] = []
         self.pythonFiles: List[str] = []
-        self.requirements: str = ""
+        self.requirementsFile: str = ""
         self.studentProgram: Dict[str, ast.Module] = {}
         self.errors: str = ""
         self.importedFiles: Set[str] = set()

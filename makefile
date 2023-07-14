@@ -1,4 +1,4 @@
-NAME=autograder_prototype
+NAME=128_autograder
 ROOT=$(shell pwd)
 SHELL=/bin/bash
 
