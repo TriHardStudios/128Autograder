@@ -1,0 +1,51 @@
+version: "3"
+services:
+  test_no_previous_submissions:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_no_previous_submissions/results:/autograder/results"
+      - "./integration/test_no_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./integration/test_no_previous_submissions/submission:/autograder/submission"
+      - "./integration/test_no_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+
+  test_lower_previous_submissions:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_lower_previous_submissions/results:/autograder/results"
+      - "./integration/test_lower_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./integration/test_lower_previous_submissions/submission:/autograder/submission"
+      - "./integration/test_lower_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+
+  test_higher_previous_submissions:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_higher_previous_submissions/results:/autograder/results"
+      - "./integration/test_higher_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./integration/test_higher_previous_submissions/submission:/autograder/submission"
+      - "./integration/test_higher_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+
+  test_lower_previous_limit_exceeded:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_lower_previous_limit_exceeded/results:/autograder/results"
+      - "./integration/test_lower_previous_limit_exceeded/studentTests:/autograder/source/studentTests"
+      - "./integration/test_lower_previous_limit_exceeded/submission:/autograder/submission"
+      - "./integration/test_lower_previous_limit_exceeded/submission_metadata.json:/autograder/submission_metadata.json"
+
+

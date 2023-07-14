@@ -1,0 +1,39 @@
+name: Integration Tests
+on:
+  push
+
+jobs:
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.8"
+
+    - name: Build container for tests
+      run: docker compose -f docker-compose-test.yaml build
+
+    - name: Run tests
+      run: docker compose --profile test up
+
+    - name: Verify test outputs
+      run: |
+        pushd integration
+        for f in *; do 
+          if [ -d $f  -a ! -h $f ];  
+          then  
+              cd -- "$f";  
+              python3 verify.py;
+              if [ $? -ne 0 ];
+              then 
+                  exit 1;
+              fi;
+              cd ..;
+          fi;
+        done;

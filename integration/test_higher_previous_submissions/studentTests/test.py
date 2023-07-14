@@ -17,4 +17,4 @@ class HelloWorld(BaseTest, StudentSubmissionAssertions):
         StudentSubmissionExecutor.execute(environment, runner)
 
         actualOutput = StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
-        self.assertEqual("Hello World", actualOutput[0])
+        self.assertEqual("This will fail", actualOutput[0])
