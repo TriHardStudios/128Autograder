@@ -24,6 +24,24 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         self.assertEqual(strInput, results[PossibleResults.STDOUT])
 
+    def testStdIOWithMain(self):
+        program = \
+            "if __name__ == '__main__':\n" \
+            "   userIn = input()\n" \
+            "   print(userIn)\n"
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        strInput = ["this is input"]
+        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
+        runnableSubmission.run()
+
+        results = runnableSubmission.getOutputData()
+
+        self.assertEqual(strInput, results[PossibleResults.STDOUT])
+
+
     def testFunctionStdIO(self):
         program = \
             ("\n"

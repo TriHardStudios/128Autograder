@@ -53,7 +53,7 @@ class Runner(ABC):
 
 class MainModuleRunner(Runner):
     def run(self):
-        exec(self.studentSubmissionCode, {__name__: "__main__"})
+        exec(self.studentSubmissionCode, {'__name__': "__main__"})
 
 
 class FunctionRunner(Runner):
