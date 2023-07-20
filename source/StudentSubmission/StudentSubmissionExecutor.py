@@ -36,11 +36,7 @@ class StudentSubmissionExecutor:
     dataDirectory: str | None = None
     """The directory where all the data for tests lives"""
 
-    resultData: dict[PossibleResults, any] = {}
-    """
-    This dict contains the data that was generated from the student's submission. This should not be accessed
-    directly, rather, use getOrAssert method
-    """
+
 
     @dataclasses.dataclass
     class ExecutionEnvironment:
@@ -62,6 +58,12 @@ class StudentSubmissionExecutor:
         """What mocks have been defined for this run of the student's submission"""
         timeout: int = 10
         """What _timeout has been defined for this run of the student's submission"""
+
+        resultData: dict[PossibleResults, any] = dataclasses.field(default_factory=dict)
+        """
+        This dict contains the data that was generated from the student's submission. This should not be accessed
+        directly, rather, use getOrAssert method
+        """
 
         SANDBOX_LOCATION: str = "./sandbox"
 
@@ -191,32 +193,38 @@ class StudentSubmissionExecutor:
         :param _environment: the execution environment
         :param _runnableSubmission: the students submission that we need to gather data from
         """
-        cls.resultData = _runnableSubmission.getOutputData()
+        resultData = _runnableSubmission.getOutputData()
 
-        if PossibleResults.STDOUT in cls.resultData.keys():
-            cls.resultData[PossibleResults.STDOUT] = filterStdOut(cls.resultData[PossibleResults.STDOUT])
+        if PossibleResults.STDOUT in resultData.keys():
+            resultData[PossibleResults.STDOUT] = filterStdOut(resultData[PossibleResults.STDOUT])
 
         if _environment.files is not None:
             # this approach means that nested fs changes aren't detected, but I don't see that coming up.
             curFiles = os.listdir(_environment.SANDBOX_LOCATION)
 
-            cls.resultData[PossibleResults.FILE_OUT] = {}
+            resultData[PossibleResults.FILE_OUT] = {}
 
             # We put them into a set and then eliminate the elements that are the same between the two sets
             diffFiles: list[str] = list(set(curFiles) ^ set(_environment.files.keys()))
 
             for file in diffFiles:
-                cls.resultData[PossibleResults.FILE_OUT][file] = \
+                resultData[PossibleResults.FILE_OUT][file] = \
                     os.path.join(_environment.SANDBOX_LOCATION, file)
 
+        _environment.resultData = resultData
+
     @classmethod
-    def getOrAssert(cls, _field: PossibleResults, file: str | None = None, mock: str | None = None) -> any:
+    def getOrAssert(cls, _environment: ExecutionEnvironment,
+                    _field: PossibleResults,
+                    file: str | None = None,
+                    mock: str | None = None) -> any:
         """
         This function gets the requested field from the results or will raise an assertion error.
 
         If a file is requested, the file name must be specified with the ``file`` parameter. The contents of the file
         will be returned.
         If a mock is requested, the mocked method's name must `also` be requested. The mocked method will be returned.
+        :param _environment: the execution environment that contains the results from execution
         :param _field: the field to get data from in the results file. Must be a ``PossibleResult``
         :param file: if ``PossibleResults.FILE_OUT`` is specified, ``file`` must also be specified. This is the file
         name to load from.
@@ -226,24 +234,26 @@ class StudentSubmissionExecutor:
         :return: The requested data if it exists
         :raises AssertionError: if the data cannot be retrieved for whatever reason
         """
-        if _field not in cls.resultData.keys():
+        resultData = _environment.resultData
+
+        if _field not in resultData.keys():
             raise AssertionError(f"Missing result data. Expected: {_field.value}.")
 
-        if _field is PossibleResults.STDOUT and not cls.resultData[_field]:
+        if _field is PossibleResults.STDOUT and not resultData[_field]:
             raise AssertionError(f"No OUTPUT was created by the students submission.\n"
                                  f"Are you missing an 'OUTPUT' statement?")
 
         if _field is PossibleResults.FILE_OUT and not file:
             raise AttributeError("File must be defined.")
 
-        if _field is PossibleResults.FILE_OUT and file not in cls.resultData[PossibleResults.FILE_OUT].keys():
+        if _field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
             raise AssertionError(f"File '{file}' was not created by the student's submission")
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
             raise AttributeError("Mock most be defined.")
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS \
-                and mock not in cls.resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
+                and mock not in resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
             raise AttributeError(
                 f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
 
@@ -251,12 +261,12 @@ class StudentSubmissionExecutor:
 
         if _field is PossibleResults.FILE_OUT:
             # load the file from disk and return it
-            return open(cls.resultData[_field][file], 'r').read()
+            return open(resultData[_field][file], 'r').read()
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS:
-            return cls.resultData[_field][mock]
+            return resultData[_field][mock]
 
-        return cls.resultData[_field]
+        return resultData[_field]
 
     @classmethod
     def cleanup(cls, _environment: ExecutionEnvironment) -> None:
