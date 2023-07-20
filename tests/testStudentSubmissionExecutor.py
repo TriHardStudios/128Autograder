@@ -108,7 +108,7 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         StudentSubmissionExecutor.postRun(self.environment, runnableSubmission)
 
-        self.assertIn(PossibleResults.FILE_OUT, StudentSubmissionExecutor.resultData.keys())
+        self.assertIn(PossibleResults.FILE_OUT, self.environment.resultData.keys())
 
         expectedResults = {
             PossibleResults.FILE_OUT: {
@@ -116,7 +116,7 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
             }
         }
 
-        self.assertDictEqual(StudentSubmissionExecutor.resultData, expectedResults)
+        self.assertDictEqual(self.environment.resultData, expectedResults)
 
     def testGetOrAssertFilePresent(self):
         expectedOutput = "this is a line in the file"
@@ -126,44 +126,44 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
             w.write(expectedOutput)
 
-        StudentSubmissionExecutor.resultData = {
+        self.environment.resultData = {
             PossibleResults.FILE_OUT: {
                 os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
             }
         }
 
         actualOutput = StudentSubmissionExecutor \
-            .getOrAssert(PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+            .getOrAssert(self.environment, PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
 
         self.assertEqual(expectedOutput, actualOutput)
 
     def testGetOrAssertFileNotPresent(self):
-        StudentSubmissionExecutor.resultData = {
+        self.environment.resultData = {
             PossibleResults.FILE_OUT: {}
         }
 
         with self.assertRaises(AssertionError):
             StudentSubmissionExecutor \
-                .getOrAssert(PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+                .getOrAssert(self.environment, PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
 
     def testGetOrAssertMockPresent(self):
-        StudentSubmissionExecutor.resultData = {
+        self.environment.resultData = {
             PossibleResults.MOCK_SIDE_EFFECTS: {
                 "mock": mock.Mock()
             }
         }
 
-        actualMock = StudentSubmissionExecutor.getOrAssert(PossibleResults.MOCK_SIDE_EFFECTS, mock="mock")
+        actualMock = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="mock")
 
         self.assertIsNotNone(actualMock)
 
     def testGetOrAssertEmptyStdout(self):
-        StudentSubmissionExecutor.resultData = {
+        self.environment.resultData = {
             PossibleResults.STDOUT: []
         }
 
         with self.assertRaises(AssertionError):
-            StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+            StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
 
     def testFileIOFullExecution(self):
         # Because file io relies on the sandbox that the executor creates
@@ -187,7 +187,7 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         StudentSubmissionExecutor.execute(self.environment, self.runner)
         actualOutput = StudentSubmissionExecutor \
-            .getOrAssert(PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+            .getOrAssert(self.environment, PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
 
         self.assertEqual(expectedOutput, actualOutput)
 
@@ -214,6 +214,6 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         StudentSubmissionExecutor.execute(self.environment, self.runner)
 
-        actualOutput = StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+        actualOutput = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
 
         self.assertEqual(expectedOutput, actualOutput[0])
