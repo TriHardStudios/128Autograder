@@ -229,6 +229,10 @@ class StudentSubmissionExecutor:
         if _field not in cls.resultData.keys():
             raise AssertionError(f"Missing result data. Expected: {_field.value}.")
 
+        if _field is PossibleResults.STDOUT and not cls.resultData[_field]:
+            raise AssertionError(f"No OUTPUT was created by the students submission.\n"
+                                 f"Are you missing an 'OUTPUT' statement?")
+
         if _field is PossibleResults.FILE_OUT and not file:
             raise AttributeError("File must be defined.")
 

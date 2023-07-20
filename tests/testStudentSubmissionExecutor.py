@@ -157,6 +157,14 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         self.assertIsNotNone(actualMock)
 
+    def testGetOrAssertEmptyStdout(self):
+        StudentSubmissionExecutor.resultData = {
+            PossibleResults.STDOUT: []
+        }
+
+        with self.assertRaises(AssertionError):
+            StudentSubmissionExecutor.getOrAssert(PossibleResults.STDOUT)
+
     def testFileIOFullExecution(self):
         # Because file io relies on the sandbox that the executor creates
         #  I am testing it as part of the executor tests
