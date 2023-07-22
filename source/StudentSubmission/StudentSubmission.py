@@ -157,7 +157,8 @@ class StudentSubmission:
         # TODO need to expand this to include the number of invalid calls
         return False, f"Invalid Function Calls\n{stringedCalls}"
 
-    def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: List[str] | None):
+    def __init__(self, _submissionDirectory: str, _disallowedFunctionSignatures: List[str] | None,
+                 discoverTestFiles: bool = False, discoverRequirementsFile: bool = False):
         self.testFiles: List[str] = []
         self.pythonFiles: List[str] = []
         self.requirementsFile: str = ""
@@ -166,7 +167,7 @@ class StudentSubmission:
         self.importedFiles: Set[str] = set()
         self.submissionDirectory: str = _submissionDirectory
 
-        self._discoverAvailableFiles(_submissionDirectory)
+        self._discoverAvailableFiles(_submissionDirectory, discoverTestFiles, discoverRequirementsFile)
         mainProgramFile: str = self._discoverMainModule(_submissionDirectory)
         self._loadProgram(_submissionDirectory, mainProgramFile, self.importedFiles, programAlais="main")
 
@@ -187,16 +188,20 @@ class StudentSubmission:
     def addValidationError(self, _error: str):
         self.addError("Validation Error", _error)
 
-    def _discoverAvailableFiles(self, _submissionDirectory: str) -> None:
+    def _discoverAvailableFiles(self, _submissionDirectory: str,
+                                _discoverTestFiles: bool,
+                                _discoverRequirementsFile: bool) -> None:
         """
         This function locates the available files in the student's submission.
 
         It is able to detect
         - test files: ``$^test\w*\.py$``
-        - python code files: ``^\w+\.py$``
+        - python code files: ``^(\w|\s)+\.py$``
         - requirements files: ``^requirements\.txt$``
 
         :param _submissionDirectory: the directory to run discovery in
+        :param _discoverTestFiles: if files matching the test pattern should be treated as test files or not
+        :param _discoverRequirementsFile: if we should attempt to discover requirements files
         """
         if not (os.path.exists(_submissionDirectory) and not os.path.isfile(_submissionDirectory)):
             self.addValidationError("Invalid student submission path")
@@ -204,14 +209,14 @@ class StudentSubmission:
 
         testFileRegex: Pattern = re.compile(r"^test\w*\.py$")
         requirementsFileRegex: Pattern = re.compile(r"^requirements.txt$")
-        pythonFileRegex: Pattern = re.compile(r"^\w+\.py$")
+        pythonFileRegex: Pattern = re.compile(r"^(\w|\s)+\.py$")
 
         # TODO: implement ability to traverse sub folders
         for file in os.listdir(_submissionDirectory):
             if not os.path.isfile(os.path.join(_submissionDirectory, file)):
                 continue
 
-            if re.match(testFileRegex, file):
+            if re.match(testFileRegex, file) and _discoverTestFiles:
                 self.testFiles.append(file)
                 continue
 
@@ -219,7 +224,7 @@ class StudentSubmission:
                 self.pythonFiles.append(file)
                 continue
 
-            if re.match(requirementsFileRegex, file):
+            if re.match(requirementsFileRegex, file) and _discoverRequirementsFile:
                 self.requirementsFile = file
                 continue
 
