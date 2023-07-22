@@ -36,6 +36,22 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertTrue(submission.isSubmissionValid())
 
+    def testDiscoverFileWithSpace(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "file with space.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+
+        self.assertTrue(submission.isSubmissionValid())
+
+    def testDiscoverFileTest(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "test.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+
+        self.assertTrue(submission.isSubmissionValid())
+
     @patch('sys.stdout', new_callable=StringIO)
     def testDiscoverMainModuleManyPy(self, capturedStdout):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
@@ -110,7 +126,7 @@ class TestStudentSubmission(unittest.TestCase):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None, discoverTestFiles=True)
         submission.validateSubmission()
 
         self.assertTrue(submission.isSubmissionValid())
@@ -129,7 +145,7 @@ class TestStudentSubmission(unittest.TestCase):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines("import pip_install_test")
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None, discoverRequirementsFile=True)
         submission.validateSubmission()
 
         submission.installRequirements()

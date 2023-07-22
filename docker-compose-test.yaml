@@ -48,4 +48,15 @@ services:
       - "./integration/test_lower_previous_limit_exceeded/submission:/autograder/submission"
       - "./integration/test_lower_previous_limit_exceeded/submission_metadata.json:/autograder/submission_metadata.json"
 
+  test_submission_name_with_spaces:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_submission_name_with_spaces/results:/autograder/results"
+      - "./integration/test_submission_name_with_spaces/studentTests:/autograder/source/studentTests"
+      - "./integration/test_submission_name_with_spaces/submission:/autograder/submission"
+      - "./integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
 

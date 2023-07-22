@@ -1,11 +1,13 @@
 import sys
 import os
+import re
 import subprocess
 
 PACKAGE_ERROR: str = "Required Package Error"
 SUBMISSION_ERROR: str = "Student Submission Error"
 RED_COLOR: str = u"\u001b[31m"
 RESET_COLOR: str = u"\u001b[0m"
+SUBMISSION_REGEX: re.Pattern = re.compile(r"^(\w|\s)+\.py$")
 
 
 def printErrorMessage(_errorType: str, _errorText: str) -> None:
@@ -69,7 +71,10 @@ def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
         printErrorMessage(SUBMISSION_ERROR, f"{_submissionDirectory} is not a directory.")
         return False
 
-    if len(os.listdir(_submissionDirectory)) < 2:
+    # this doesn't catch files in folders. Something to be aware of for students
+    files = [file for file in os.listdir(_submissionDirectory) if SUBMISSION_REGEX.match(file)]
+
+    if len(files) < 2:
         printErrorMessage(SUBMISSION_ERROR,
                           f"No valid files found in submission directory. "
                           f"Found {os.listdir(_submissionDirectory)}")
