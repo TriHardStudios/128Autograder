@@ -74,7 +74,7 @@ def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
     # this doesn't catch files in folders. Something to be aware of for students
     files = [file for file in os.listdir(_submissionDirectory) if SUBMISSION_REGEX.match(file)]
 
-    if len(files) < 2:
+    if len(files) < 1:
         printErrorMessage(SUBMISSION_ERROR,
                           f"No valid files found in submission directory. "
                           f"Found {os.listdir(_submissionDirectory)}")
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     if not verifyStudentWorkPresent(submissionDirectory):
         sys.exit(1)
 
-    command: list[str] = ["python3", "run.py", "--unit-test-only", submissionDirectory]
+    command: list[str] = [sys.executable, "run.py", "--unit-test-only", submissionDirectory]
 
     with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:
