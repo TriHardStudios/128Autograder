@@ -1,0 +1,11 @@
+[project]
+name="128Autograder"
+
+
+
+# PyRight LSP support by default
+# We might want to add more LSP stuff.
+#  But I really like PyRight as it has static type checking
+[tool.pyright]
+
+
