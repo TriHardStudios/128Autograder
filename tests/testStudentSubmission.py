@@ -97,11 +97,12 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertIn("No .py files were found", submission.getValidationError())
 
     def testDiscoverNoMainPyFile(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
-            w.writelines(self.TEST_FILE_NON_MAIN)
+        fileNames = []
 
         for i in range(10):
             fileName = "".join([random.choice(string.ascii_letters) for i in range(10)]) + ".py"
+
+            fileNames.append(fileName)
 
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
@@ -110,7 +111,12 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertFalse(submission.isSubmissionValid())
 
-        self.assertIn("Unable to find main file", submission.getValidationError())
+        fileNames.sort()
+
+        self.assertIn(str(fileNames), submission.getValidationError())
+        self.assertIn("no main.py file was found", submission.getValidationError())
+        self.assertIn("create main.py or delete extra .py files", submission.getValidationError())
+
 
     def testDiscoverTestFiles(self):
         testFileNames: list[str] = [

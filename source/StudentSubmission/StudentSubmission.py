@@ -177,16 +177,22 @@ class StudentSubmission:
             StudentSubmission._generateDisallowedFunctionCalls(_disallowedFunctionSignatures) \
                 if _disallowedFunctionSignatures else []
 
-    def addError(self, _errorName: str, _errorText: str):
+    def addError(self, _errorName: str, _errorText: str, description: str = None):
         if not _errorName:
             _errorName = "Error"
 
         if not _errorText:
             return
+
         self.errors += f"{_errorName}: {_errorText}\n"
 
-    def addValidationError(self, _error: str):
-        self.addError("Validation Error", _error)
+        if not description:
+            return
+
+        self.errors += f"{description}\n"
+
+    def addValidationError(self, _error: str, description: str = None):
+        self.addError("Validation Error", _error, description)
 
     def _discoverAvailableFiles(self, _submissionDirectory: str,
                                 _discoverTestFiles: bool,
@@ -246,7 +252,16 @@ class StudentSubmission:
                 mainProgramFile = filteredFiles[0]
 
         if not mainProgramFile:
-            self.addValidationError("Unable to find main file")
+            # sort so that order matches what file system shows
+            self.pythonFiles.sort()
+
+            self.addValidationError(
+                (
+                    f"Many .py files, {self.pythonFiles}, found in {_submissionDirectory}\n"
+                    f"However, no main.py file was found\n"
+                ),
+                "Please create main.py or delete extra .py files"
+            )
 
         return mainProgramFile
 
