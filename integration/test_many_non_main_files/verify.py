@@ -10,4 +10,5 @@ testResult = results['tests'][0]
 
 assert results['score'] == 0
 
+assert "Validation Error" in testResult["output"]
 assert str(os.listdir('./submission')) in testResult["output"]
