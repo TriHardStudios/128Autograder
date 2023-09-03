@@ -240,7 +240,7 @@ class StudentSubmission:
         """
         mainProgramFile: str = ""
         if len(self.pythonFiles) == 0:
-            self.addValidationError("No .py files were found")
+            self.addValidationError("No .py files were found", "Does your file end in .py?")
             return ""
 
         if len(self.pythonFiles) == 1:

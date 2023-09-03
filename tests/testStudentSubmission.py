@@ -95,6 +95,7 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertFalse(submission.isSubmissionValid())
 
         self.assertIn("No .py files were found", submission.getValidationError())
+        self.assertIn("Does your file end in .py", submission.getValidationError())
 
     def testDiscoverNoMainPyFile(self):
         fileNames = []
