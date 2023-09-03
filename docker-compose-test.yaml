@@ -60,3 +60,16 @@ services:
       - "./integration/test_submission_name_with_spaces/submission:/autograder/submission"
       - "./integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
 
+  test_many_non_main_files:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile
+    entrypoint: /autograder/run_autograder
+    volumes:
+      - "./integration/test_many_non_main_files/results:/autograder/results"
+      - "./integration/test_many_non_main_files/studentTests:/autograder/source/studentTests"
+      - "./integration/test_many_non_main_files/submission:/autograder/submission"
+      - "./integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
+
+
