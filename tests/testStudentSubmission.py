@@ -14,7 +14,8 @@ from StudentSubmission import StudentSubmission
 class TestStudentSubmission(unittest.TestCase):
     TEST_FILE_DIRECTORY: str = "./testFiles"
     TEST_FILE_MAIN: str = "\n" \
-                          "print('TEST_FILE_MAIN')\n"
+                          "if __name__ == '__main__':" \
+                          " print('TEST_FILE_MAIN')\n"
 
     TEST_FILE_NON_MAIN: str = "\n" \
                               "print('TEST_FILE_NON_MAIN')\n"
@@ -64,7 +65,7 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertTrue(submission.isSubmissionValid())
 
-        exec(submission.getStudentSubmissionCode())
+        exec(submission.getStudentSubmissionCode(), {'__name__': "__main__"})
 
         self.assertEqual("TEST_FILE_MAIN\n", capturedStdout.getvalue())
 
