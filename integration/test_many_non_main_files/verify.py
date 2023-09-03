@@ -10,5 +10,8 @@ testResult = results['tests'][0]
 
 assert results['score'] == 0
 
+files = os.listdir('./submission')
+files.sort()
+
 assert "Validation Error" in testResult["output"]
-assert str(os.listdir('./submission')) in testResult["output"]
+assert str(files) in testResult["output"]
