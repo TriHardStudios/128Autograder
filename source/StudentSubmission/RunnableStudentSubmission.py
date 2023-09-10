@@ -49,20 +49,16 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, _runner: Runner, _inputSharedMemName: str, _outputDataMemName: str,
-                 _executionDirectory: str, timeout: int = 10):
+    def __init__(self, _runner: Runner, _executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
+
+        It sets the default names for shared input and output.
+        Those should probably be updated.
 
         :param _runner: The submission runner to be run in a new process. Can be any callable object (lamda, function,
         etc). If there is a return value it will be shared with the parent.
 
-        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin. The
-        data at this location is stored as a list and must be processed into a format understood by ``StringIO``. The
-        data here must exist before the child is started.
-
-        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
-        return values. This is created by the child and will be connected to by the parent once the child exits.
 
         :param _executionDirectory: The directory that this process should be running in. This is to make sure that all
         data is isolated for each run of the autograder.
@@ -72,10 +68,31 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         super().__init__(name="Student Submission")
         self.runner: Runner = _runner
-        self.inputDataMemName: str = _inputSharedMemName
-        self.outputDataMemName: str = _outputDataMemName
+        self.inputDataMemName: str = "input_data"
+        self.outputDataMemName: str = "output_data"
         self.executionDirectory: str = _executionDirectory
         self.timeout: int = timeout
+
+    def setInputDataMemName(self, _inputSharedMemName):
+        """
+        Updates the input data memory name from the default
+
+        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin.
+        The data at this location is stored as a list
+        and must be processed into a format understood by ``StringIO``.
+        The data must exist before the child is started.
+        """
+        self.inputDataMemName: str = _inputSharedMemName
+
+    def setOutputDataMenName(self, _outputDataMemName):
+        """
+        Updates the output data memory name from the default.
+
+        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
+        return values.
+        This is created by the child and will be connected to by the parent once the child exits.
+        """
+        self.outputDataMemName = _outputDataMemName
 
     def _setup(self) -> None:
         """
@@ -153,17 +170,12 @@ class RunnableStudentSubmission:
 
     def __init__(self, _stdin: list[str], _runner: Runner, _executionDirectory: str, _timeout: int):
         self.stdin: list[str] = _stdin
-        self.inputDataMemName = "input_data"
-        self.outputDataMemName = "output_data"
-
         self.inputSharedMem: shared_memory.SharedMemory | None = None
         self.outputSharedMem: shared_memory.SharedMemory | None = None
 
-        self.studentSubmissionProcess = StudentSubmissionProcess(
-            _runner,
-            self.inputDataMemName, self.outputDataMemName, _executionDirectory,
-            _timeout)
-
+        self.runner = _runner
+        self.executionDirectory = _executionDirectory
+        self.studentSubmissionProcess = StudentSubmissionProcess(_runner, _executionDirectory, _timeout)
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
         self.outputData: dict[PossibleResults, object] = {}
@@ -179,8 +191,11 @@ class RunnableStudentSubmission:
         :param _memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
         """
 
-        self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=_memorySize)
-        self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=_memorySize)
+        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
+        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
+
+        self.studentSubmissionProcess.setInputDataMemName(self.inputSharedMem.name)
+        self.studentSubmissionProcess.setOutputDataMenName(self.outputSharedMem.name)
 
     def run(self):
         self.setup(SHARED_MEMORY_SIZE)

@@ -41,7 +41,6 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         self.assertEqual(strInput, results[PossibleResults.STDOUT])
 
-
     def testFunctionStdIO(self):
         program = \
             ("\n"
@@ -211,3 +210,27 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         with self.assertRaises(MissingOutputDataException):
             raise runnableSubmission.getException()
+
+    def testHandleManyFailedRuns(self):
+        # This test enforces that we prefer a resource leak to crashing tests
+        # This might need to be re-evaluated in the future
+        program = \
+            (
+                "print('Hi Mom!')\n"
+            )
+
+        capturedCleanup = RunnableStudentSubmission.cleanup
+        RunnableStudentSubmission.cleanup = lambda x: None
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+
+        RunnableStudentSubmission.cleanup = capturedCleanup
+
+        runnableSubmission.run()
+
