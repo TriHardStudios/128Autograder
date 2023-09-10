@@ -17,13 +17,11 @@ from io import StringIO
 
 import dill
 
-from StudentSubmission.common import PossibleResults
+from StudentSubmission.common import PossibleResults, MissingOutputDataException
 from StudentSubmission.Runners import Runner
 
+SHARED_MEMORY_SIZE = 2 ** 20
 
-SHARED_STDIN_NAME: str = "sub_stdin"
-SHARED_STDOUT_NAME: str = "sub_stdout"
-SHARED_GENERAL_NAME: str =  "sub_stdout"
 
 class StudentSubmissionProcess(multiprocessing.Process):
     """
@@ -99,7 +97,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None, _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
+    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None,
+                  _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
         """
 .       This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
@@ -152,7 +151,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: list[str], _runner: Runner,  _executionDirectory: str, _timeout: int):
+    def __init__(self, _stdin: list[str], _runner: Runner, _executionDirectory: str, _timeout: int):
         self.stdin: list[str] = _stdin
         self.inputDataMemName = "input_data"
         self.outputDataMemName = "output_data"
@@ -169,7 +168,7 @@ class RunnableStudentSubmission:
         self.exception: Exception | None = None
         self.outputData: dict[PossibleResults, object] = {}
 
-    def setup(self, memorySize: int = 2 ** 20):
+    def setup(self, _memorySize: int):
         """
         This function sets up the data that will be shared between the two processes.
 
@@ -177,14 +176,14 @@ class RunnableStudentSubmission:
         the issue with windows GC cleaning up the memory before we are done with it as there will be at least one
         active hook for each memory resource til ``cleanup`` is called.
 
-        :param memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
+        :param _memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
         """
 
-        self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=memorySize)
-        self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=memorySize)
-        
+        self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=_memorySize)
+        self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=_memorySize)
+
     def run(self):
-        self.setup()
+        self.setup(SHARED_MEMORY_SIZE)
 
         # allocate 1 mb for the shared memory
         serializedStdin = dill.dumps(self.stdin, dill.HIGHEST_PROTOCOL)
@@ -203,7 +202,19 @@ class RunnableStudentSubmission:
             self.cleanup()
             return
 
-        deserializedData: dict[PossibleResults, object] = dill.loads(self.outputSharedMem.buf.tobytes())
+        # If a student exits with `exit()` then we cant trust the output
+
+        outputBytes = self.outputSharedMem.buf.tobytes()
+
+        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
+        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+            self.cleanup()
+
+            self.exception = MissingOutputDataException(self.outputSharedMem.name)
+
+            return
+
+        deserializedData: dict[PossibleResults, object] = dill.loads(outputBytes)
 
         self.exception = deserializedData[PossibleResults.EXCEPTION]
         self.outputData = deserializedData
