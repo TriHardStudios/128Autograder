@@ -1,7 +1,7 @@
 import unittest
 from StudentSubmission.RunnableStudentSubmission import RunnableStudentSubmission
 from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
-from StudentSubmission.common import PossibleResults
+from StudentSubmission.common import PossibleResults, MissingOutputDataException
 from TestingFramework import SingleFunctionMock
 
 
@@ -40,7 +40,6 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         results = runnableSubmission.getOutputData()
 
         self.assertEqual(strInput, results[PossibleResults.STDOUT])
-
 
     def testFunctionStdIO(self):
         program = \
@@ -196,3 +195,42 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         with self.assertRaises(EOFError):
             raise runnableSubmission.getException()
+
+    def testHandleExit(self):
+        program = \
+            (
+                "exit(0)"
+            )
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        with self.assertRaises(MissingOutputDataException):
+            raise runnableSubmission.getException()
+
+    def testHandleManyFailedRuns(self):
+        # This test enforces that we prefer a resource leak to crashing tests
+        # This might need to be re-evaluated in the future
+        program = \
+            (
+                "print('Hi Mom!')\n"
+            )
+
+        capturedCleanup = RunnableStudentSubmission.cleanup
+        RunnableStudentSubmission.cleanup = lambda x: None
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+
+        RunnableStudentSubmission.cleanup = capturedCleanup
+
+        runnableSubmission.run()
+

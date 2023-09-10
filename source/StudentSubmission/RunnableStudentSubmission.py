@@ -17,13 +17,11 @@ from io import StringIO
 
 import dill
 
-from StudentSubmission.common import PossibleResults
+from StudentSubmission.common import PossibleResults, MissingOutputDataException
 from StudentSubmission.Runners import Runner
 
+SHARED_MEMORY_SIZE = 2 ** 20
 
-SHARED_STDIN_NAME: str = "sub_stdin"
-SHARED_STDOUT_NAME: str = "sub_stdout"
-SHARED_GENERAL_NAME: str =  "sub_stdout"
 
 class StudentSubmissionProcess(multiprocessing.Process):
     """
@@ -51,20 +49,16 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, _runner: Runner, _inputSharedMemName: str, _outputDataMemName: str,
-                 _executionDirectory: str, timeout: int = 10):
+    def __init__(self, _runner: Runner, _executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
+
+        It sets the default names for shared input and output.
+        Those should probably be updated.
 
         :param _runner: The submission runner to be run in a new process. Can be any callable object (lamda, function,
         etc). If there is a return value it will be shared with the parent.
 
-        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin. The
-        data at this location is stored as a list and must be processed into a format understood by ``StringIO``. The
-        data here must exist before the child is started.
-
-        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
-        return values. This is created by the child and will be connected to by the parent once the child exits.
 
         :param _executionDirectory: The directory that this process should be running in. This is to make sure that all
         data is isolated for each run of the autograder.
@@ -74,10 +68,31 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         super().__init__(name="Student Submission")
         self.runner: Runner = _runner
-        self.inputDataMemName: str = _inputSharedMemName
-        self.outputDataMemName: str = _outputDataMemName
+        self.inputDataMemName: str = "input_data"
+        self.outputDataMemName: str = "output_data"
         self.executionDirectory: str = _executionDirectory
         self.timeout: int = timeout
+
+    def setInputDataMemName(self, _inputSharedMemName):
+        """
+        Updates the input data memory name from the default
+
+        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin.
+        The data at this location is stored as a list
+        and must be processed into a format understood by ``StringIO``.
+        The data must exist before the child is started.
+        """
+        self.inputDataMemName: str = _inputSharedMemName
+
+    def setOutputDataMenName(self, _outputDataMemName):
+        """
+        Updates the output data memory name from the default.
+
+        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
+        return values.
+        This is created by the child and will be connected to by the parent once the child exits.
+        """
+        self.outputDataMemName = _outputDataMemName
 
     def _setup(self) -> None:
         """
@@ -99,7 +114,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None, _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
+    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None,
+                  _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
         """
 .       This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
@@ -152,24 +168,19 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
 class RunnableStudentSubmission:
 
-    def __init__(self, _stdin: list[str], _runner: Runner,  _executionDirectory: str, _timeout: int):
+    def __init__(self, _stdin: list[str], _runner: Runner, _executionDirectory: str, _timeout: int):
         self.stdin: list[str] = _stdin
-        self.inputDataMemName = "input_data"
-        self.outputDataMemName = "output_data"
-
         self.inputSharedMem: shared_memory.SharedMemory | None = None
         self.outputSharedMem: shared_memory.SharedMemory | None = None
 
-        self.studentSubmissionProcess = StudentSubmissionProcess(
-            _runner,
-            self.inputDataMemName, self.outputDataMemName, _executionDirectory,
-            _timeout)
-
+        self.runner = _runner
+        self.executionDirectory = _executionDirectory
+        self.studentSubmissionProcess = StudentSubmissionProcess(_runner, _executionDirectory, _timeout)
         self.timeoutOccurred: bool = False
         self.exception: Exception | None = None
         self.outputData: dict[PossibleResults, object] = {}
 
-    def setup(self, memorySize: int = 2 ** 20):
+    def setup(self, _memorySize: int):
         """
         This function sets up the data that will be shared between the two processes.
 
@@ -177,14 +188,17 @@ class RunnableStudentSubmission:
         the issue with windows GC cleaning up the memory before we are done with it as there will be at least one
         active hook for each memory resource til ``cleanup`` is called.
 
-        :param memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
+        :param _memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
         """
 
-        self.inputSharedMem = shared_memory.SharedMemory(self.inputDataMemName, create=True, size=memorySize)
-        self.outputSharedMem = shared_memory.SharedMemory(self.outputDataMemName, create=True, size=memorySize)
-        
+        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
+        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
+
+        self.studentSubmissionProcess.setInputDataMemName(self.inputSharedMem.name)
+        self.studentSubmissionProcess.setOutputDataMenName(self.outputSharedMem.name)
+
     def run(self):
-        self.setup()
+        self.setup(SHARED_MEMORY_SIZE)
 
         # allocate 1 mb for the shared memory
         serializedStdin = dill.dumps(self.stdin, dill.HIGHEST_PROTOCOL)
@@ -203,7 +217,19 @@ class RunnableStudentSubmission:
             self.cleanup()
             return
 
-        deserializedData: dict[PossibleResults, object] = dill.loads(self.outputSharedMem.buf.tobytes())
+        # If a student exits with `exit()` then we cant trust the output
+
+        outputBytes = self.outputSharedMem.buf.tobytes()
+
+        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
+        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+            self.cleanup()
+
+            self.exception = MissingOutputDataException(self.outputSharedMem.name)
+
+            return
+
+        deserializedData: dict[PossibleResults, object] = dill.loads(outputBytes)
 
         self.exception = deserializedData[PossibleResults.EXCEPTION]
         self.outputData = deserializedData
