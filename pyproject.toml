@@ -9,6 +9,15 @@ maintainers = [
 version = "1.0.0"
 requires-python = ">=3.9.0"
 
+[tool.pyright]
+include = ["source"]
+
+exclude = ["**__pycache__**"]
+
+executionEnvironments = [
+    {root = "tests", extraPaths = ["source"] }
+]
+
 
 [tool.pylint.main]
 fail-under = 8
