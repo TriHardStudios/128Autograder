@@ -8,6 +8,7 @@ import hashlib
 PACKAGE_ERROR: str = "Required Package Error"
 SUBMISSION_ERROR: str = "Student Submission Error"
 RED_COLOR: str = u"\u001b[31m"
+YELLOW_COLOR: str = u"\u001b[33m"
 RESET_COLOR: str = u"\u001b[0m"
 SUBMISSION_REGEX: re.Pattern = re.compile(r"^(\w|\s)+\.py$")
 FILE_HASHES_NAME: str = ".filehashes" 
@@ -25,8 +26,8 @@ def printErrorMessage(_errorType: str, _errorText: str) -> None:
     print(f"[{RED_COLOR}{_errorType}{RESET_COLOR}]: {_errorText}")
 
 
-def printWarningMessage(_warningType: str, _warningText:str) -> None:
-    pass
+def printWarningMessage(_warningType: str, _warningText: str) -> None:
+    print(f"[{YELLOW_COLOR}{_warningType}{RESET_COLOR}]: {_warningText}")
 
 def verifyRequiredPackages() -> bool:
     """
@@ -175,6 +176,9 @@ if __name__ == "__main__":
 
     if not verifyStudentWorkPresent(submissionDirectory):
         sys.exit(1)
+
+    if not verifyFileChanged(submissionDirectory):
+        printWarningMessage("Student Submission Warning", "Student submision may not have changed")
 
     command: list[str] = [sys.executable, "run.py", "--unit-test-only", submissionDirectory]
 
