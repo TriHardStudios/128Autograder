@@ -73,8 +73,8 @@ class TestStudentSubmission(unittest.TestCase):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        for i in range(10):
-            fileName = str([random.choice(string.ascii_letters) for i in range(10)])
+        for _ in range(10):
+            fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)])
 
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
@@ -84,8 +84,8 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertTrue(submission.isSubmissionValid())
 
     def testDiscoverNoPyFiles(self):
-        for i in range(10):
-            fileName = str([random.choice(string.ascii_letters) for i in range(10)])
+        for _ in range(10):
+            fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)])
 
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
@@ -100,8 +100,8 @@ class TestStudentSubmission(unittest.TestCase):
     def testDiscoverNoMainPyFile(self):
         fileNames = []
 
-        for i in range(10):
-            fileName = "".join([random.choice(string.ascii_letters) for i in range(10)]) + ".py"
+        for _ in range(10):
+            fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)]) + ".py"
 
             fileNames.append(fileName)
 

@@ -33,6 +33,7 @@ jobs:
               python3 verify.py;
               if [ $? -ne 0 ];
               then 
+                  echo "Failed on $f"
                   exit 1;
               fi;
               cd ..;

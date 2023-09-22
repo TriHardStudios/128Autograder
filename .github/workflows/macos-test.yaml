@@ -1,8 +1,10 @@
-# This config runs the unit tests on windows
+# This config runs the unit tests on macOS
 
 name: Run unittests on macOS
 
-on: [push]
+# WE ARE updating this to only run on PRs so that the we run the integreation pipeline less
+on: 
+  pull_request:
 
 jobs:
   build:

@@ -220,7 +220,7 @@ class TestRunnableStudentSubmission(unittest.TestCase):
             )
 
         capturedCleanup = RunnableStudentSubmission.cleanup
-        RunnableStudentSubmission.cleanup = lambda x: None
+        RunnableStudentSubmission.cleanup = lambda _: None
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
