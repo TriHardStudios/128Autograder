@@ -70,6 +70,7 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertTrue(result)
 
+
     def testCleanPrevSubmission(self):
         for _ in range(10):
             fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)]) + ".zip"
@@ -84,9 +85,61 @@ class TestStudentTestMyWork(unittest.TestCase):
         self.assertFalse(len(os.listdir(self.TEST_DIRECTORY)) > 1)
 
 
+    
+    def testChangesDetectedFirstRun(self):
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
+            w.write("First run!")
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertTrue(result)
 
     
 
-    
+    def testChangesDetectedManyRuns(self):
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
+            w.write("Frist run!")
 
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertTrue(result)
+
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'a') as w:
+            w.write("Second run!")
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertTrue(result)
+
+
+    def testUnchangedDetected(self):
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
+            w.write("Frist run!")
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertTrue(result)
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertFalse(result)
+
+
+    def testChangesInManyFiles(self):
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission1.py"), 'w') as w:
+            w.write("First run!")
+
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission2.py"), 'w') as w:
+            w.write("First run!")
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        
+        self.assertTrue(result)
+
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission2.py"), 'a') as w:
+            w.write("Second run!")
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        
+        self.assertTrue(result)
 
