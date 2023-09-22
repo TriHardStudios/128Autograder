@@ -19,6 +19,12 @@ find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 # |
 # |_studentTests
 #   |_test_public_*.py
+#   |_data
+#     |_files
+#     | |_...
+#     |
+#     |_starter_code
+#       |_...
 
 # Copy over base files.
 cp "$3"/run.py "$1"/run.py
@@ -40,8 +46,21 @@ cp "$3"/studentTests/test_public*.py "$1"/studentTests/
 cp "$2"/student/test_my_work.py "$1"/test_my_work.py
 cp "$2"/student/create_gradescope_upload.py "$1"/create_gradescope_upload.py
 
-
 # create student work folder
 mkdir "$1"/student_work
+
+if [ -d "$3/studentTests/data/starter_code" ] 
+then
+    if [ $(ls "$3"/studentTests/data/starter_code | wc -l) -ne "1" ] 
+    then
+        echo "ERROR: Too many files in starter_code folder"
+        exit 64
+    fi
+
+    echo "		Adding starter code to student autograder..."
+
+    cp "$3"/studentTests/data/starter_code/* "$1"/student_work/
+fi
+    
 touch "$1"/student_work/.keep
 

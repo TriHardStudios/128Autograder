@@ -72,4 +72,24 @@ services:
       - "./integration/test_many_non_main_files/submission:/autograder/submission"
       - "./integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
 
+  test_build_move_test_cases:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile.build
+    entrypoint: /app/run.sh
+    volumes:
+      - "./integration/test_build_move_test_cases/studentTests:/app/source/studentTests"
+      - "./integration/test_build_move_test_cases/run.sh:/app/run.sh"
+      - "./integration/test_build_move_test_cases/bin:/app/bin"
 
+  test_build_move_starter_code:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile.build
+    entrypoint: /app/run.sh
+    volumes:
+      - "./integration/test_build_move_starter_code/studentTests:/app/source/studentTests"
+      - "./integration/test_build_move_starter_code/run.sh:/app/run.sh"
+      - "./integration/test_build_move_starter_code/bin:/app/bin"

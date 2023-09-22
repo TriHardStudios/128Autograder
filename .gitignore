@@ -8,3 +8,7 @@ __pycache__
 
 htmlcov
 integration/*/results/*
+integration/*/bin/*
+
+
+!.keep
