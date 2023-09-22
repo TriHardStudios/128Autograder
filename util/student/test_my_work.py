@@ -22,6 +22,9 @@ def printErrorMessage(_errorType: str, _errorText: str) -> None:
     print(f"[{RED_COLOR}{_errorType}{RESET_COLOR}]: {_errorText}")
 
 
+def printWarningMessage(_warningType: str, _warningText:str) -> None:
+    pass
+
 def verifyRequiredPackages() -> bool:
     """
     This function verifies that all the required packages needed for the actual autograder are installed
@@ -82,14 +85,20 @@ def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
 
     return True
 
-
-if __name__ == "__main__":
-    zipFiles = [file for file in os.listdir('.') if file[:-4] == ".zip"]
+def cleanPreviousSubmissions(_directory: str) -> None:
+    zipFiles = [os.path.join(_directory, file) for file in os.listdir(_directory) if file[-4:] == ".zip"]
     if len(zipFiles) > 0:
         print("Previous submissions found. Cleaning out old submission files...")
         for file in zipFiles:
             print(f"\tRemoving {file}...")
             os.remove(file)
+
+def verifyFileChanged(_submissionDirectory: str) -> bool:
+    return False
+
+
+if __name__ == "__main__":
+    cleanPreviousSubmissions(".")
 
     submissionDirectory = "student_work/"
 
@@ -97,7 +106,7 @@ if __name__ == "__main__":
         submissionDirectory = sys.argv[1]
 
     # need to make sure to that we have a / at the end of the path
-    if submissionDirectory[:-1] != '/':
+    if submissionDirectory[-1:] != '/':
         submissionDirectory += "/"
 
     if not verifyRequiredPackages():
