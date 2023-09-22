@@ -16,5 +16,12 @@ cp -r "$2"/TestingFramework "$1"/TestingFramework
 cp -r "$2"/StudentSubmission "$1"/StudentSubmission
 
 # copy over unit tests
-cp -r "$2"/studentTests "$1"/studentTests
+mkdir "$1"/studentTests 
+cp "$2"/studentTests/test* "$1"/studentTests/
+
+if [ -d "$2/studentTests/data/files" ]
+then
+    cp -r "$2"/studentTests/data/files/ "$1"/studentTests/data/files/
+fi
+
 

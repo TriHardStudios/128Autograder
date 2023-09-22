@@ -13,3 +13,6 @@ actualStarterCode = [file for file in actualStarterCode if file != ".keep"]
 
 assert expectedStarterCode == actualStarterCode
 
+# assert that it did not get pulled in to gradescope
+assert not os.path.exists("./bin/generation/gradescope/studentTests/data/starter_code/")
+
