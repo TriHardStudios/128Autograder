@@ -1,6 +1,7 @@
 NAME=128_autograder
 ROOT=$(shell pwd)
 SHELL=/bin/bash
+CLEAN = clean
 
 SUBMISSION_DIR=$(ROOT)/student/submission
 RESULTS_DIR=$(ROOT)/student/results
@@ -29,7 +30,7 @@ run: build-docker
 	docker run --rm -v $(SUBMISSION_DIR):/autograder/submission -v $(RESULTS_DIR):/autograder/results $(NAME) /autograder/run_autograder && cat $(RESULTS_DIR)/results.json
 
 
-build: clean
+build: $(CLEAN)
 	$(if $(autograder_name),,  \
 		@echo "Build MUST be invoked with autograder_name=<name>"; \
 		echo "For example: make build autograder_name=F2022-101-Teslacoils"; \

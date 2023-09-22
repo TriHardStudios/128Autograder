@@ -1,0 +1,11 @@
+FROM alpine:latest
+
+RUN apk add --no-cache make \
+    && apk add --no-cache zip \
+    && apk add --no-cache bash
+
+ADD source /app/source
+ADD makefile /app/makefile
+ADD util /app/util
+
+WORKDIR app
