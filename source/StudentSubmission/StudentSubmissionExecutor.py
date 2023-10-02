@@ -165,7 +165,13 @@ class StudentSubmissionExecutor:
         :param exception: The exception from the students submission
         :return: A nicely formatted message explaining the exception
         """
-        return f"Submission execution failed due to an {type(exception).__qualname__} exception."
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception."
+
+        if isinstance(exception, EOFError):
+            errorMessage += "\n" \
+                            "Are you missing if __name__ == '__main__'?"
+
+        return errorMessage
 
     @classmethod
     def execute(cls, _environment: ExecutionEnvironment, _runner: Runner) -> None:

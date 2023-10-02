@@ -169,3 +169,9 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         with self.assertRaises(AssertionError):
             StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
 
+    def testEOFError(self):
+        actual = StudentSubmissionExecutor._processException(EOFError())
+
+        self.assertIn("missing if __name__ == '__main__'", actual)
+
+
