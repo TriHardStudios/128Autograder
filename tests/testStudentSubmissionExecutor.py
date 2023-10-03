@@ -4,7 +4,7 @@ import unittest
 import unittest.mock as mock
 from StudentSubmission import StudentSubmissionExecutor, StudentSubmission
 from StudentSubmission.Runners import MainModuleRunner
-from StudentSubmission.common import PossibleResults
+from StudentSubmission.common import PossibleResults, MissingFunctionDefinition
 
 
 class TestStudentSubmissionExecutor(unittest.TestCase):
@@ -175,3 +175,10 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         self.assertIn("missing if __name__ == '__main__'", actual)
 
 
+    def testMissingFunctionDefinition(self):
+        functionName = "func1"
+        actual = StudentSubmissionExecutor._processException(MissingFunctionDefinition(functionName))
+
+        self.assertIn(functionName, actual)
+        self.assertIn("missing the function definition", actual)
+    

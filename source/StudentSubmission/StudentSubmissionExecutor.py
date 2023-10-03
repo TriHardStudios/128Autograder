@@ -24,7 +24,7 @@ import dill
 
 from StudentSubmission import RunnableStudentSubmission
 from StudentSubmission import StudentSubmission
-from StudentSubmission.common import PossibleResults, filterStdOut
+from StudentSubmission.common import PossibleResults, MissingFunctionDefinition, filterStdOut
 from StudentSubmission.Runners import Runner
 
 # We need to use the dill pickle-ing library to pass functions in the processes
@@ -170,6 +170,9 @@ class StudentSubmissionExecutor:
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
                             "Are you missing if __name__ == '__main__'?"
+
+        if isinstance(exception, MissingFunctionDefinition):
+            errorMessage = str(exception)
 
         return errorMessage
 

@@ -1,7 +1,7 @@
 import unittest
 from StudentSubmission.RunnableStudentSubmission import RunnableStudentSubmission
 from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
-from StudentSubmission.common import PossibleResults, MissingOutputDataException
+from StudentSubmission.common import PossibleResults, MissingOutputDataException, MissingFunctionDefinition
 from TestingFramework import SingleFunctionMock
 
 
@@ -118,6 +118,24 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         mockMeMock.assertCalledWith(1, 2, 3)
         mockMeMock.assertCalledTimes(2)
+
+    def testMissingFunctionDeclaration(self):
+        program = \
+            (
+                "def ignoreMe():\n"
+                "   return True\n"
+            )
+
+        runner = FunctionRunner("runMe")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        with self.assertRaises(MissingFunctionDefinition):
+            raise runnableSubmission.getException()
+
+
 
     def testTerminateInfiniteLoop(self):
         program = \

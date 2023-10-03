@@ -1,6 +1,8 @@
 import sys
 from abc import ABC, abstractmethod
 
+from StudentSubmission.common import MissingFunctionDefinition
+
 
 class Runner(ABC):
     """
@@ -65,4 +67,7 @@ class FunctionRunner(Runner):
     def run(self):
         exec(self.studentSubmissionCode)
         self.applyMocks()
+        if self.functionToCall not in locals().keys():
+            raise MissingFunctionDefinition(self.functionToCall)
+
         return locals()[self.functionToCall](*self.args)
