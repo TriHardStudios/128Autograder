@@ -15,6 +15,11 @@ class MissingOutputDataException(Exception):
                          f"Failed to parse results in {_outputFileName}.\n"
                          f"Submission possibly crashed or terminated before harness could write to {_outputFileName}.")
 
+class MissingFunctionDefinition(Exception):
+    def __init__(self, _functionName: str):
+        super().__init__(f"Failed to find function with name: {_functionName}.\n"
+                          "Are you missing the function definition?")
+
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """
