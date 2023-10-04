@@ -169,7 +169,8 @@ class StudentSubmissionExecutor:
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
-                            "Are you missing if __name__ == '__main__'?"
+                            "Are you missing if __name__ == '__main__'?\n" \
+                            "Is your code inside of the branch?"
 
         if isinstance(exception, MissingFunctionDefinition):
             errorMessage = str(exception)
