@@ -165,11 +165,12 @@ class StudentSubmissionExecutor:
         :param exception: The exception from the students submission
         :return: A nicely formatted message explaining the exception
         """
-        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception."
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(exception)
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
-                            "Are you missing if __name__ == '__main__'?"
+                            "Are you missing if __name__ == '__main__'?\n" \
+                            "Is your code inside of the branch?"
 
         if isinstance(exception, MissingFunctionDefinition):
             errorMessage = str(exception)

@@ -17,9 +17,12 @@ class MissingOutputDataException(Exception):
 
 class MissingFunctionDefinition(Exception):
     def __init__(self, _functionName: str):
-        super().__init__(f"Failed to find function with name: {_functionName}.\n"
-                          "Are you missing the function definition?")
+        self.functionName = _functionName
 
+
+    def __str__(self):
+        return (f"Failed to find function with name: {self.functionName}.\n"
+                "Are you missing the function definition?")
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """
