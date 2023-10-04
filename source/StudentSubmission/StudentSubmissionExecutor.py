@@ -165,7 +165,7 @@ class StudentSubmissionExecutor:
         :param exception: The exception from the students submission
         :return: A nicely formatted message explaining the exception
         """
-        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception."
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(exception)
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
