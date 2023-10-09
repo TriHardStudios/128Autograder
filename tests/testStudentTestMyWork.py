@@ -143,3 +143,14 @@ class TestStudentTestMyWork(unittest.TestCase):
         
         self.assertTrue(result)
 
+
+    def testEmptyJson(self):
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, testMyWork.FILE_HASHES_NAME), "w") as _:
+            pass
+
+        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+
+        self.assertTrue(result)
+
+        
+
