@@ -147,7 +147,11 @@ def verifyFileChanged(_submissionDirectory: str) -> bool:
 
 
     with open(FILE_HASHES_PATH, 'r') as r:
-        existingHashes = json.load(r)
+        try:
+            existingHashes = json.load(r)
+        except json.JSONDecodeError:
+            existingHashes = None
+        
 
     newHashes = generateHashes(_submissionDirectory)
 
@@ -177,11 +181,13 @@ if __name__ == "__main__":
     if not verifyStudentWorkPresent(submissionDirectory):
         sys.exit(1)
 
-    if not verifyFileChanged(submissionDirectory):
-        printWarningMessage("Student Submission Warning", "Student submision may not have changed")
+    fileChanged: bool = verifyFileChanged(submissionDirectory)
 
     command: list[str] = [sys.executable, "run.py", "--unit-test-only", submissionDirectory]
 
     with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:
             print(line, end="")
+
+    if not fileChanged:
+        printWarningMessage("Student Submission Warning", "Student submision may not have changed")
