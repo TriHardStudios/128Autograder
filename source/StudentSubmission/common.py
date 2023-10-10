@@ -15,14 +15,25 @@ class MissingOutputDataException(Exception):
                          f"Failed to parse results in {_outputFileName}.\n"
                          f"Submission possibly crashed or terminated before harness could write to {_outputFileName}.")
 
+
 class MissingFunctionDefinition(Exception):
     def __init__(self, _functionName: str):
         self.functionName = _functionName
 
-
     def __str__(self):
         return (f"Failed to find function with name: {self.functionName}.\n"
                 "Are you missing the function definition?")
+
+
+class InvalidTestCaseSetupCode(Exception):
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        return ("Failed to find 'autograder_setup' function to run.\n"
+                "Ensure that your setup code contains a 'autograder_setup' function.\n"
+                "This is an autograder error.")
+
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """
