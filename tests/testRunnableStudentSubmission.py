@@ -3,7 +3,8 @@ from unittest import skip
 
 from StudentSubmission.RunnableStudentSubmission import RunnableStudentSubmission
 from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
-from StudentSubmission.common import PossibleResults, MissingOutputDataException, MissingFunctionDefinition
+from StudentSubmission.common import PossibleResults, MissingOutputDataException, MissingFunctionDefinition, \
+    InvalidTestCaseSetupCode
 from TestingFramework import SingleFunctionMock
 
 
@@ -272,6 +273,46 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         self.assertEqual(4, actualOutput)
 
+    def testRunFunctionSetupCode(self):
+        program = \
+            "import random\n" \
+            "def test():\n" \
+            "   return random.randint(0, 5)\n"
+
+        setup = \
+            "def autograder_setup():\n" \
+            "   random.seed('autograder')\n"
+
+        runner = FunctionRunner("test")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+        runner.setSetupCode(setup)
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
+        runnableSubmission.run()
+
+        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+
+        self.assertEqual(4, actualOutput)
+
+    def testBadFunctionSetupCode(self):
+        program = \
+            "def test():\n" \
+            "   pass\n"
+
+        setup = \
+            "def this_is_a_bad_name():\n" \
+            "   pass\n"
+
+        runner = FunctionRunner("test")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+        runner.setSetupCode(setup)
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
+        runnableSubmission.run()
+
+        with self.assertRaises(InvalidTestCaseSetupCode):
+            raise runnableSubmission.getException()
+
     @skip("Future feature with mocks")
     def testMockImportedFunction(self):
         program = \
@@ -290,4 +331,3 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
 
         self.assertEqual(1, actualOutput)
-

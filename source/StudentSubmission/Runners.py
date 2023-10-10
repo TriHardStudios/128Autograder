@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import importlib
 from types import ModuleType
 
-from StudentSubmission.common import MissingFunctionDefinition
+from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 
 
 class Runner(ABC):
@@ -20,9 +20,12 @@ class Runner(ABC):
     the current frame.
     """
 
+    AUTOGRADER_SETUP_NAME: str = "autograder_setup"
+
     def __init__(self):
         self.studentSubmissionCode = None
         self.mocks: dict[str, object] | None = None
+        self.setupCode = None
 
     def setSubmission(self, _code):
         self.studentSubmissionCode = _code
@@ -32,6 +35,9 @@ class Runner(ABC):
 
     def getMocks(self) -> dict[str, dict[str, object]] | None:
         return self.mocks
+
+    def setSetupCode(self, _setupCode):
+        self.setupCode = compile(_setupCode, "setup_code", "exec")
 
     def applyMocks(self) -> None:
         """
@@ -61,12 +67,14 @@ class MainModuleRunner(Runner):
 
 
 class FunctionRunner(Runner):
+
     def __init__(self, _functionToCall: str, *args):
         super().__init__()
         self.functionToCall: str = _functionToCall
         self.args = args
 
-    def applyImports(self, _imports):
+    @staticmethod
+    def applyImports(_imports):
         currentModule = sys.modules[__name__]
 
         for moduleName in _imports:
@@ -75,11 +83,20 @@ class FunctionRunner(Runner):
 
     def run(self):
         exec(self.studentSubmissionCode)
-        importedModules = [localName for localName, localValue in locals().items() if isinstance(localValue, ModuleType)]
+        importedModules = [localName for localName, localValue in locals().items() if
+                           isinstance(localValue, ModuleType)]
         self.applyMocks()
         self.applyImports(importedModules)
         if self.functionToCall not in locals().keys():
             raise MissingFunctionDefinition(self.functionToCall)
+
+        if self.setupCode is not None:
+            exec(self.setupCode)
+
+            if self.AUTOGRADER_SETUP_NAME not in locals().keys():
+                raise InvalidTestCaseSetupCode()
+
+            locals()[self.AUTOGRADER_SETUP_NAME]()
 
         functionToCall = locals()[self.functionToCall]
 
