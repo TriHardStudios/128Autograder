@@ -1,5 +1,7 @@
 import sys
 from abc import ABC, abstractmethod
+import importlib
+import random
 
 from StudentSubmission.common import MissingFunctionDefinition
 
@@ -69,5 +71,13 @@ class FunctionRunner(Runner):
         self.applyMocks()
         if self.functionToCall not in locals().keys():
             raise MissingFunctionDefinition(self.functionToCall)
+    
+        functionToCall = locals()[self.functionToCall]
 
-        return locals()[self.functionToCall](*self.args)
+        def functionCaller(function) -> object:
+            return function(*self.args)
+
+        return functionCaller(functionToCall)
+
+
+

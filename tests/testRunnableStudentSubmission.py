@@ -252,3 +252,30 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         runnableSubmission.run()
 
+
+    def testImportedFunction(self):
+        program = \
+            "import random\n"\
+            "def test():\n"\
+            "    random.seed('autograder')\n"\
+            "    return random.randint(0, 5)\n"
+
+        runner = FunctionRunner("test")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        if runnableSubmission.getException() is not None:
+            raise AssertionError(runnableSubmission.getException())
+
+
+        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+
+        self.assertEqual(4, actualOutput)
+        
+
+
+        
+
+
