@@ -1,4 +1,6 @@
 import unittest
+from unittest import skip
+
 from StudentSubmission.RunnableStudentSubmission import RunnableStudentSubmission
 from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
 from StudentSubmission.common import PossibleResults, MissingOutputDataException, MissingFunctionDefinition
@@ -135,8 +137,6 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         with self.assertRaises(MissingFunctionDefinition):
             raise runnableSubmission.getException()
 
-
-
     def testTerminateInfiniteLoop(self):
         program = \
             (
@@ -251,4 +251,43 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         RunnableStudentSubmission.cleanup = capturedCleanup
 
         runnableSubmission.run()
+
+    def testImportedFunction(self):
+        program = \
+            "import random\n" \
+            "def test():\n" \
+            "    random.seed('autograder')\n" \
+            "    return random.randint(0, 5)\n"
+
+        runner = FunctionRunner("test")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        if runnableSubmission.getException() is not None:
+            raise AssertionError(runnableSubmission.getException())
+
+        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+
+        self.assertEqual(4, actualOutput)
+
+    @skip("Future feature with mocks")
+    def testMockImportedFunction(self):
+        program = \
+            "import random\n" \
+            "def test():\n" \
+            "   return random.randint(10, 15)\n"
+
+        runner = FunctionRunner("test")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runner.setMocks({"random.randint": SingleFunctionMock("randint", [1])})
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+
+        self.assertEqual(1, actualOutput)
 

@@ -1,5 +1,7 @@
 import sys
 from abc import ABC, abstractmethod
+import importlib
+from types import ModuleType
 
 from StudentSubmission.common import MissingFunctionDefinition
 
@@ -64,10 +66,21 @@ class FunctionRunner(Runner):
         self.functionToCall: str = _functionToCall
         self.args = args
 
+    def applyImports(self, _imports):
+        currentModule = sys.modules[__name__]
+
+        for moduleName in _imports:
+            library = importlib.import_module(moduleName)
+            setattr(currentModule, moduleName, library)
+
     def run(self):
         exec(self.studentSubmissionCode)
+        importedModules = [localName for localName, localValue in locals().items() if isinstance(localValue, ModuleType)]
         self.applyMocks()
+        self.applyImports(importedModules)
         if self.functionToCall not in locals().keys():
             raise MissingFunctionDefinition(self.functionToCall)
 
-        return locals()[self.functionToCall](*self.args)
+        functionToCall = locals()[self.functionToCall]
+
+        return functionToCall(*self.args)
