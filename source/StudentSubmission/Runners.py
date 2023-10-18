@@ -1,7 +1,7 @@
 import sys
 from abc import ABC, abstractmethod
 import importlib
-from types import ModuleType
+from types import ModuleType, FunctionType
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 
@@ -81,12 +81,26 @@ class FunctionRunner(Runner):
             library = importlib.import_module(moduleName)
             setattr(currentModule, moduleName, library)
 
+    @staticmethod
+    def applyMethods(_functions):
+        currentModule = sys.modules[__name__]
+
+        for functionName, function in _functions:
+            setattr(currentModule, functionName, function)
+
     def run(self):
         exec(self.studentSubmissionCode)
+        # all of these hacky workarounds make me want to refactor this :(
+        # That should be done for v2 :(
         importedModules = [localName for localName, localValue in locals().items() if
                            isinstance(localValue, ModuleType)]
-        self.applyMocks()
+        definedFunctions = [(localName, localValue) for localName, localValue in locals().items() if
+                            isinstance(localValue, FunctionType)]
+
         self.applyImports(importedModules)
+        self.applyMethods(definedFunctions)
+        self.applyMocks()
+
         if self.functionToCall not in locals().keys():
             raise MissingFunctionDefinition(self.functionToCall)
 

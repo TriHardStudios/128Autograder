@@ -331,3 +331,22 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
 
         self.assertEqual(1, actualOutput)
+
+    def testFunctionCallsOtherFunction(self):
+        program = \
+            "def test1():\n" \
+            "   return test2('hello from test2')\n" \
+            "\n" \
+            "def test2(var):\n" \
+            "   return var\n"
+
+        runner = FunctionRunner("test1")
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission.run()
+
+        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+
+        self.assertIsNone(runnableSubmission.getException())
+        self.assertEqual("hello from test2", actualOutput)
