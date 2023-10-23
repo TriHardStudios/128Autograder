@@ -69,3 +69,21 @@ class TestSingleFunctionMock(unittest.TestCase):
             funcToMock(i, i, i)
 
         funcToMock.assertCalledWith(3, 3, 3)
+
+
+    def testCalledWithSpy(self):
+        def funcToMock(a, b, c):
+            return a + b + c
+
+        funcToMockSrc = funcToMock
+        funcToMock = SingleFunctionMock("funcToMock", spy=True)
+
+        funcToMock.setSpyFunction(funcToMockSrc)
+
+        result = funcToMock(1, 2, 3)
+
+        self.assertEqual(6, result)
+        funcToMock.assertCalledTimes(1)
+
+        
+

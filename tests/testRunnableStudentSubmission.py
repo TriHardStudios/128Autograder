@@ -122,6 +122,29 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         mockMeMock.assertCalledWith(1, 2, 3)
         mockMeMock.assertCalledTimes(2)
 
+    def testFunctionSpy(self):
+        program = \
+            (
+                "def mockMe(a, b, c):\n"
+                "    return a + b + c\n"
+            )
+
+        runner = FunctionRunner("mockMe", 1, 2, 3)
+        mocks = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
+
+        runner.setMocks(mocks)
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
+        runnableSubmission.run()
+
+        results = runnableSubmission.getOutputData()
+        mockMeMock: SingleFunctionMock = results[PossibleResults.MOCK_SIDE_EFFECTS]["mockMe"]
+        returnVal = results[PossibleResults.RETURN_VAL]
+
+        self.assertEqual(6, returnVal)
+        mockMeMock.assertCalledTimes(1)
+
     def testMissingFunctionDeclaration(self):
         program = \
             (
