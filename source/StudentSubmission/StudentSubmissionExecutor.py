@@ -183,6 +183,9 @@ class StudentSubmissionExecutor:
         runnableSubmission: RunnableStudentSubmission = cls.setup(_environment, _runner)
         runnableSubmission.run()
 
+        # Run the postRun code so we always have data in the results
+        cls.postRun(_environment, runnableSubmission)
+
         # Doing this, this way is *much* better than re throwing the exceptions. It also gets rid of the need
         #  for more custom exceptions
         # If exceptions were raised then we need to process them
@@ -192,7 +195,6 @@ class StudentSubmissionExecutor:
         if runnableSubmission.getTimeoutOccurred():
             raise AssertionError(f"Submission timed out after {_environment.timeout} seconds.")
 
-        cls.postRun(_environment, runnableSubmission)
 
     @classmethod
     def postRun(cls, _environment: ExecutionEnvironment, _runnableSubmission: RunnableStudentSubmission) -> None:
