@@ -182,4 +182,15 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         self.assertIn(functionName, actual)
         self.assertIn("missing the function definition", actual)
         self.assertEqual(actual.count("missing the function definition"), 1)
+
+
+    def testSandboxNotCreatedCleanup(self):
+        exception = None
+        try:
+            StudentSubmissionExecutor.cleanup(self.environment)
+        except Exception as e:
+            exception = e
+
+        self.assertIsNone(exception)
+        
     
