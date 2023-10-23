@@ -103,3 +103,28 @@ class TestFullExecutions(unittest.TestCase):
         actualOutput = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
 
         self.assertEqual(expectedOutput, actualOutput[0])
+
+
+    def testExceptionRaisedResultPopulated(self):
+        expectedOutput = "Huzzah"
+        program = \
+            (
+                f"print('OUTPUT {expectedOutput}')\n"
+                "raise Exception()"
+            )
+
+        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+        
+        with self.assertRaises(AssertionError):
+            StudentSubmissionExecutor.execute(self.environment, self.runner)
+
+        stdout = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)[0]
+        exception = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.EXCEPTION)
+
+        self.assertEqual(expectedOutput, stdout)
+        self.assertIsInstance(exception, Exception)
+
+        
+
+
+
