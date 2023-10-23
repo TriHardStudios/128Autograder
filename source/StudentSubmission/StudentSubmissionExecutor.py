@@ -288,6 +288,6 @@ class StudentSubmissionExecutor:
         each function
         """
 
-        cls.resultData = {}
+        if os.path.exists(_environment.SANDBOX_LOCATION):
+            shutil.rmtree(_environment.SANDBOX_LOCATION)
 
-        shutil.rmtree(_environment.SANDBOX_LOCATION)
