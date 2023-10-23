@@ -4,6 +4,7 @@ import importlib
 from types import ModuleType, FunctionType
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
 class Runner(ABC):
@@ -24,16 +25,16 @@ class Runner(ABC):
 
     def __init__(self):
         self.studentSubmissionCode = None
-        self.mocks: dict[str, object] | None = None
+        self.mocks: dict[str, SingleFunctionMock] | None = None
         self.setupCode = None
 
     def setSubmission(self, _code):
         self.studentSubmissionCode = _code
 
-    def setMocks(self, _mocks: dict[str, object]):
+    def setMocks(self, _mocks: dict[str, SingleFunctionMock]):
         self.mocks = _mocks
 
-    def getMocks(self) -> dict[str, dict[str, object]] | None:
+    def getMocks(self) -> dict[str, SingleFunctionMock] | None:
         return self.mocks
 
     def setSetupCode(self, _setupCode):
@@ -51,6 +52,9 @@ class Runner(ABC):
         currentModule = sys.modules[__name__]
 
         for mockName, mock in self.mocks.items():
+            if mock.spy:
+                mock.setSpyFunction(getattr(currentModule, mockName))
+
             setattr(currentModule, mockName, mock)
 
     @abstractmethod
@@ -88,6 +92,17 @@ class FunctionRunner(Runner):
         for functionName, function in _functions:
             setattr(currentModule, functionName, function)
 
+    @staticmethod
+    def getMethod(_functionName):
+        currentModule = sys.modules[__name__]
+
+        function = getattr(currentModule, _functionName, None)
+        if function is None:
+            raise MissingFunctionDefinition(_functionName)
+
+        return function
+
+
     def run(self):
         exec(self.studentSubmissionCode)
         # all of these hacky workarounds make me want to refactor this :(
@@ -101,9 +116,6 @@ class FunctionRunner(Runner):
         self.applyMethods(definedFunctions)
         self.applyMocks()
 
-        if self.functionToCall not in locals().keys():
-            raise MissingFunctionDefinition(self.functionToCall)
-
         if self.setupCode is not None:
             exec(self.setupCode)
 
@@ -112,6 +124,6 @@ class FunctionRunner(Runner):
 
             locals()[self.AUTOGRADER_SETUP_NAME]()
 
-        functionToCall = locals()[self.functionToCall]
+        functionToCall = self.getMethod(self.functionToCall)
 
         return functionToCall(*self.args)

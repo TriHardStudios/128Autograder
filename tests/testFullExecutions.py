@@ -42,8 +42,6 @@ class TestFullExecutions(unittest.TestCase):
         if "sandbox" in os.listdir("."):
             shutil.rmtree("sandbox")
 
-        StudentSubmissionExecutor.resultData = {}
-
         if os.path.exists(self.PYTHON_PROGRAM_DIRECTORY):
             shutil.rmtree(self.PYTHON_PROGRAM_DIRECTORY)
 
