@@ -49,9 +49,11 @@ def addFolderToZip(_currentZipBuffer: ZipFile, _directoryToAdd: str) -> None:
     print(f"\tEntering {_directoryToAdd}...")
 
     for file in os.listdir(_directoryToAdd):
-        if os.path.isfile(_directoryToAdd + file):
+        if os.path.isfile(_directoryToAdd + file) and file[-3:] == ".py":
             print(f"\tAdding {_directoryToAdd + file}...")
             _currentZipBuffer.write(_directoryToAdd + file)
+        elif os.path.isfile(_directoryToAdd + file):
+            print(f"\tIgnoring {_directoryToAdd + file}...")
         else:
             addFolderToZip(_currentZipBuffer, _directoryToAdd + file + "/")
 
@@ -71,9 +73,11 @@ def generateZipFile(_submissionDirectory: str) -> None:
     with ZipFile(zipName, 'w') as submissionZip:
         os.chdir(_submissionDirectory)
         for file in os.listdir("."):
-            if os.path.isfile(file):
+            if os.path.isfile(file) and file[-3:] == ".py":
                 print(f"\tAdding {_submissionDirectory + file} to zip...")
                 submissionZip.write(file)
+            elif os.path.isfile(file):
+                print(f"\tIgnoring {_submissionDirectory + file}...")
             else:
                 addFolderToZip(submissionZip, file + "/")
 
@@ -88,7 +92,7 @@ if __name__ == "__main__":
         submissionDirectory = sys.argv[1]
 
     # need to make sure to that we have a / at the end of the path
-    if submissionDirectory[:-1] != '/':
+    if submissionDirectory[-1:] != '/':
         submissionDirectory += "/"
 
     generateZipFile(submissionDirectory)
