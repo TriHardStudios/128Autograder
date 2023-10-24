@@ -23,7 +23,7 @@ student_actual_directories = os.listdir("./bin/generation/student/studentTests/d
 assert gradescope_expected_directories == gradescope_actual_directories
 assert student_expected_directories == student_actual_directories
 
-student_actual_files_data_folder = os.listdir("./bin/generation/student/studentTests/test_public/")
+student_actual_files_data_folder = os.listdir("./bin/generation/student/studentTests/data/files/test_public/")
 student_actual_files_data_folder.sort()
 
 assert expected_public == student_actual_files_data_folder
@@ -37,10 +37,10 @@ for file in expected_private:
     assert file not in student_student_work_folder
 
 
-gradescope_actual_public_files = os.listdir("./bin/generation/gradescope/studentTests/test_public")
+gradescope_actual_public_files = os.listdir("./bin/generation/gradescope/studentTests/data/files/test_public")
 gradescope_actual_public_files.sort()
 
-gradescope_actual_private_files = os.listdir("./bin/generation/gradescope/studentTests/test_private")
+gradescope_actual_private_files = os.listdir("./bin/generation/gradescope/studentTests/data/files/test_private")
 gradescope_actual_private_files.sort()
 
 assert gradescope_actual_private_files == expected_private

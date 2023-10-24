@@ -66,9 +66,9 @@ if [ -d "$3/studentTests/data/files/test_public" ]
 then 
     echo "		Adding data files to student autograder..."
 
-    mkdir -p "$1/studentTests/data/files/test_public"
-    cp -r "$3/studentTests/data/files/test_public/" "$1/studentTests/data/files/test_public"
-    cp -r "$3/studentTests/data/files/test_public/" "$1/student_work/"
+    mkdir -p "$1/studentTests/data/files/"
+    cp -r "$3/studentTests/data/files/test_public" "$1/studentTests/data/files/"
+    cp -r "$3/studentTests/data/files/test_public/." "$1/student_work/"
 
 fi
     

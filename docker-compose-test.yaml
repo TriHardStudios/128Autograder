@@ -111,6 +111,7 @@ services:
       - test
     build:
       dockerfile: Dockerfile.build
+    entrypoint: /app/run.sh
     volumes:
       - "./integration/test_build_move_data_files/studentTests:/app/source/studentTests"
       - "./integration/test_build_move_data_files/run.sh:/app/run.sh"
