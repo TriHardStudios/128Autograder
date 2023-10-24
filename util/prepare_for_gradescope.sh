@@ -21,7 +21,8 @@ cp "$2"/studentTests/test* "$1"/studentTests/
 
 if [ -d "$2/studentTests/data/files" ]
 then
+    echo "		Add data files to Gradescope autograder..."
+    mkdir -p "$1"/studentTests/data/files/
     cp -r "$2"/studentTests/data/files/ "$1"/studentTests/data/files/
 fi
-
 

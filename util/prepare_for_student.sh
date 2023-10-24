@@ -61,6 +61,16 @@ then
 
     cp "$3"/studentTests/data/starter_code/* "$1"/student_work/
 fi
+
+if [ -d "$3/studentTests/data/files/test_public" ]
+then 
+    echo "		Adding data files to student autograder..."
+
+    mkdir -p "$1/studentTests/data/files/test_public"
+    cp -r "$3/studentTests/data/files/test_public/" "$1/studentTests/data/files/test_public"
+    cp -r "$3/studentTests/data/files/test_public/" "$1/student_work/"
+
+fi
     
 touch "$1"/student_work/.keep
 
