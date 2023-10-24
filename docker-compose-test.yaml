@@ -105,3 +105,15 @@ services:
       - "./integration/test_build_move_starter_code/studentTests:/app/source/studentTests"
       - "./integration/test_build_move_starter_code/run.sh:/app/run.sh"
       - "./integration/test_build_move_starter_code/bin:/app/bin"
+
+  test_build_move_data_files:
+    profiles:
+      - test
+    build:
+      dockerfile: Dockerfile.build
+    volumes:
+      - "./integration/test_build_move_data_files/studentTests:/app/source/studentTests"
+      - "./integration/test_build_move_data_files/run.sh:/app/run.sh"
+      - "./integration/test_build_move_data_files/bin:/app/bin"
+
+
