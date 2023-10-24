@@ -56,8 +56,11 @@ class TestFullExecutions(unittest.TestCase):
         expectedOutput = "this is a line in the file"
         program = \
             (
-                f"fileContents = open('{os.path.basename(self.TEST_FILE_LOCATION)}').read()\n"
-                f"open('{os.path.basename(self.OUTPUT_FILE_LOCATION)}', 'w').write(fileContents)\n"
+                f"fileContents = None\n"
+                f"with open('{os.path.basename(self.TEST_FILE_LOCATION)}', 'r') as r:\n"
+                f"    fileContents = r.read()\n"
+                f"with open('{os.path.basename(self.OUTPUT_FILE_LOCATION)}', 'w') as w:\n"
+                f"     w.write(fileContents)\n"
             )
 
         self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
