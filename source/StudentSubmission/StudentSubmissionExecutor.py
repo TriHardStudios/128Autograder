@@ -273,7 +273,11 @@ class StudentSubmissionExecutor:
 
         if _field is PossibleResults.FILE_OUT:
             # load the file from disk and return it
-            return open(resultData[_field][file], 'r').read()
+            readFile = ""
+            with open(resultData[_field][file], 'r') as r:
+                readFile  = r.read()
+
+            return readFile
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS:
             return resultData[_field][mock]
