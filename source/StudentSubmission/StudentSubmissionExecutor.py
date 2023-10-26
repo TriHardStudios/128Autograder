@@ -18,6 +18,7 @@ import dataclasses
 import multiprocessing
 import os.path
 import shutil
+import hashlib
 import unittest.mock
 
 import dill
@@ -215,6 +216,7 @@ class StudentSubmissionExecutor:
             curFiles = os.listdir(_environment.SANDBOX_LOCATION)
 
             resultData[PossibleResults.FILE_OUT] = {}
+            resultData[PossibleResults.FILE_HASH] = {}
 
             # We put them into a set and then eliminate the elements that are the same between the two sets
             diffFiles: list[str] = list(set(curFiles) ^ set(_environment.files.keys()))
@@ -222,6 +224,12 @@ class StudentSubmissionExecutor:
             for file in diffFiles:
                 resultData[PossibleResults.FILE_OUT][file] = \
                     os.path.join(_environment.SANDBOX_LOCATION, file)
+
+                with open(os.path.join(_environment.SANDBOX_LOCATION, file), "rb") as rb:
+                    fileBytes = rb.read()
+
+                    resultData[PossibleResults.FILE_HASH][file] = \
+                            hashlib.md5(fileBytes, usedforsecurity=False).hexdigest()
 
         _environment.resultData = resultData
 
@@ -255,11 +263,14 @@ class StudentSubmissionExecutor:
             raise AssertionError(f"No OUTPUT was created by the students submission.\n"
                                  f"Are you missing an 'OUTPUT' statement?")
 
-        if _field is PossibleResults.FILE_OUT and not file:
+        if (_field is PossibleResults.FILE_OUT or _field is PossibleResults.FILE_HASH) and not file:
             raise AttributeError("File must be defined.")
 
         if _field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
             raise AssertionError(f"File '{file}' was not created by the student's submission")
+
+        if _field is PossibleResults.FILE_HASH and file not in resultData[PossibleResults.FILE_OUT].keys():
+            raise AssertionError(f"File hash for '{file}' was not created.\nFile '{file}' was not created by the student's submission")
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
             raise AttributeError("Mock most be defined.")
@@ -278,6 +289,10 @@ class StudentSubmissionExecutor:
                 readFile  = r.read()
 
             return readFile
+
+        if _field is PossibleResults.FILE_HASH:
+            return resultData[_field][file]
+
 
         if _field is PossibleResults.MOCK_SIDE_EFFECTS:
             return resultData[_field][mock]

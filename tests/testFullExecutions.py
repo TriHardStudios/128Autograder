@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 import unittest
@@ -124,6 +125,39 @@ class TestFullExecutions(unittest.TestCase):
 
         self.assertEqual(expectedOutput, stdout)
         self.assertIsInstance(exception, Exception)
+
+    def testFileHashFullExecution(self):
+        fileContents = "This is the contents of the file\n"
+
+        with open(self.TEST_FILE_LOCATION, 'w') as w:
+            w.write(fileContents)
+
+        expectedFileHash = ""
+        with open(self.TEST_FILE_LOCATION, 'rb') as rb:
+            expectedFileHash = hashlib.md5(rb.read(), usedforsecurity=False).hexdigest()
+
+        self.assertNotEqual(expectedFileHash, "")
+
+        program = \
+            (
+                f"fileContents = None\n"
+                f"with open('{os.path.basename(self.TEST_FILE_LOCATION)}', 'r') as r:\n"
+                f"    fileContents = r.read()\n"
+                f"with open('{os.path.basename(self.OUTPUT_FILE_LOCATION)}', 'w') as w:\n"
+                f"     w.write(fileContents)\n"
+            )
+
+        self.environment.files = {
+            os.path.basename(self.TEST_FILE_LOCATION): os.path.basename(self.TEST_FILE_LOCATION)
+        }
+
+        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+
+        StudentSubmissionExecutor.execute(self.environment, self.runner)
+
+        actualFileHash = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.FILE_HASH, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+
+        self.assertEqual(expectedFileHash, actualFileHash)
 
         
 
