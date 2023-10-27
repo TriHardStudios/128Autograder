@@ -115,6 +115,10 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         expectedResults = {
             PossibleResults.FILE_OUT: {
                 os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
+            },
+            PossibleResults.FILE_HASH: {
+                os.path.basename(self.OUTPUT_FILE_LOCATION): "f5e55a898d1b68d6ad45f57fbf2cd0ed"
+
             }
         }
 

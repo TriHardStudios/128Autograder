@@ -5,6 +5,7 @@ class PossibleResults(Enum):
     STDOUT = "stdout"
     RETURN_VAL = "return_val"
     FILE_OUT = "file_out"
+    FILE_HASH = "file_hash"
     MOCK_SIDE_EFFECTS = "mock"
     EXCEPTION = "exception"
 
