@@ -2,7 +2,7 @@ import os
 import shutil
 import unittest
 import unittest.mock as mock
-from StudentSubmission import StudentSubmissionExecutor, StudentSubmission
+from StudentSubmission import StudentSubmissionExecutor, StudentSubmission, RunnableStudentSubmission
 from StudentSubmission.Runners import MainModuleRunner
 from StudentSubmission.common import PossibleResults, MissingFunctionDefinition
 
@@ -68,6 +68,27 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
         StudentSubmissionExecutor.setup(self.environment, self.runner)
 
         self.assertIn(os.path.basename(self.TEST_FILE_LOCATION), os.listdir(self.environment.SANDBOX_LOCATION))
+
+    def testMoveFilesWithAlais(self):
+        self.environment.files = {
+            os.path.basename(self.TEST_FILE_LOCATION) : "this_is_alais.txt"
+        }
+
+        with open(self.TEST_FILE_LOCATION, 'w') as w:
+            w.write("this is a line in the file")
+
+        StudentSubmissionExecutor.setup(self.environment, self.runner)
+
+        self.assertIn("this_is_alais.txt", os.listdir(self.environment.SANDBOX_LOCATION))
+
+
+        runnableSubmission = mock.Mock(spec=RunnableStudentSubmission.RunnableStudentSubmission)
+        runnableSubmission.getOutputData = mock.Mock(return_value={})
+
+        StudentSubmissionExecutor.postRun(self.environment, runnableSubmission)
+
+        self.assertEqual({PossibleResults.FILE_OUT: {}, PossibleResults.FILE_HASH: {}}, self.environment.resultData)
+        
 
     def testMoveFilesImports(self):
         with open(self.TEST_IMPORT_NAME, "w") as w:

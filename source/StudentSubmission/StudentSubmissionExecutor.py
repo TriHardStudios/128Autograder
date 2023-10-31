@@ -196,6 +196,16 @@ class StudentSubmissionExecutor:
         if runnableSubmission.getTimeoutOccurred():
             raise AssertionError(f"Submission timed out after {_environment.timeout} seconds.")
 
+    
+    @staticmethod
+    def updateEnvironmentFileNames(files: dict[str, str]) -> dict[str, str]:
+        updatedEnvironmentFiles = {}
+
+        for _, value in files.items():
+            updatedEnvironmentFiles[value] = value
+
+        return updatedEnvironmentFiles
+
 
     @classmethod
     def postRun(cls, _environment: ExecutionEnvironment, _runnableSubmission: RunnableStudentSubmission) -> None:
@@ -214,6 +224,10 @@ class StudentSubmissionExecutor:
         if _environment.files is not None:
             # this approach means that nested fs changes aren't detected, but I don't see that coming up.
             curFiles = os.listdir(_environment.SANDBOX_LOCATION)
+
+            # update files names to account for alaises
+
+            _environment.files = StudentSubmissionExecutor.updateEnvironmentFileNames(_environment.files)
 
             resultData[PossibleResults.FILE_OUT] = {}
             resultData[PossibleResults.FILE_HASH] = {}
