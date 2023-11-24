@@ -7,10 +7,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_no_previous_submissions/results:/autograder/results"
-      - "./integration/test_no_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./integration/test_no_previous_submissions/submission:/autograder/submission"
-      - "./integration/test_no_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_no_previous_submissions/results:/autograder/results"
+      - "./tests/integration/test_no_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_no_previous_submissions/submission:/autograder/submission"
+      - "./tests/integration/test_no_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_lower_previous_submissions:
     profiles:
@@ -19,10 +19,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_lower_previous_submissions/results:/autograder/results"
-      - "./integration/test_lower_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./integration/test_lower_previous_submissions/submission:/autograder/submission"
-      - "./integration/test_lower_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_lower_previous_submissions/results:/autograder/results"
+      - "./tests/integration/test_lower_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_lower_previous_submissions/submission:/autograder/submission"
+      - "./tests/integration/test_lower_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_higher_previous_submissions:
     profiles:
@@ -31,10 +31,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_higher_previous_submissions/results:/autograder/results"
-      - "./integration/test_higher_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./integration/test_higher_previous_submissions/submission:/autograder/submission"
-      - "./integration/test_higher_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_higher_previous_submissions/results:/autograder/results"
+      - "./tests/integration/test_higher_previous_submissions/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_higher_previous_submissions/submission:/autograder/submission"
+      - "./tests/integration/test_higher_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_lower_previous_limit_exceeded:
     profiles:
@@ -43,10 +43,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_lower_previous_limit_exceeded/results:/autograder/results"
-      - "./integration/test_lower_previous_limit_exceeded/studentTests:/autograder/source/studentTests"
-      - "./integration/test_lower_previous_limit_exceeded/submission:/autograder/submission"
-      - "./integration/test_lower_previous_limit_exceeded/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_lower_previous_limit_exceeded/results:/autograder/results"
+      - "./tests/integration/test_lower_previous_limit_exceeded/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_lower_previous_limit_exceeded/submission:/autograder/submission"
+      - "./tests/integration/test_lower_previous_limit_exceeded/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_submission_name_with_spaces:
     profiles:
@@ -55,10 +55,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_submission_name_with_spaces/results:/autograder/results"
-      - "./integration/test_submission_name_with_spaces/studentTests:/autograder/source/studentTests"
-      - "./integration/test_submission_name_with_spaces/submission:/autograder/submission"
-      - "./integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_submission_name_with_spaces/results:/autograder/results"
+      - "./tests/integration/test_submission_name_with_spaces/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_submission_name_with_spaces/submission:/autograder/submission"
+      - "./tests/integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_many_non_main_files:
     profiles:
@@ -67,10 +67,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_many_non_main_files/results:/autograder/results"
-      - "./integration/test_many_non_main_files/studentTests:/autograder/source/studentTests"
-      - "./integration/test_many_non_main_files/submission:/autograder/submission"
-      - "./integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_many_non_main_files/results:/autograder/results"
+      - "./tests/integration/test_many_non_main_files/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_many_non_main_files/submission:/autograder/submission"
+      - "./tests/integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_missing_function_definition:
     profiles:
@@ -79,10 +79,10 @@ services:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
     volumes:
-      - "./integration/test_missing_function_definition/results:/autograder/results"
-      - "./integration/test_missing_function_definition/studentTests:/autograder/source/studentTests"
-      - "./integration/test_missing_function_definition/submission:/autograder/submission"
-      - "./integration/test_missing_function_definition/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_missing_function_definition/results:/autograder/results"
+      - "./tests/integration/test_missing_function_definition/studentTests:/autograder/source/studentTests"
+      - "./tests/integration/test_missing_function_definition/submission:/autograder/submission"
+      - "./tests/integration/test_missing_function_definition/submission_metadata.json:/autograder/submission_metadata.json"
 
   test_build_move_test_cases:
     profiles:
@@ -91,9 +91,9 @@ services:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
     volumes:
-      - "./integration/test_build_move_test_cases/studentTests:/app/source/studentTests"
-      - "./integration/test_build_move_test_cases/run.sh:/app/run.sh"
-      - "./integration/test_build_move_test_cases/bin:/app/bin"
+      - "./tests/integration/test_build_move_test_cases/studentTests:/app/source/studentTests"
+      - "./tests/integration/test_build_move_test_cases/run.sh:/app/run.sh"
+      - "./tests/integration/test_build_move_test_cases/bin:/app/bin"
 
   test_build_move_starter_code:
     profiles:
@@ -102,9 +102,9 @@ services:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
     volumes:
-      - "./integration/test_build_move_starter_code/studentTests:/app/source/studentTests"
-      - "./integration/test_build_move_starter_code/run.sh:/app/run.sh"
-      - "./integration/test_build_move_starter_code/bin:/app/bin"
+      - "./tests/integration/test_build_move_starter_code/studentTests:/app/source/studentTests"
+      - "./tests/integration/test_build_move_starter_code/run.sh:/app/run.sh"
+      - "./tests/integration/test_build_move_starter_code/bin:/app/bin"
 
   test_build_move_data_files:
     profiles:
@@ -113,8 +113,8 @@ services:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
     volumes:
-      - "./integration/test_build_move_data_files/studentTests:/app/source/studentTests"
-      - "./integration/test_build_move_data_files/run.sh:/app/run.sh"
-      - "./integration/test_build_move_data_files/bin:/app/bin"
+      - "./tests/integration/test_build_move_data_files/studentTests:/app/source/studentTests"
+      - "./tests/integration/test_build_move_data_files/run.sh:/app/run.sh"
+      - "./tests/integration/test_build_move_data_files/bin:/app/bin"
 
 
