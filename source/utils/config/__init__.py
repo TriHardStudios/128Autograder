@@ -1,1 +1,2 @@
-from .ConfigSchema import CONFIG_SCHEMA
+from .ConfigSchema import ConfigSchema
+from .exceptions import InvalidConfigException
