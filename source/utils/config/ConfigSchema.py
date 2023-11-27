@@ -13,7 +13,7 @@ def getAvaibleTags():
 
 tags = getAvaibleTags()
 
-configSchema = Schema(
+CONFIG_SCHEMA = Schema(
     {
         "asignment_name": And(str, Regex(r"^(\w+-?)+$")),
         "semester": And(str, Regex(r"^(F|S|SUM)\d{2}$")),
