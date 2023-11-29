@@ -106,6 +106,37 @@ class TestFullExecutions(unittest.TestCase):
 
         self.assertEqual(expectedOutput, actualOutput[0])
 
+    def testImportFullExecutionWithDataFiles(self):
+        # Huge shout out to Nate T from F23 for finding this issue.
+        # What a wild corner case
+
+        expectedFileContents = "Called from a different file!!"
+        testFileName = "test.txt"
+        with open(self.TEST_IMPORT_NAME, 'w') as w:
+            w.writelines("def fun1():\n"
+                         f"  with open('{testFileName}', 'w') as w:\n"
+                         f"    w.write('{expectedFileContents}')\n"
+                         "\n")
+        program = \
+            (
+                "from mod1 import fun1\n"
+                "fun1()\n"
+            )
+
+        self.environment.submission.getImports = \
+            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
+
+        self.environment.files = {}
+
+        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+
+        StudentSubmissionExecutor.execute(self.environment, self.runner)
+
+        actualOutput = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.FILE_OUT, file=testFileName)
+
+        self.assertEqual(expectedFileContents, actualOutput)
+
+
 
     def testExceptionRaisedResultPopulated(self):
         expectedOutput = "Huzzah"
