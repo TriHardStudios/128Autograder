@@ -1,7 +1,9 @@
 import re
+from typing import Optional
 
 import unittest
 from unittest import mock
+
 from utils.config import ConfigSchema, InvalidConfigException
 
 
@@ -27,9 +29,6 @@ def mockRequestsGet(url, **kwargs):
 class TestConfigSchema(unittest.TestCase):
 
     def setUp(self) -> None:
-        with mock.patch('requests.get', side_effect=mockRequestsGet) as _:
-            self.schema = ConfigSchema()
-
         self.configFile = {
             "assignment_name": "HelloWold",
             "semester": "F99",
@@ -45,18 +44,63 @@ class TestConfigSchema(unittest.TestCase):
             }
         }
 
+    @staticmethod
+    def createConfigSchema() -> ConfigSchema:
+        with mock.patch('requests.get', side_effect=mockRequestsGet):
+            return ConfigSchema()
+
+    def testGetTagsOnce(self):
+        with mock.patch("ConfigSchema.getAvailableTags") as mock:
+            self.createConfigSchema()
+            self.createConfigSchema()
+
+
     def testValidNoOptionalFields(self):
-        actual = self.schema.validate(self.configFile)
+        schema = self.createConfigSchema()
+
+        actual = schema.validate(self.configFile)
         self.assertIn("submission_limit", actual["config"])
+        self.assertIn("python", actual["config"])
+        self.assertNotIn("extra_packages", actual["config"]["python"])
+
+    def testValidOptionalFields(self):
+        schema = self.createConfigSchema()
+
+        self.configFile["config"]["python"] = {}
+        actual = schema.validate(self.configFile)
+        self.assertIn("extra_packages", actual["config"]["python"])
+
+    def testInvalidOptionalFields(self):
+        schema = self.createConfigSchema()
+
+        self.configFile["config"]["python"] = {}
+        self.configFile["config"]["python"]["extra_packages"] = [{"name": "package"}]
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
+    def testValidOptionalNestedFields(self):
+        schema = self.createConfigSchema()
+
+        self.configFile["config"]["python"] = {}
+        packages = [{"name": "package", "version": "1.0.0"}]
+        self.configFile["config"]["python"]["extra_packages"] = packages
+
+        actual = schema.validate(self.configFile)
+
+        self.assertEqual(packages, actual["config"]["python"]["extra_packages"])
 
     def testExtraFields(self):
+        schema = self.createConfigSchema()
+
         self.configFile["new_field"] = "This field shouldn't exist"
 
         with self.assertRaises(InvalidConfigException):
-            self.schema.validate(self.configFile)
+            schema.validate(self.configFile)
 
     def testInvalidAutograderVersion(self):
+        schema = self.createConfigSchema()
+
         self.configFile["config"]["autograder_version"] = "0.0.0"
 
         with self.assertRaises(InvalidConfigException):
-            self.schema.validate(self.configFile)
+            schema.validate(self.configFile)
