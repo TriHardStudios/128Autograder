@@ -223,7 +223,8 @@ class StudentSubmissionExecutor:
 
         if _environment.files is not None:
             # this approach means that nested fs changes aren't detected, but I don't see that coming up.
-            curFiles = os.listdir(_environment.SANDBOX_LOCATION)
+
+            curFiles = [file for file in os.listdir(_environment.SANDBOX_LOCATION) if os.path.isfile(os.path.join(_environment.SANDBOX_LOCATION, file))]
 
             # update files names to account for alaises
 
