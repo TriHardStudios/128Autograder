@@ -156,7 +156,8 @@ class TestStudentSubmission(unittest.TestCase):
         submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None, discoverRequirementsFile=True)
         submission.validateSubmission()
 
-        submission.installRequirements()
+        # This behavior is incorrect! The requirements.txt should be installed before we attempt to resolve imports
+        # submission.installRequirements()
 
         self.assertTrue(submission.isSubmissionValid())
         exec(submission.getStudentSubmissionCode())
