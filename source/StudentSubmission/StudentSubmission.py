@@ -168,6 +168,10 @@ class StudentSubmission:
         self.submissionDirectory: str = _submissionDirectory
 
         self._discoverAvailableFiles(_submissionDirectory, discoverTestFiles, discoverRequirementsFile)
+
+        if discoverRequirementsFile and self.requirementsFile:
+            self.installRequirements()
+
         mainProgramFile: str = self._discoverMainModule(_submissionDirectory)
         self._loadProgram(_submissionDirectory, mainProgramFile, self.importedFiles, programAlais="main")
 
