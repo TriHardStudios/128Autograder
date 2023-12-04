@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 import unittest
-from unittest import mock
+import unittest.mock as mock
 
 from utils.config import ConfigSchema, InvalidConfigException
 
@@ -48,12 +48,6 @@ class TestConfigSchema(unittest.TestCase):
     def createConfigSchema() -> ConfigSchema:
         with mock.patch('requests.get', side_effect=mockRequestsGet):
             return ConfigSchema()
-
-    def testGetTagsOnce(self):
-        with mock.patch("ConfigSchema.getAvailableTags") as mock:
-            self.createConfigSchema()
-            self.createConfigSchema()
-
 
     def testValidNoOptionalFields(self):
         schema = self.createConfigSchema()
