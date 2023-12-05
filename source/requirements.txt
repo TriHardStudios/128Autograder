@@ -3,3 +3,4 @@ dill==0.3.6
 Better-PyUnit-Format==0.2.0
 schema==0.7.5
 requests==2.31.0
+tomlkit==0.12.3
