@@ -48,10 +48,28 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
 
         actual = \
-                AutograderConfigurationBuilder(configSchema=MockSchema())\
-                .fromTOML(file=self.DATA_FILE)\
-                .build()
+            AutograderConfigurationBuilder(configSchema=MockSchema())\
+            .fromTOML(file=self.DATA_FILE)\
+            .build()
 
         self.assertEqual(expectedString, actual.string_property)
         self.assertEqual(expectedInt, actual.int_property)
+
+    def testMalformedToml(self):
+        expectedString = "TOML!"
+        expectedInt = 5
+
+        with open(self.DATA_FILE, 'w') as w:
+            w.write(
+                f"string_property: '{expectedString}'\n"\
+                f"int_property = {expectedInt}\n"
+            )
+
+
+        with self.assertRaises(Exception):
+            # Might want to wrap this in the future
+            AutograderConfigurationBuilder(configSchema=MockSchema())\
+                .fromTOML(file=self.DATA_FILE)\
+                .build()
+
 
