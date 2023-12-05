@@ -1,0 +1,15 @@
+{
+    "tests": [
+        {
+            "name": "testCode (test.HelloWorld)",
+            "score": 10,
+            "max_score": 10,
+            "status": "passed"
+        }
+    ],
+    "leaderboard": [],
+    "visibility": "visible",
+    "execution_time": "0.26",
+    "score": 9.5,
+    "output": "Submission 4 of 3.\nSubmission limit exceeded.\nAutograder has been run on your code so you can see how you did\nbut, your score will be highest of your valid submissions.\nScore has been set to your highest valid score.\n"
+}

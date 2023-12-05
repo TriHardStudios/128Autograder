@@ -1,0 +1,16 @@
+{
+    "tests": [
+        {
+            "name": "testCode (test.HelloWorld)",
+            "score": 0.0,
+            "max_score": 10,
+            "status": "failed",
+            "output": "Test Failed: Failed to find function with name: hello_world.\nAre you missing the function definition?\n"
+        }
+    ],
+    "leaderboard": [],
+    "visibility": "visible",
+    "execution_time": "0.27",
+    "score": 0.0,
+    "output": "Submission 1 of 3.\n"
+}
