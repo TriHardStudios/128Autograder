@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 
 import unittest
 import unittest.mock as mock
@@ -55,7 +54,7 @@ class TestConfigSchema(unittest.TestCase):
         actual = schema.validate(self.configFile)
         self.assertIn("submission_limit", actual["config"])
         self.assertIn("python", actual["config"])
-        self.assertNotIn("extra_packages", actual["config"]["python"])
+        self.assertIsNone(actual["config"]["python"])
 
     def testValidOptionalFields(self):
         schema = self.createConfigSchema()
@@ -98,3 +97,29 @@ class TestConfigSchema(unittest.TestCase):
 
         with self.assertRaises(InvalidConfigException):
             schema.validate(self.configFile)
+
+
+    def testBuildNoOptional(self):
+        schema = self.createConfigSchema()
+
+        data = schema.validate(self.configFile)
+
+        actual = schema.build(data)
+
+        self.assertEqual("F99", actual.semester)
+        self.assertEqual(1000, actual.config.submission_limit)
+
+    def testBuildWithOptional(self):
+        schema = self.createConfigSchema()
+
+        self.configFile["config"]["python"] = {}
+
+        data = schema.validate(self.configFile)
+
+        actual = schema.build(data)
+
+        self.assertIsNotNone(actual.config.python)
+        self.assertIsNotNone(actual.config.python.extra_packages)
+
+
+
