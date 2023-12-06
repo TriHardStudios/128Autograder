@@ -208,12 +208,13 @@ class AutograderConfigurationBuilder(Generic[T]):
 
     def fromTOML(self, file=DEFAULT_CONFIG_FILE):
         try:
-            from tomlkit import loads
+            from tomli import load
         except ModuleNotFoundError:
             raise MissingParsingLibrary("tomlkit", "AutograderConfigurationBuilder.fromTOML")
 
-        with open(file, 'r') as r:
-            self.data = loads(r.read())
+        with open(file, 'rb') as rb:
+            self.data = load(rb)
+            print(self.data)
 
         return self
 

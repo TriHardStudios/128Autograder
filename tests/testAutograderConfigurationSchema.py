@@ -121,5 +121,3 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.assertIsNotNone(actual.config.python)
         self.assertIsNotNone(actual.config.python.extra_packages)
 
-
-
