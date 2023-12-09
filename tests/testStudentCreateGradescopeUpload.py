@@ -8,6 +8,7 @@ import zipfile
 
 import create_gradescope_upload as createGradescopeUpload
 
+
 class TestStudentCreateGradescopeUpload(unittest.TestCase):
     # These tests should prolly be expanded
     STUDENT_WORK_FOLDER = "student_work/"
@@ -21,19 +22,16 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         with open(os.path.join(self.STUDENT_WORK_FOLDER, ".keep"), 'w') as w:
             w.write("")
 
-
     def tearDown(self) -> None:
         if self.workingDirectory != os.getcwd():
             os.chdir(self.workingDirectory)
 
         shutil.rmtree(self.STUDENT_WORK_FOLDER)
-        
+
         # clean up any zip files
-        for file in os.listdir("."): 
+        for file in os.listdir("."):
             if os.path.isfile(file) and file[-4:] == ".zip":
-                os.remove(file) 
-
-
+                os.remove(file)
 
     def testAddFolderToZipOnePy(self):
         zipMock = MagicMock(spec=zipfile.ZipFile)
@@ -44,7 +42,6 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
 
         writeMock.assert_called_once()
         writeMock.assert_called_with(os.path.join(self.STUDENT_WORK_FOLDER, "submission.py"))
-
 
     def testAddFolderToZipDataFilesOnePy(self):
         for _ in range(10):
@@ -74,15 +71,14 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_once()
         writeMock.assert_called_with("submission.py")
 
-
-    @patch("create_gradescope_upload.ZipFile") 
+    @patch("create_gradescope_upload.ZipFile")
     def testGenerateZipFileDataFilesOnePy(self, zipMock):
         for _ in range(10):
             randomName = "".join([random.choice(string.ascii_lowercase) for _ in range(10)]) + ".dat"
 
             with open(os.path.join(self.STUDENT_WORK_FOLDER, randomName), 'w') as w:
                 w.write("")
-        
+
         zipFileMock = MagicMock()
         zipMock.return_value.__enter__ = zipFileMock
 
