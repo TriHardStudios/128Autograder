@@ -4,8 +4,8 @@ import os
 from utils.config import AutograderConfiguration
 
 
-def gradescopePostProcessing(autograderResults: Dict, autograderConfiguration: AutograderConfiguration):
-    if not os.path.exists("/autograder/submission_metadata.json"):
+def gradescopePostProcessing(autograderResults: Dict, autograderConfiguration: AutograderConfiguration, metadataPath: str):
+    if not os.path.exists(metadataPath):
         return
 
     # for now, we aren't implementing any new features for this
@@ -14,7 +14,7 @@ def gradescopePostProcessing(autograderResults: Dict, autograderConfiguration: A
 
     # Enforce submission limit
     submissionMetadata: dict = {}
-    with open("/autograder/submission_metadata.json", 'r') as submissionMetadataIn:
+    with open(metadataPath, 'r') as submissionMetadataIn:
         submissionMetadata = json.load(submissionMetadataIn)
 
     previousSubmissions: list[dict] = submissionMetadata['previous_submissions']

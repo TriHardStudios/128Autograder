@@ -13,10 +13,11 @@ def main(runUnitTestsOnly: bool, resultsPath: str, autograderConfiguration: Auto
         testRunner.run(testSuite)
         return
 
+    METADATA_PATH = "/autograder/submission_metadata.json"
     with open(resultsPath, 'w+') as results:
         testRunner = JSONTestRunner(visibility='visible',
                                     stream=results,
-                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfiguration))
+                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfiguration, METADATA_PATH))
         testRunner.run(testSuite)
 
 
