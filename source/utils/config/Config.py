@@ -214,7 +214,6 @@ class AutograderConfigurationBuilder(Generic[T]):
 
         with open(file, 'rb') as rb:
             self.data = load(rb)
-            print(self.data)
 
         return self
 

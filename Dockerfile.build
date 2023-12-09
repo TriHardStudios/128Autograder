@@ -6,6 +6,5 @@ RUN apk add --no-cache make \
 
 ADD source /app/source
 ADD makefile /app/makefile
-ADD util /app/util
 
 WORKDIR app
