@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 
 class PossibleResults(Enum):
     STDOUT = "stdout"
@@ -18,6 +19,7 @@ class MissingOutputDataException(Exception):
 
 class MissingFunctionDefinition(Exception):
     def __init__(self, _functionName: str):
+        super().__init__()
         self.functionName = _functionName
 
     def __str__(self):
@@ -34,6 +36,19 @@ class InvalidTestCaseSetupCode(Exception):
                 "Ensure that your setup code contains a 'autograder_setup' function.\n"
                 "This is an autograder error.")
 
+class StudentSubmissionException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+class ValidationError(AssertionError):
+    @staticmethod
+    def combineErrorMessages(exceptions: List[Exception]) -> str:
+        return ""
+
+    def __init__(self, exceptions: List[Exception]):
+        msg = self.combineErrorMessages(exceptions)
+
+        super().__init__("Validation Erorrs:\n" + msg)
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """

@@ -1,20 +1,18 @@
 import abc
 from typing import List
 
-class ValidationError(Exception):
-    pass
-
-class AbstractValidator(abc.ABCMeta):
+class AbstractValidator(abc.ABC):
     def __init__(self):
-        self.validationErrors: List[ValidationError] = []
+        self.errors: List[Exception] = []
 
     @abc.abstractmethod
-    def setup(self):
+    # this should be typed, but its a weird cross depenacny issue
+    def setup(self, studentSubmission):
         pass
 
     @abc.abstractmethod
     def run(self):
         pass
 
-    def collectErrors(self) -> List[ValidationError]:
-        return self.validationErrors
+    def collectErrors(self) -> List[Exception]:
+        return self.errors

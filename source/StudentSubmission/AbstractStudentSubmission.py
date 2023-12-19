@@ -1,24 +1,25 @@
 import abc
 from os import PathLike
-from typing import Generic, List, TypeVar, Any, Union
+from typing import Generic, List, Set, TypeVar, Any, Union
+
+from .common import ValidationError
 
 from .AbstractValidator import AbstractValidator
+from .GenericValidators import SubmissionPathValidator
 
-G = TypeVar("G")
 T = TypeVar("T")
 
-TBuilder = TypeVar("TBuilder", bound="AbstractStudentSubmission[Any, Any]")
+# for some reason this has to be TBuilder??
+TBuilder = TypeVar("TBuilder", bound="AbstractStudentSubmission[Any]")
 
-
-class StudentSubmissionException(Exception):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
-
-
-class AbstractStudentSubmission(abc.ABCMeta, Generic[G, T]):
+class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def __init__(self):
         self.submissionRoot: Union[PathLike, str] = "."
-        self.validators: List[AbstractValidator] = []
+        # default valaidators
+        self.validators: Set[AbstractValidator] = {
+            SubmissionPathValidator()
+        }
+        self.validationErrors: List[Exception] = []
 
 
     def setSubmissionRoot(self: TBuilder, submissionRoot: str) -> TBuilder:
@@ -26,7 +27,7 @@ class AbstractStudentSubmission(abc.ABCMeta, Generic[G, T]):
         return self
 
     def addValidator(self: TBuilder, validator: AbstractValidator) -> TBuilder:
-        self.validators.append(validator)
+        self.validators.add(validator)
         return self
     
     @abc.abstractmethod
@@ -34,6 +35,15 @@ class AbstractStudentSubmission(abc.ABCMeta, Generic[G, T]):
         pass
 
     def validate(self: TBuilder) -> TBuilder:
+
+        for validator in self.validators:
+            validator.setup(self)
+            validator.run()
+            self.validationErrors.extend(validator.collectErrors())
+
+        if self.validationErrors:
+            raise ValidationError(self.validationErrors)
+
         return self
 
     @abc.abstractmethod
@@ -44,8 +54,12 @@ class AbstractStudentSubmission(abc.ABCMeta, Generic[G, T]):
     @abc.abstractmethod
     def getExecutableSubmission(self) -> T:
         pass
+
+    def getSubmissionRoot(self) -> Union[PathLike, str]:
+        return self.submissionRoot
     
 
-    
+
+
 
 
