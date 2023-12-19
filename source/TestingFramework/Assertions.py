@@ -158,3 +158,18 @@ class Assertions(unittest.TestCase):
 
         if round(abs(_expected - _actual), self.findPrecision(_delta)) > _delta:
             self._raiseFailure(f"output (allowed delta +/- {_delta})", _expected, _actual, msg)
+
+
+    def assertCorrectNumberOfOutputLines(self, expected: list[str], actual: list[str]):
+        if len(actual) == 0:
+            raise AssertionError("No OUTPUT lines found. Check OUTPUT formatting.")
+
+        if len(actual) > len(expected):
+            raise AssertionError(f"Too many OUTPUT lines. Check OUTPUT formatting.\n"
+                                 f"Expected number of lines: {len(expected)}\n"
+                                 f"Actual number of lines  : {len(actual)}")
+
+        if len(actual) < len(expected):
+            raise AssertionError(f"Too few OUTPUT lines. Check OUTPUT formatting.\n"
+                                 f"Expected number of lines: {len(expected)}\n"
+                                 f"Actual number of lines  : {len(actual)}")

@@ -2,11 +2,10 @@ import sys
 import unittest
 
 from StudentSubmission import StudentSubmission
-from StudentSubmission import StudentSubmissionAssertions
 from .Assertions import Assertions
 
 
-class BaseTest(Assertions, StudentSubmissionAssertions):
+class BaseTest(Assertions):
     studentSubmission: StudentSubmission | None = None
     submissionDirectory: str | None = None
 
