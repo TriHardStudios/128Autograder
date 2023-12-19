@@ -9,6 +9,13 @@ class PossibleResults(Enum):
     MOCK_SIDE_EFFECTS = "mock"
     EXCEPTION = "exception"
 
+class ValidationHook(Enum):
+    PRE_LOAD = 1
+    POST_LOAD = 2
+    PRE_BUILD = 3
+    POST_BUILD = 4
+    VALIDATION = 5
+
 
 class MissingOutputDataException(Exception):
     def __init__(self, _outputFileName):
@@ -43,12 +50,16 @@ class StudentSubmissionException(Exception):
 class ValidationError(AssertionError):
     @staticmethod
     def combineErrorMessages(exceptions: List[Exception]) -> str:
-        return ""
+        msg = ""
+        for i, ex in enumerate(exceptions):
+            msg += f"{i + 1}. {ex}\n"
+
+        return msg
 
     def __init__(self, exceptions: List[Exception]):
         msg = self.combineErrorMessages(exceptions)
 
-        super().__init__("Validation Erorrs:\n" + msg)
+        super().__init__("Validation Errors:\n" + msg)
 
 def filterStdOut(_stdOut: list[str]) -> list[str]:
     """

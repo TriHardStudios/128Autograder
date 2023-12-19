@@ -1,7 +1,14 @@
 import abc
 from typing import List
 
+from .common import ValidationHook
+
 class AbstractValidator(abc.ABC):
+    @staticmethod
+    @abc.abstractmethod
+    def getValidationHook() -> ValidationHook:
+        pass
+
     def __init__(self):
         self.errors: List[Exception] = []
 

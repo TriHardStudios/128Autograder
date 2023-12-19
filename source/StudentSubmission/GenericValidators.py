@@ -1,9 +1,14 @@
+from .common import ValidationHook
 from .AbstractValidator import AbstractValidator
 from os import PathLike
 import os
 from typing import Union
 
 class SubmissionPathValidator(AbstractValidator):
+    @staticmethod
+    def getValidationHook() -> ValidationHook:
+        return ValidationHook.PRE_LOAD
+
     def __init__(self):
         super().__init__()
         self.pathToValidate: Union[PathLike, str] = ""
