@@ -33,7 +33,7 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     For an example, take a look at the Python (or coming soon, the C / C++) implementation.
     """
     def __init__(self):
-        self.submissionRoot: Union[PathLike, str] = "."
+        self.submissionRoot: str = "."
         self.validators: Dict[ValidationHook, Set[AbstractValidator]] = {}
         self.validationErrors: List[Exception] = []
 
@@ -174,7 +174,7 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def getExecutableSubmission(self) -> T:
         pass
 
-    def getSubmissionRoot(self) -> Union[PathLike, str]:
+    def getSubmissionRoot(self) -> str:
         return self.submissionRoot
     
 

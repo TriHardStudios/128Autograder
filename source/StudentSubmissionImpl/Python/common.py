@@ -25,3 +25,9 @@ class TooManyFilesError(Exception):
             f"Expected one `.py` file. Received: {','.join(file for file in files)}"
         )
 
+class InvalidPackageError(Exception):
+    def __init__(self, packageName: str, version: str):
+        super().__init__(
+            f"Unable to locate package, '{packageName}' at version "
+            f"{version if version else 'any version'}"
+        )
