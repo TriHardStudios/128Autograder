@@ -21,5 +21,8 @@ class AbstractValidator(abc.ABC):
     def run(self):
         pass
 
+    def addError(self, error: Exception):
+        self.errors.append(error)
+
     def collectErrors(self) -> List[Exception]:
         return self.errors

@@ -44,7 +44,7 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def setSubmissionRoot(self: TBuilder, submissionRoot: str) -> TBuilder:
         """
         Description
-        ===========
+        ---
         
         Defines the root of the submission. 
 
@@ -59,7 +59,7 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def addValidator(self: TBuilder, validator: AbstractValidator) -> TBuilder:
         """
         Description
-        ===========
+        ---
 
         Adds a validator to run at the hook defined in the validator.
 
@@ -106,7 +106,8 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def load(self: TBuilder) -> TBuilder:
         """
         Description
-        ===========
+        ---
+
         Runs all validators attached to the ``LOAD`` hooks.
 
         This method calls the overriden ``doLoad`` method.
@@ -131,7 +132,8 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def build(self: TBuilder) -> TBuilder:
         """
         Description
-        ===========
+        ---
+        
         Runs all validators attached to the ``BUILD`` hooks.
 
         This method calls the overriden ``doBuild`` method.
@@ -156,7 +158,8 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
     def validate(self: TBuilder) -> TBuilder:
         """
         Description
-        ===========
+        ---
+
         Runs all validators attached to the ``VALIDATION`` hook.
 
         This method should be overriden to perform any final validation that is needed prior to getting the executable version of the submission.
