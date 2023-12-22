@@ -1,7 +1,8 @@
-from typing import Dict, Set, List
+from typing import Dict, List
+import os
 from StudentSubmission import AbstractValidator
 from StudentSubmission.common import ValidationHook
-from .common import FileTypeMap, InvalidPackageError, MissingMainFileError, NoPyFilesError, TooManyFilesError
+from .common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
 from .PythonSubmission import StudentSubmission
 
 class PythonFileValidator(AbstractValidator):
@@ -13,7 +14,7 @@ class PythonFileValidator(AbstractValidator):
     def __init__(self, allowedMainNames: List[str]):
         super().__init__()
         self.ALLOWED_MAIN_NAMES = allowedMainNames
-        self.pythonFiles: Dict[FileTypeMap, Set[str]] = {}
+        self.pythonFiles: Dict[FileTypeMap, List[str]] = {}
         self.looseMainMatchingAllowed: bool = False
 
     def setup(self, studentSubmission: StudentSubmission):
@@ -24,7 +25,7 @@ class PythonFileValidator(AbstractValidator):
             self.pythonFiles[FileTypeMap.TEST_FILES] = submissionFiles[FileTypeMap.TEST_FILES]
 
         if FileTypeMap.PYTHON_FILES not in submissionFiles:
-            submissionFiles[FileTypeMap.PYTHON_FILES] = set() 
+            submissionFiles[FileTypeMap.PYTHON_FILES] = []
 
         self.pythonFiles[FileTypeMap.PYTHON_FILES] = submissionFiles[FileTypeMap.PYTHON_FILES]
 
@@ -48,22 +49,37 @@ class RequirementsValidator(AbstractValidator):
 
     def __init__(self):
         super().__init__()
-        self.requirements: Set[str] = set()
+        self.requirements: List[str] = []
         self.submissionBase: str = ""
 
     def setup(self, studentSubmission: StudentSubmission):
         self.submissionBase = studentSubmission.getSubmissionRoot()
         files = studentSubmission.getDiscoveredFileMap()
         if FileTypeMap.REQUIREMENTS not in files:
-            files[FileTypeMap.REQUIREMENTS] = set()
+            files[FileTypeMap.REQUIREMENTS] = []
 
         self.requirements = files[FileTypeMap.REQUIREMENTS]
 
     def run(self):
-        pass
+        if not self.requirements:
+            return
 
+        if len(self.requirements) != 1:
+            self.addError(InvalidRequirementsFileError(
+                    "Too many requirements.txt files.\n"
+                    f"Expected 1, received {len(self.requirements)}"
+                )
+            )
+        for file in self.requirements:
+            if file == os.path.join(self.submissionBase, "requirements.txt"):
+                continue
 
-
+            self.addError(InvalidRequirementsFileError(
+                    "Invalid location for requirements file.\n"
+                    f"Should be {os.path.join(self.submissionBase, 'requirements.txt')}\n"
+                    f"But was {file}"
+                )
+            )
 
 class PackageValidator(AbstractValidator):
 

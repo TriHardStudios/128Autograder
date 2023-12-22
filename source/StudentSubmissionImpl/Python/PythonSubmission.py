@@ -1,12 +1,11 @@
 # It finally happened. The great refactoring!
 
 import os
-from os.path import isdir
 import re
 from types import CodeType
-from typing import Dict, Iterable, Optional, TypeVar, Set
+from typing import Dict, Iterable, List, Optional, TypeVar
 from StudentSubmission import AbstractStudentSubmission
-from .PythonValidators import PythonFileValidator, PackageValidator
+from .PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
 from .common import FileTypeMap
 
 Builder = TypeVar("Builder", bound="StudentSubmission")
@@ -43,11 +42,12 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
         self._allowRequirements: bool = False
         self._allowLooseMainMatching: bool = False
 
-        self.discoveredFileMap: Dict[FileTypeMap, Set[str]]
+        self.discoveredFileMap: Dict[FileTypeMap, List[str]]
 
         self.extraPackages: Dict[str, str] = {}
 
         self.addValidator(PythonFileValidator(self.ALLOWED_STRICT_MAIN_NAMES))
+        self.addValidator(RequirementsValidator())
         self.addValidator(PackageValidator())
 
     def allowTestFiles(self: Builder, allowTestFiles: bool = True) -> Builder:
@@ -72,9 +72,9 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
 
     def _addFileToMap(self, path: str, fileType: FileTypeMap) -> None:
         if fileType not in self.discoveredFileMap.keys():
-            self.discoveredFileMap[fileType] = set()
+            self.discoveredFileMap[fileType] = []
 
-        self.discoveredFileMap[fileType].add(path)
+        self.discoveredFileMap[fileType].append(path)
 
     def _discoverSubmittedFiles(self, directoryToSearch: str) -> None:
         pathesToVisit: Iterable[str] = filter(filterSearchResults, os.listdir(directoryToSearch))
@@ -102,8 +102,7 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
         if not self.requirementsAllowed() or FileTypeMap.REQUIREMENTS not in self.discoveredFileMap:
             return
 
-        # techinically, its indeterminate which element will be returned, but there should only be one file named requirements.txt
-        with open(self.discoveredFileMap[FileTypeMap.REQUIREMENTS].pop(), 'r') as r:
+        with open(self.discoveredFileMap[FileTypeMap.REQUIREMENTS][0], 'r') as r:
             # we are going to ignore any paths that aren't set up as package==version
             for line in r:
                 # we might want to add logging + telementry
@@ -128,5 +127,5 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
     def testFilesAllowed(self) -> bool: return self._allowTestFiles
     def requirementsAllowed(self) -> bool: return self._allowRequirements
     def looseMainMatchingAllowed(self) -> bool: return self._allowLooseMainMatching
-    def getDiscoveredFileMap(self) -> Dict[FileTypeMap, Set[str]]: return self.discoveredFileMap
+    def getDiscoveredFileMap(self) -> Dict[FileTypeMap, List[str]]: return self.discoveredFileMap
     def getExtraPackages(self) -> Dict[str, str]: return self.extraPackages

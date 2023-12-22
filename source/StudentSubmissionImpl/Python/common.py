@@ -31,3 +31,7 @@ class InvalidPackageError(Exception):
             f"Unable to locate package, '{packageName}' at version "
             f"{version if version else 'any version'}"
         )
+
+class InvalidRequirementsFileError(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
