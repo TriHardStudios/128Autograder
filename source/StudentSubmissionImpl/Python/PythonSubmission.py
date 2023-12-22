@@ -38,11 +38,13 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
     REQUIREMENTS_LINE_REGEX: re.Pattern = re.compile(r"^(\w|-)+(==)?(\d+\.?){0,3}$")
 
     def __init__(self):
+        super().__init__()
+
         self._allowTestFiles: bool = False
         self._allowRequirements: bool = False
         self._allowLooseMainMatching: bool = False
 
-        self.discoveredFileMap: Dict[FileTypeMap, List[str]]
+        self.discoveredFileMap: Dict[FileTypeMap, List[str]] = {}
 
         self.extraPackages: Dict[str, str] = {}
 
@@ -119,7 +121,11 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
 
 
     def doBuild(self):
-        return super().doBuild()
+        pass
+
+    def getExecutableSubmission(self) -> CodeType:
+        return compile("", "submission", "exec")
+
 
 
 

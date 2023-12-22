@@ -52,7 +52,7 @@ class ValidationError(AssertionError):
     def combineErrorMessages(exceptions: List[Exception]) -> str:
         msg = ""
         for i, ex in enumerate(exceptions):
-            msg += f"{i + 1}. {ex.__qualname__}: {ex}\n"
+            msg += f"{i + 1}. {type(ex).__qualname__}: {ex}\n"
 
         return msg
 

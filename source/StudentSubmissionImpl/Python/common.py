@@ -16,13 +16,14 @@ class NoPyFilesError(Exception):
 class MissingMainFileError(Exception):
     def __init__(self, expectedMains: Iterable[str], files: Iterable[str]) -> None:
         super().__init__(
-            f"Expected file named {'or'.join(file for file in expectedMains)}. Received: {','.join(file for file in files)}"
+            f"Expected file named {' or '.join(file for file in expectedMains)}. Received: {','.join(file for file in files)}"
         )
 
 class TooManyFilesError(Exception):
     def __init__(self, files: Iterable[str]) -> None:
         super().__init__(
-            f"Expected one `.py` file. Received: {','.join(file for file in files)}"
+            f"Expected one `.py` file. Received: {', '.join(file for file in files)}\n"
+            "Please delete extra `.py` files"
         )
 
 class InvalidPackageError(Exception):

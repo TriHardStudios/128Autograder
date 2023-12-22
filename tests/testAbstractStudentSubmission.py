@@ -80,6 +80,8 @@ class TestAbstractStudentSubmission(unittest.TestCase):
     def testSetSubmissionRootExists(self):
         submissionRoot = "./submission"
         os.mkdir(submissionRoot)
+        with open(os.path.join(submissionRoot, "file.txt"), 'w') as w:
+            w.write("FILE!")
 
         studentSubmission = StudentSubmission()\
                 .setSubmissionRoot(submissionRoot)\
@@ -100,7 +102,7 @@ class TestAbstractStudentSubmission(unittest.TestCase):
         exceptionText = str(validationError.exception)
 
         self.assertIn("Validation Errors:", exceptionText)
-        self.assertIn(f"1. {submissionRoot} does not exist", exceptionText)
+        self.assertIn(f"1. FileNotFoundError: {submissionRoot} does not exist", exceptionText)
 
 
     def testAddValidatorForExistingFile(self):

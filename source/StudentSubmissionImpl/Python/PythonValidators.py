@@ -3,7 +3,6 @@ import os
 from StudentSubmission import AbstractValidator
 from StudentSubmission.common import ValidationHook
 from .common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
-from .PythonSubmission import StudentSubmission
 
 class PythonFileValidator(AbstractValidator):
 
@@ -13,21 +12,21 @@ class PythonFileValidator(AbstractValidator):
 
     def __init__(self, allowedMainNames: List[str]):
         super().__init__()
-        self.ALLOWED_MAIN_NAMES = allowedMainNames
+        self.allowedMainNames = allowedMainNames
         self.pythonFiles: Dict[FileTypeMap, List[str]] = {}
         self.looseMainMatchingAllowed: bool = False
 
-    def setup(self, studentSubmission: StudentSubmission):
+    def setup(self, studentSubmission):
         submissionFiles = studentSubmission.getDiscoveredFileMap()
         self.looseMainMatchingAllowed = studentSubmission.looseMainMatchingAllowed()
 
-        if studentSubmission.testFilesAllowed():
+        if studentSubmission.testFilesAllowed() and FileTypeMap.TEST_FILES in submissionFiles.keys():
             self.pythonFiles[FileTypeMap.TEST_FILES] = submissionFiles[FileTypeMap.TEST_FILES]
 
         if FileTypeMap.PYTHON_FILES not in submissionFiles:
             submissionFiles[FileTypeMap.PYTHON_FILES] = []
 
-        self.pythonFiles[FileTypeMap.PYTHON_FILES] = submissionFiles[FileTypeMap.PYTHON_FILES]
+        self.pythonFiles[FileTypeMap.PYTHON_FILES] = [os.path.basename(file) for file in submissionFiles[FileTypeMap.PYTHON_FILES]]
 
     def run(self):
         if not self.pythonFiles[FileTypeMap.PYTHON_FILES]:
@@ -38,8 +37,8 @@ class PythonFileValidator(AbstractValidator):
             self.addError(TooManyFilesError(self.pythonFiles[FileTypeMap.PYTHON_FILES]))
             return
 
-        if not any(file in self.pythonFiles[FileTypeMap.PYTHON_FILES] for file in self.ALLOWED_MAIN_NAMES):
-            self.addError(MissingMainFileError(self.ALLOWED_MAIN_NAMES, self.pythonFiles[FileTypeMap.PYTHON_FILES]))
+        if not self.looseMainMatchingAllowed and not any(file in self.pythonFiles[FileTypeMap.PYTHON_FILES] for file in self.allowedMainNames):
+            self.addError(MissingMainFileError(self.allowedMainNames, self.pythonFiles[FileTypeMap.PYTHON_FILES]))
             return
 
 class RequirementsValidator(AbstractValidator):
@@ -52,7 +51,7 @@ class RequirementsValidator(AbstractValidator):
         self.requirements: List[str] = []
         self.submissionBase: str = ""
 
-    def setup(self, studentSubmission: StudentSubmission):
+    def setup(self, studentSubmission):
         self.submissionBase = studentSubmission.getSubmissionRoot()
         files = studentSubmission.getDiscoveredFileMap()
         if FileTypeMap.REQUIREMENTS not in files:
@@ -93,7 +92,7 @@ class PackageValidator(AbstractValidator):
         super().__init__()
         self.packages: Dict[str, str] = {}
 
-    def setup(self, studentSubmission: StudentSubmission):
+    def setup(self, studentSubmission):
         self.packages = studentSubmission.getExtraPackages()
 
     def run(self):

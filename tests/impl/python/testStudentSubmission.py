@@ -2,13 +2,16 @@ import io
 import os
 import shutil
 import string
+import subprocess
 import sys
 import unittest
 from unittest.mock import patch
 from io import StringIO
 import random
+from StudentSubmission.common import ValidationError
 
-from StudentSubmission import StudentSubmission
+from StudentSubmissionImpl.Python import PythonSubmission
+from StudentSubmissionImpl.Python.common import FileTypeMap
 
 
 class TestStudentSubmission(unittest.TestCase):
@@ -30,47 +33,60 @@ class TestStudentSubmission(unittest.TestCase):
             shutil.rmtree(self.TEST_FILE_DIRECTORY)
 
     def testDiscoverMainModuleSinglePy(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
+        filename = os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py")
+
+        with open(filename, 'w') as w:
             w.writelines(self.TEST_FILE_NON_MAIN)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .allowLooseMainMatching()\
+                .allowTestFiles()\
+                .allowRequirements()\
+                .load()\
+                .build()\
+                .validate()
 
-        self.assertTrue(submission.isSubmissionValid())
+        self.assertIn(filename, submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES])
 
-    def testDiscoverFileWithSpace(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "file with space.py"), 'w') as w:
+
+    def testDiscoverFileWithDashes(self):
+        filename = os.path.join(self.TEST_FILE_DIRECTORY, "file-with-dashes.py")
+
+        with open(filename, 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .allowLooseMainMatching()\
+                .load()\
+                .build()\
+                .validate()
 
-        self.assertTrue(submission.isSubmissionValid())
+        self.assertIn(filename, submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES])
 
     def testDiscoverFileTest(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "test.py"), 'w') as w:
+        filename = os.path.join(self.TEST_FILE_DIRECTORY, "test.py")
+
+        with open(filename, 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
-
-        self.assertTrue(submission.isSubmissionValid())
-
-    @patch('sys.stdout', new_callable=StringIO)
-    def testDiscoverMainModuleManyPy(self, capturedStdout):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
-            w.writelines(self.TEST_FILE_NON_MAIN)
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .allowTestFiles()\
+                .load()\
+                .build()\
+                .validate()
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        self.assertIn(filename, submission.getDiscoveredFileMap()[FileTypeMap.TEST_FILES])
 
-        self.assertTrue(submission.isSubmissionValid())
-
-        exec(submission.getStudentSubmissionCode(), {'__name__': "__main__"})
-
-        self.assertEqual("TEST_FILE_MAIN\n", capturedStdout.getvalue())
 
     def testDiscoverMainModuleRandomNonPy(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+        filename = os.path.join(self.TEST_FILE_DIRECTORY, "main.py")
+        with open(filename, 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
         for _ in range(10):
@@ -79,9 +95,14 @@ class TestStudentSubmission(unittest.TestCase):
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .load()\
+                .build()\
+                .validate()
 
-        self.assertTrue(submission.isSubmissionValid())
+        self.assertIn(filename, submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES])
+        self.assertEqual(1, len(submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES]))
 
     def testDiscoverNoPyFiles(self):
         for _ in range(10):
@@ -90,12 +111,18 @@ class TestStudentSubmission(unittest.TestCase):
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        with self.assertRaises(ValidationError) as error:
+            PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .allowLooseMainMatching()\
+                    .load()\
+                    .build()\
+                    .validate()
 
-        self.assertFalse(submission.isSubmissionValid())
+        exceptionText = str(error.exception)
 
-        self.assertIn("No .py files were found", submission.getValidationError())
-        self.assertIn("Does your file end in .py", submission.getValidationError())
+        self.assertIn("Expected at least one `.py` file", exceptionText)
+        self.assertIn("Are you writing your code in a file that ends with `.py`", exceptionText)
 
     def testDiscoverNoMainPyFile(self):
         fileNames = []
@@ -108,15 +135,19 @@ class TestStudentSubmission(unittest.TestCase):
             with open(os.path.join(self.TEST_FILE_DIRECTORY, fileName), 'w') as w:
                 w.writelines("RAND")
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None)
+        with self.assertRaises(ValidationError) as error:
+            PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .allowLooseMainMatching()\
+                    .load()\
+                    .build()\
+                    .validate()
 
-        self.assertFalse(submission.isSubmissionValid())
+        exceptionText = str(error.exception)
 
-        fileNames.sort()
-
-        self.assertIn(str(fileNames), submission.getValidationError())
-        self.assertIn("no main.py file was found", submission.getValidationError())
-        self.assertIn("create main.py or delete extra .py files", submission.getValidationError())
+        self.assertIn(fileNames[3], exceptionText)
+        self.assertIn("Expected one `.py` file", exceptionText)
+        self.assertIn("delete extra `.py` files", exceptionText)
 
 
     def testDiscoverTestFiles(self):
@@ -134,37 +165,78 @@ class TestStudentSubmission(unittest.TestCase):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None, discoverTestFiles=True)
-        submission.validateSubmission()
-
-        self.assertTrue(submission.isSubmissionValid())
-
-        self.assertFalse(submission.getImports())
+        submission = PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .allowTestFiles()\
+                    .allowLooseMainMatching()\
+                    .load()\
+                    .build()\
+                    .validate()
 
         testFileNames = [f"{os.path.join(self.TEST_FILE_DIRECTORY, file)}" for file in testFileNames]
 
-        self.assertCountEqual(testFileNames, submission.getTestFiles())
+        self.assertCountEqual(testFileNames, submission.getDiscoveredFileMap()[FileTypeMap.TEST_FILES])
+        self.assertEqual(1, len(submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES]))
 
     @patch('sys.stdout', new_callable=StringIO)
-    def testDiscoverRequirementsFile(self, capturedStdout):
+    def testDiscoverMainModuleManyPy(self, capturedStdout):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_NON_MAIN)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .load()\
+                .build()\
+                .validate()
+
+        exec(submission.getExecutableSubmission(), {'__name__': "__main__"})
+
+        self.assertEqual("TEST_FILE_MAIN\n", capturedStdout.getvalue())
+
+    def testAddPackage(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .addPackage("pip-install-test")\
+                .load()\
+                .build()\
+                .validate()
+
+    def testGetPackagesFromRequirements(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "requirements.txt"), 'w') as w:
             w.writelines("pip-install-test==0.5\n")
 
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines("import pip_install_test")
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, None, discoverRequirementsFile=True)
-        submission.validateSubmission()
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .allowRequirements()\
+                .load()\
+                .build()\
+                .validate()
 
-        # This behavior is incorrect! The requirements.txt should be installed before we attempt to resolve imports
-        # submission.installRequirements()
+        self.assertEqual({"pip-install-test": "0.5"}, submission.getExtraPackages())
 
-        self.assertTrue(submission.isSubmissionValid())
-        exec(submission.getStudentSubmissionCode())
 
-        self.assertIn("You installed a pip module.", capturedStdout.getvalue())
+    def testNonExistentPackageInRequirements(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "requirements.txt"), 'w') as w:
+            w.writelines("does-not-exist==0.5\n")
 
-        submission.removeRequirements()
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines("import pip_install_test")
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .allowRequirements()\
+                .load()\
+                .build()\
+                .validate()
 
     def testDisallowedFunctionPresent(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
