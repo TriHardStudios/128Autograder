@@ -1,13 +1,12 @@
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
 from TestingFramework import BaseTest
-from StudentSubmission import StudentSubmissionAssertions
 from StudentSubmission.StudentSubmissionExecutor import StudentSubmissionExecutor
 from StudentSubmission.Runners import FunctionRunner
 from StudentSubmission.common import PossibleResults
 
 
-class HelloWorld(BaseTest, StudentSubmissionAssertions):
+class HelloWorld(BaseTest):
 
     @weight(10)
     def testCode(self):
