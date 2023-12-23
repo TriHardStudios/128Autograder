@@ -1,4 +1,5 @@
-from typing import Dict, List
+from types import LambdaType
+from typing import Callable, Dict, List
 import os
 from StudentSubmission import AbstractValidator
 from StudentSubmission.common import ValidationHook
@@ -18,9 +19,9 @@ class PythonFileValidator(AbstractValidator):
 
     def setup(self, studentSubmission):
         submissionFiles = studentSubmission.getDiscoveredFileMap()
-        self.looseMainMatchingAllowed = studentSubmission.looseMainMatchingAllowed()
+        self.looseMainMatchingAllowed = studentSubmission.getLooseMainMatchingEnabled()
 
-        if studentSubmission.testFilesAllowed() and FileTypeMap.TEST_FILES in submissionFiles.keys():
+        if studentSubmission.getTestFilesEnabled() and FileTypeMap.TEST_FILES in submissionFiles.keys():
             self.pythonFiles[FileTypeMap.TEST_FILES] = submissionFiles[FileTypeMap.TEST_FILES]
 
         if FileTypeMap.PYTHON_FILES not in submissionFiles:
@@ -37,10 +38,25 @@ class PythonFileValidator(AbstractValidator):
             self.addError(TooManyFilesError(self.pythonFiles[FileTypeMap.PYTHON_FILES]))
             return
 
-        if not self.looseMainMatchingAllowed and not any(file in self.pythonFiles[FileTypeMap.PYTHON_FILES] for file in self.allowedMainNames):
-            self.addError(MissingMainFileError(self.allowedMainNames, self.pythonFiles[FileTypeMap.PYTHON_FILES]))
+        if self.looseMainMatchingAllowed:
             return
 
+        mainNameFilter: Callable[[str], bool] = lambda x: x in self.allowedMainNames
+
+        filteredFiles = list(filter(mainNameFilter, self.pythonFiles[FileTypeMap.PYTHON_FILES]))
+
+        if not filteredFiles:
+            self.addError(MissingMainFileError(self.allowedMainNames, self.pythonFiles[FileTypeMap.PYTHON_FILES]))
+            return
+        
+        if len(filteredFiles) != 1:
+            self.addError(TooManyFilesError(filteredFiles))
+
+
+
+
+
+        
 class RequirementsValidator(AbstractValidator):
     @staticmethod
     def getValidationHook() -> ValidationHook:

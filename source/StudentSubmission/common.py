@@ -17,6 +17,9 @@ class ValidationHook(Enum):
     VALIDATION = 5
 
 
+# This is a problem for future me, but basically the pickler is not picking these execeptions correctly. It is passing the message into it, 
+# Which also explains that weird error that I was getting eariler in the semester when the MissingFunctionDefination error would appear twice
+# we should prolly look into this
 class MissingOutputDataException(Exception):
     def __init__(self, _outputFileName):
         super().__init__("Output results are NULL.\n"
@@ -26,22 +29,18 @@ class MissingOutputDataException(Exception):
 
 class MissingFunctionDefinition(Exception):
     def __init__(self, _functionName: str):
-        super().__init__()
-        self.functionName = _functionName
-
-    def __str__(self):
-        return (f"Failed to find function with name: {self.functionName}.\n"
-                "Are you missing the function definition?")
-
+        super().__init__(
+                f"Failed to find function with name: {_functionName}.\n"
+                "Are you missing the function definition?"
+        )
 
 class InvalidTestCaseSetupCode(Exception):
-    def __init__(self):
-        super().__init__()
-
-    def __str__(self):
-        return ("Failed to find 'autograder_setup' function to run.\n"
+    def __init__(self, *args):
+        super().__init__(
+                "Failed to find 'autograder_setup' function to run.\n"
                 "Ensure that your setup code contains a 'autograder_setup' function.\n"
-                "This is an autograder error.")
+                "This is an autograder error."
+        )
 
 class StudentSubmissionException(Exception):
     def __init__(self, *args: object) -> None:

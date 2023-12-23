@@ -1,9 +1,6 @@
-import io
 import os
 import shutil
 import string
-import subprocess
-import sys
 import unittest
 from unittest.mock import patch
 from io import StringIO
@@ -40,9 +37,9 @@ class TestStudentSubmission(unittest.TestCase):
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                .allowLooseMainMatching()\
-                .allowTestFiles()\
-                .allowRequirements()\
+                .enableLooseMainMatching()\
+                .enableRequirements()\
+                .enableTestFiles()\
                 .load()\
                 .build()\
                 .validate()
@@ -58,7 +55,7 @@ class TestStudentSubmission(unittest.TestCase):
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                .allowLooseMainMatching()\
+                .enableLooseMainMatching()\
                 .load()\
                 .build()\
                 .validate()
@@ -76,7 +73,7 @@ class TestStudentSubmission(unittest.TestCase):
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                .allowTestFiles()\
+                .enableTestFiles()\
                 .load()\
                 .build()\
                 .validate()
@@ -114,7 +111,7 @@ class TestStudentSubmission(unittest.TestCase):
         with self.assertRaises(ValidationError) as error:
             PythonSubmission()\
                     .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                    .allowLooseMainMatching()\
+                    .enableLooseMainMatching()\
                     .load()\
                     .build()\
                     .validate()
@@ -138,7 +135,7 @@ class TestStudentSubmission(unittest.TestCase):
         with self.assertRaises(ValidationError) as error:
             PythonSubmission()\
                     .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                    .allowLooseMainMatching()\
+                    .enableLooseMainMatching()\
                     .load()\
                     .build()\
                     .validate()
@@ -167,8 +164,8 @@ class TestStudentSubmission(unittest.TestCase):
 
         submission = PythonSubmission()\
                     .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                    .allowTestFiles()\
-                    .allowLooseMainMatching()\
+                    .enableTestFiles()\
+                    .enableLooseMainMatching()\
                     .load()\
                     .build()\
                     .validate()
@@ -178,8 +175,47 @@ class TestStudentSubmission(unittest.TestCase):
         self.assertCountEqual(testFileNames, submission.getDiscoveredFileMap()[FileTypeMap.TEST_FILES])
         self.assertEqual(1, len(submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES]))
 
+    def testDiscoverNestedFiles(self):
+        nestedDirectory = os.path.join(self.TEST_FILE_DIRECTORY, "nested1", "nested2")
+        os.makedirs(nestedDirectory)
+        file = os.path.join(nestedDirectory, "main.py")
+        
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_NON_MAIN)
+        with open(file, 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission = PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .load()\
+                    .build()\
+                    .validate()
+
+        self.assertEqual(2, len(submission.getDiscoveredFileMap()[FileTypeMap.PYTHON_FILES]))
+
+
+    def testManyNestedMainFiles(self):
+        nestedDirectory = os.path.join(self.TEST_FILE_DIRECTORY, "nested1", "nested2")
+        os.makedirs(nestedDirectory)
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "nested1", "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "nested1", "nested2", "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        with self.assertRaises(ValidationError):
+            PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .load()\
+                    .build()\
+                    .validate()
+
     @patch('sys.stdout', new_callable=StringIO)
-    def testDiscoverMainModuleManyPy(self, capturedStdout):
+    def testDiscoverEntrypointManyPy(self, capturedStdout):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
 
@@ -196,6 +232,22 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertEqual("TEST_FILE_MAIN\n", capturedStdout.getvalue())
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def testDiscoveryEntrypointLooseMatching(self, capturedStdout):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_NON_MAIN)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .enableLooseMainMatching()\
+                .load()\
+                .build()\
+                .validate()
+
+        exec(submission.getExecutableSubmission())
+
+        self.assertEqual("TEST_FILE_NON_MAIN\n", capturedStdout.getvalue())
+
     def testAddPackage(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)
@@ -207,6 +259,10 @@ class TestStudentSubmission(unittest.TestCase):
                 .build()\
                 .validate()
 
+        self.assertEqual({"pip-install-test": ""}, submission.getExtraPackages())
+
+        submission.TEST_ONLY_removeRequirements()
+
     def testGetPackagesFromRequirements(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "requirements.txt"), 'w') as w:
             w.writelines("pip-install-test==0.5\n")
@@ -216,97 +272,52 @@ class TestStudentSubmission(unittest.TestCase):
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                .allowRequirements()\
+                .enableRequirements()\
                 .load()\
                 .build()\
                 .validate()
 
         self.assertEqual({"pip-install-test": "0.5"}, submission.getExtraPackages())
 
+        submission.TEST_ONLY_removeRequirements()
 
     def testNonExistentPackageInRequirements(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "requirements.txt"), 'w') as w:
-            w.writelines("does-not-exist==0.5\n")
+            w.writelines("does-not-exist\ndoes-not-exist2==2.0\n")
 
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines("import pip_install_test")
 
-        submission = PythonSubmission()\
+        with self.assertRaises(ValidationError) as error:
+            PythonSubmission()\
+                    .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                    .enableRequirements()\
+                    .load()\
+                    .build()\
+                    .validate()
+
+        exceptionText = str(error.exception)
+
+        self.assertIn("Unable to locate package, 'does-not-exist'", exceptionText)
+        self.assertIn("Unable to locate package, 'does-not-exist2'", exceptionText)
+
+    def testInvalidPackageVersion(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        with self.assertRaises(ValidationError) as error:
+            PythonSubmission()\
                 .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
-                .allowRequirements()\
+                .addPackage("pip-install-test", "-1")\
                 .load()\
                 .build()\
                 .validate()
 
-    def testDisallowedFunctionPresent(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
-            w.writelines("\n"
-                         "int(16, 4)\n"
-                         )
+        exceptionText = str(error.exception)
 
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["int(_, 4)"])
+        self.assertIn("Unable to locate package, 'pip-install-test' at version -1", exceptionText)
 
-        submission.validateSubmission()
-
-        self.assertFalse(submission.isSubmissionValid())
-
-        self.assertIn("Invalid Function Calls", submission.getValidationError())
-
-    def testDisallowedFunctionInOtherModule(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "mod1.py"), 'w') as w:
-            w.writelines("\n"
-                         "int(16, 4)\n"
-                         "int(4)"
-                         )
-
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
-            w.writelines("import mod1\n"
-                         "int(16, 5)\n"
-                         "int(8, 3)\n"
-                         "int(1, 2)\n"
-                         "int(8, 8)\n"
-                         )
-
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["int(_,4)"])
-
-        submission.validateSubmission()
-
-        self.assertFalse(submission.isSubmissionValid())
-
-        self.assertIn("Invalid Function Calls", submission.getValidationError())
-        self.assertIn("int: called 1 times", submission.getValidationError())
-
-    def testDisallowedFunctionNamePresent(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
-            w.writelines("\n"
-                         "eval('Hello', 16, 'wheeeee')\n"
-                         "eval('different parameters!')\n"
-                         )
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["eval()"])
-
-        submission.validateSubmission()
-
-        self.assertFalse(submission.isSubmissionValid())
-
-        self.assertIn("Invalid Function Calls", submission.getValidationError())
-        self.assertIn("eval: called 2 times", submission.getValidationError())
-
-    def testDisallowedFunctionNotPresent(self):
-        with open(os.path.join(self.TEST_FILE_DIRECTORY, "non_main.py"), 'w') as w:
-            w.writelines("\n"
-                         "int(16, 5)\n"
-                         "int(8, 3)\n"
-                         "int(1, 2)\n"
-                         "int(8, 8)\n"
-                         "int(4)"
-                         )
-
-        submission: StudentSubmission = StudentSubmission(self.TEST_FILE_DIRECTORY, ["int(_, 4)"])
-
-        submission.validateSubmission()
-
-        self.assertTrue(submission.isSubmissionValid())
-
+    @unittest.skip("This functionality shouldnt really be handled by the student submission")
     @patch('sys.stdout', new_callable=StringIO)
     def testImportLibrary(self, capturedStdout):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "file.py"), 'w') as w:
@@ -325,6 +336,7 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertEqual("3\n", capturedStdout.getvalue())
 
+    @unittest.skip("I dont think that this functionality should be in the student submission - this should be handled by the executor when it builds out the paths to use")
     def testModules(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "mod1.py"), 'w') as w:
             w.writelines("\n"

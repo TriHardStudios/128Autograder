@@ -6,6 +6,10 @@ from types import ModuleType, FunctionType
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
+# OMG I FINALLY FOUND HOW TO DO THIS CORRECTLY!!
+# https://stackoverflow.com/questions/55905240/python-dynamically-import-modules-code-from-string-with-importlib
+# https://docs.python.org/3/reference/import.html#the-meta-path
+# https://stackoverflow.com/questions/43571737/how-to-implement-an-import-hook-that-can-modify-the-source-code-on-the-fly-using
 
 class Runner(ABC):
     """
