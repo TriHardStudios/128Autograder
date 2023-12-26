@@ -2,6 +2,8 @@ import sys
 from abc import ABC, abstractmethod
 import importlib
 from types import ModuleType, FunctionType
+from typing import Generic, TypeVar
+from .AbstractStudentSubmission import AbstractStudentSubmission
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
@@ -11,7 +13,13 @@ from TestingFramework.SingleFunctionMock import SingleFunctionMock
 # https://docs.python.org/3/reference/import.html#the-meta-path
 # https://stackoverflow.com/questions/43571737/how-to-implement-an-import-hook-that-can-modify-the-source-code-on-the-fly-using
 
-class Runner(ABC):
+T_code = TypeVar("T_code")
+
+class IRunner(ABC, Generic[T_code]):
+    def setSubmission(self, submission: T_code): 
+        pass
+
+class Runner(IRunner):
     """
     :Description:
     This class contains common code needed for each runner.
