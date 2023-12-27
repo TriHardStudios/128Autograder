@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, TypeVar, Union
+from typing import List, Dict, Optional, TypeVar, Union, Any
 
 import dataclasses
 from StudentSubmission import AbstractStudentSubmission
@@ -35,6 +35,73 @@ class ExecutionEnvironment:
     """
 
     SANDBOX_LOCATION: str = "./sandbox"
+
+
+# TODO - Update this to be strongly typed
+def getOrAssert(environment: ExecutionEnvironment,
+                field: PossibleResults,
+                file: Optional[str] = None,
+                mock: Optional[str] = None) -> Any:
+    """
+    This function gets the requested field from the results or will raise an assertion error.
+
+    If a file is requested, the file name must be specified with the ``file`` parameter. The contents of the file
+    will be returned.
+    If a mock is requested, the mocked method's name must `also` be requested. The mocked method will be returned.
+    :param environment: the execution environment that contains the results from execution
+    :param field: the field to get data from in the results file. Must be a ``PossibleResult``
+    :param file: if ``PossibleResults.FILE_OUT`` is specified, ``file`` must also be specified. This is the file
+    name to load from.
+    :param mock: if ``PossibleResults.MOCK_SIDE_EFFECT`` is specified, ``mock`` must also be specified. This is the
+    mocked method name (usually from ``method.__name__``)
+
+    :return: The requested data if it exists
+    :raises AssertionError: if the data cannot be retrieved for whatever reason
+    """
+    resultData = environment.resultData
+
+    if field not in resultData.keys():
+        raise AssertionError(f"Missing result data. Expected: {field.value}.")
+
+    if field is PossibleResults.STDOUT and not resultData[field]:
+        raise AssertionError(f"No OUTPUT was created by the students submission.\n"
+                             f"Are you missing an 'OUTPUT' statement?")
+
+    if (field is PossibleResults.FILE_OUT or field is PossibleResults.FILE_HASH) and not file:
+        raise AttributeError("File must be defined.")
+
+    if field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
+        raise AssertionError(f"File '{file}' was not created by the student's submission")
+
+    if field is PossibleResults.FILE_HASH and file not in resultData[PossibleResults.FILE_OUT].keys():
+        raise AssertionError(f"File hash for '{file}' was not created.\nFile '{file}' was not created by the student's submission")
+
+    if field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
+        raise AttributeError("Mock most be defined.")
+
+    if field is PossibleResults.MOCK_SIDE_EFFECTS \
+            and mock not in resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
+        raise AttributeError(
+            f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
+
+    # now that all that validation is done, we can actually give the data requested lol
+
+    if field is PossibleResults.FILE_OUT:
+        # load the file from disk and return it
+        readFile = ""
+        with open(resultData[field][file], 'r') as r:
+            readFile  = r.read()
+
+        return readFile
+
+    if field is PossibleResults.FILE_HASH:
+        return resultData[field][file]
+
+
+    if field is PossibleResults.MOCK_SIDE_EFFECTS:
+        return resultData[field][mock]
+
+    return resultData[field]
 
 Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder")
 

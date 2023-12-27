@@ -16,8 +16,11 @@ from TestingFramework.SingleFunctionMock import SingleFunctionMock
 T_code = TypeVar("T_code")
 
 class IRunner(ABC, Generic[T_code]):
+    @abstractmethod
     def setSubmission(self, submission: T_code): 
-        pass
+        raise NotImplementedError()
+
+
 
 class Runner(IRunner):
     """
