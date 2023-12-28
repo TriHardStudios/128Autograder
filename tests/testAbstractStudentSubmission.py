@@ -57,8 +57,6 @@ class FileExistsValidator(AbstractValidator):
             self.errors.append(Exception(f"{self.fileName} does not exist!"))
 
 
-
-
 class TestAbstractStudentSubmission(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
