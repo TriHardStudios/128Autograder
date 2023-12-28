@@ -76,7 +76,7 @@ SubmissionProcessFactory.register(MockSubmission, MockSubmissionProcess)
 
 class TestExecutor(unittest.TestCase):
     TEST_FILE_ROOT = "./test_data"
-    TEST_FILE_LOCATION = os.path.join(TEST_FILE_ROOT, "sub/test.txt")
+    TEST_FILE_LOCATION = os.path.join(TEST_FILE_ROOT, "sub", "test.txt")
     OUTPUT_FILE_LOCATION = os.path.join(ExecutionEnvironment.SANDBOX_LOCATION,
                                         os.path.basename(TEST_FILE_LOCATION))
 
