@@ -52,8 +52,8 @@ class TestEnvironmentBuilder(unittest.TestCase):
 
         environment = ExecutionEnvironmentBuilder(MockSubmission())\
                 .setDataRoot(self.DATA_ROOT)\
-                .addFile("./sub/file.txt", "file.txt")\
-                .addFile("sub/file.txt", "file.txt")\
+                .addFile(os.path.join("./sub", "file.txt"), "file.txt")\
+                .addFile(os.path.join("sub", "file.txt"), "file.txt")\
                 .build()
 
         self.assertIn(os.path.join(self.DATA_ROOT, "sub", "file.txt"), environment.files.keys())
