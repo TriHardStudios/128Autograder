@@ -2,7 +2,8 @@ import unittest
 import os
 import shutil
 
-from StudentSubmission import AbstractStudentSubmission, AbstractValidator
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from StudentSubmission.AbstractValidator import AbstractValidator
 from StudentSubmission.common import ValidationError, ValidationHook
 
 
@@ -54,8 +55,6 @@ class FileExistsValidator(AbstractValidator):
     def run(self):
         if self.fileName not in self.submissionRoot:
             self.errors.append(Exception(f"{self.fileName} does not exist!"))
-
-
 
 
 class TestAbstractStudentSubmission(unittest.TestCase):
