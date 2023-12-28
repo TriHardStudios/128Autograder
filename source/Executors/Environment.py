@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Optional, TypeVar, Union, Any
+from typing import Generic, List, Dict, Optional, TypeVar, Union, Any
 from enum import Enum
 
 import dataclasses
@@ -9,9 +9,10 @@ class PossibleResults(Enum):
     STDOUT = "stdout"
     RETURN_VAL = "return_val"
     FILE_OUT = "file_out"
-    FILE_HASH = "file_hash"
     MOCK_SIDE_EFFECTS = "mock"
     EXCEPTION = "exception"
+
+T = TypeVar("T", str, Exception, object)
 
 @dataclasses.dataclass
 class ExecutionEnvironment:
@@ -36,7 +37,7 @@ class ExecutionEnvironment:
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
 
-    resultData: dict[PossibleResults, object] = dataclasses.field(default_factory=dict)
+    resultData: Dict[PossibleResults, Union[Dict[str, object], object]] = dataclasses.field(default_factory=dict)
     """
     This dict contains the data that was generated from the student's submission. This should not be accessed
     directly, rather, use getOrAssert method
@@ -49,7 +50,7 @@ class ExecutionEnvironment:
 def getOrAssert(environment: ExecutionEnvironment,
                 field: PossibleResults,
                 file: Optional[str] = None,
-                mock: Optional[str] = None) -> Any:
+                mock: Optional[str] = None) -> Union[Dict[str, object], object]:
     """
     This function gets the requested field from the results or will raise an assertion error.
 
@@ -94,7 +95,7 @@ def getOrAssert(environment: ExecutionEnvironment,
 
     # now that all that validation is done, we can actually give the data requested lol
 
-    if field is PossibleResults.FILE_OUT:
+    if field is PossibleResults.FILE_OUT and file is not None:
         # load the file from disk and return it
         readFile = ""
         with open(resultData[field][file], 'r') as r:
@@ -102,7 +103,7 @@ def getOrAssert(environment: ExecutionEnvironment,
 
         return readFile
 
-    if field is PossibleResults.FILE_HASH:
+    if field is PossibleResults.FILE_HASH and file is not None:
         return resultData[field][file]
 
 

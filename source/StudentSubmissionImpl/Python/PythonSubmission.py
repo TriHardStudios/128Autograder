@@ -146,9 +146,7 @@ class StudentSubmission(AbstractStudentSubmission[CodeType]):
             return r.read()
 
     def _compileFile(self, filePath, code: str) -> CodeType:
-        fileName = filePath[len(self.getSubmissionRoot()):].replace("/",".")
-
-        return compile(code, fileName, "exec")
+        return compile(code, filePath, "exec")
         
 
     def doLoad(self):

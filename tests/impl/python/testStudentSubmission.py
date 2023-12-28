@@ -12,7 +12,7 @@ from StudentSubmissionImpl.Python.common import FileTypeMap
 
 
 class TestStudentSubmission(unittest.TestCase):
-    TEST_FILE_DIRECTORY: str = "./testFiles"
+    TEST_FILE_DIRECTORY: str = "./sandbox"
     TEST_FILE_MAIN: str = "\n" \
                           "if __name__ == '__main__':" \
                           " print('TEST_FILE_MAIN')\n"

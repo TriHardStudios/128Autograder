@@ -1,13 +1,14 @@
 from typing import Dict, Type
 
 from Executors.Environment import ExecutionEnvironment
+
+from .ISubmissionProcess import ISubmissionProcess
 from .Runners import IRunner
 
 from .AbstractStudentSubmission import AbstractStudentSubmission
-from .ISubmissionProcess import ISubmissionProcess
 
 
-class SubmissionProcessFactory():
+class SubmissionProcessFactory:
     registry: Dict[Type[AbstractStudentSubmission], Type[ISubmissionProcess]] = {}
 
 

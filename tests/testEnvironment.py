@@ -87,7 +87,7 @@ class TestEnvironmentBuilder(unittest.TestCase):
 class TestEnvironmentGetOrAssert(unittest.TestCase):
     DATA_DIRECTORY: str = "./test_data"
     OUTPUT_FILE_LOCATION = os.path.join(
-        ExecutionEnvironment.SANDBOX_LOCATION,
+        DATA_DIRECTORY,
         "outputFile.txt"
     )
 
@@ -105,8 +105,6 @@ class TestEnvironmentGetOrAssert(unittest.TestCase):
 
     def testGetOrAssertFilePresent(self):
         expectedOutput = "this is a line in the file"
-
-        os.mkdir(os.path.dirname(self.OUTPUT_FILE_LOCATION))
 
         with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
             w.write(expectedOutput)
