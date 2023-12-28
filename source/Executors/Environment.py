@@ -1,9 +1,17 @@
 import os
 from typing import List, Dict, Optional, TypeVar, Union, Any
+from enum import Enum
 
 import dataclasses
 from StudentSubmission import AbstractStudentSubmission
-from StudentSubmission.common import PossibleResults
+
+class PossibleResults(Enum):
+    STDOUT = "stdout"
+    RETURN_VAL = "return_val"
+    FILE_OUT = "file_out"
+    FILE_HASH = "file_hash"
+    MOCK_SIDE_EFFECTS = "mock"
+    EXCEPTION = "exception"
 
 @dataclasses.dataclass
 class ExecutionEnvironment:
@@ -64,7 +72,7 @@ def getOrAssert(environment: ExecutionEnvironment,
         raise AssertionError(f"Missing result data. Expected: {field.value}.")
 
     if field is PossibleResults.STDOUT and not resultData[field]:
-        raise AssertionError(f"No OUTPUT was created by the students submission.\n"
+        raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
                              f"Are you missing an 'OUTPUT' statement?")
 
     if (field is PossibleResults.FILE_OUT or field is PossibleResults.FILE_HASH) and not file:
@@ -174,6 +182,9 @@ class ExecutionEnvironmentBuilder():
         then ``fileSrc`` should be ``./public/file.txt``.
         :param fileDest: The path relative to ``SANDBOX_LOCATION`` that the file should be dropped at.
         """
+        if fileSrc[0:2] == "./":
+            fileSrc = fileSrc[2:]
+
         fileSrc = os.path.join(self.dataRoot, fileSrc)
         fileDest = os.path.join(self.environment.SANDBOX_LOCATION, fileDest)
 
@@ -192,11 +203,6 @@ class ExecutionEnvironmentBuilder():
 
         :param timeout: The timeout to use.
         """
-        if not isinstance(timeout, int):
-            raise AttributeError(f"Timeout MUST be an integer. Was {type(timeout).__qualname__}")
-
-        if timeout < 1:
-            raise AttributeError(f"Timeout MUST be greater than 1. Was {timeout}")
 
         self.environment.timeout = timeout
 
@@ -210,6 +216,12 @@ class ExecutionEnvironmentBuilder():
         for src in environment.files.keys():
             if not os.path.exists(src):
                 raise EnvironmentError(f"File {src} does not exist or is not accessible!")
+
+        if not isinstance(environment.timeout, int):
+            raise AttributeError(f"Timeout MUST be an integer. Was {type(environment.timeout).__qualname__}")
+
+        if environment.timeout < 1:
+            raise AttributeError(f"Timeout MUST be greater than 1. Was {environment.timeout}")
 
         # TODO - Validate requested features
 

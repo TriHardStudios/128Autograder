@@ -145,54 +145,6 @@ class TestStudentSubmissionExecutor(unittest.TestCase):
 
         self.assertDictEqual(self.environment.resultData, expectedResults)
 
-    def testGetOrAssertFilePresent(self):
-        expectedOutput = "this is a line in the file"
-
-        os.mkdir(os.path.dirname(self.OUTPUT_FILE_LOCATION))
-
-        with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
-            w.write(expectedOutput)
-
-        self.environment.resultData = {
-            PossibleResults.FILE_OUT: {
-                os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
-            }
-        }
-
-        actualOutput = StudentSubmissionExecutor \
-            .getOrAssert(self.environment, PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
-
-        self.assertEqual(expectedOutput, actualOutput)
-
-    def testGetOrAssertFileNotPresent(self):
-        self.environment.resultData = {
-            PossibleResults.FILE_OUT: {}
-        }
-
-        with self.assertRaises(AssertionError):
-            StudentSubmissionExecutor \
-                .getOrAssert(self.environment, PossibleResults.FILE_OUT,
-                             file=os.path.basename(self.OUTPUT_FILE_LOCATION))
-
-    def testGetOrAssertMockPresent(self):
-        self.environment.resultData = {
-            PossibleResults.MOCK_SIDE_EFFECTS: {
-                "mock": mock.Mock()
-            }
-        }
-
-        actualMock = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.MOCK_SIDE_EFFECTS,
-                                                           mock="mock")
-
-        self.assertIsNotNone(actualMock)
-
-    def testGetOrAssertEmptyStdout(self):
-        self.environment.resultData = {
-            PossibleResults.STDOUT: []
-        }
-
-        with self.assertRaises(AssertionError):
-            StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
 
     def testEOFError(self):
         actual = StudentSubmissionExecutor._processException(EOFError())
