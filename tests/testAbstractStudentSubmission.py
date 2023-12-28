@@ -2,7 +2,8 @@ import unittest
 import os
 import shutil
 
-from StudentSubmission import AbstractStudentSubmission, AbstractValidator
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from StudentSubmission.AbstractValidator import AbstractValidator
 from StudentSubmission.common import ValidationError, ValidationHook
 
 

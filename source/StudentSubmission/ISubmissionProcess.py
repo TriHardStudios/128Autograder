@@ -21,3 +21,8 @@ class ISubmissionProcess(abc.ABC):
     @abc.abstractmethod
     def cleanup(self):
         pass
+
+    @classmethod
+    @abc.abstractmethod
+    def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
+        pass

@@ -3,7 +3,7 @@ from typing import Generic, List, Dict, Optional, TypeVar, Union, Any
 from enum import Enum
 
 import dataclasses
-from StudentSubmission import AbstractStudentSubmission
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 
 class PossibleResults(Enum):
     STDOUT = "stdout"
@@ -76,14 +76,12 @@ def getOrAssert(environment: ExecutionEnvironment,
         raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
                              f"Are you missing an 'OUTPUT' statement?")
 
-    if (field is PossibleResults.FILE_OUT or field is PossibleResults.FILE_HASH) and not file:
+    if field is PossibleResults.FILE_OUT and not file:
         raise AttributeError("File must be defined.")
 
     if field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
         raise AssertionError(f"File '{file}' was not created by the student's submission")
 
-    if field is PossibleResults.FILE_HASH and file not in resultData[PossibleResults.FILE_OUT].keys():
-        raise AssertionError(f"File hash for '{file}' was not created.\nFile '{file}' was not created by the student's submission")
 
     if field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
         raise AttributeError("Mock most be defined.")
@@ -102,10 +100,6 @@ def getOrAssert(environment: ExecutionEnvironment,
             readFile  = r.read()
 
         return readFile
-
-    if field is PossibleResults.FILE_HASH and file is not None:
-        return resultData[field][file]
-
 
     if field is PossibleResults.MOCK_SIDE_EFFECTS:
         return resultData[field][mock]

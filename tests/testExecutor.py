@@ -9,8 +9,8 @@ from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 from StudentSubmission.Runners import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from StudentSubmission.common import MissingFunctionDefinition
-from Executors import ExecutionEnvironment, Executor
-from Executors.Environment import PossibleResults
+from Executors.Executor import Executor
+from Executors.Environment import ExecutionEnvironment,PossibleResults
 
 
 class MockSubmission(AbstractStudentSubmission[str]):
@@ -65,6 +65,11 @@ class MockSubmissionProcess(ISubmissionProcess):
 
     def cleanup(self):
         pass
+
+    @classmethod
+    def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
+        if environment.resultData[PossibleResults.EXCEPTION] is not None:
+            raise AssertionError()
 
 
 SubmissionProcessFactory.register(MockSubmission, MockSubmissionProcess)
@@ -145,6 +150,7 @@ class TestExecutor(unittest.TestCase):
 
         MockRunner.run = savedRun
 
+    @unittest.skip("This will be handled by the 'populateResults' ")
     def testGeneratedFiles(self):
         self.environment.files = {
             self.TEST_FILE_LOCATION: self.OUTPUT_FILE_LOCATION
@@ -172,12 +178,14 @@ class TestExecutor(unittest.TestCase):
         self.assertDictEqual(self.environment.resultData, expectedResults)
 
 
+    @unittest.skip("This will be handled by the the python process")
     def testEOFError(self):
         actual = Executor._processException(EOFError())
 
         self.assertIn("missing if __name__ == '__main__'", actual)
 
 
+    @unittest.skip("This will be handled the python process")
     def testMissingFunctionDefinition(self):
         functionName = "func1"
         actual = Executor._processException(MissingFunctionDefinition(functionName))

@@ -2,8 +2,8 @@ import os
 import shutil
 import unittest
 
-from StudentSubmission import AbstractStudentSubmission
-from Executors import ExecutionEnvironment, ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
 
 class MockSubmission(AbstractStudentSubmission[str]):
     def __init__(self):

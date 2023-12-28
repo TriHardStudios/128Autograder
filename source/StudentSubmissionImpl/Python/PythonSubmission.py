@@ -1,16 +1,13 @@
-# It finally happened. The great refactoring!
-
-from io import StringIO
 import os
 import re
 import sys
 from types import CodeType
 from typing import Dict, Iterable, List, Optional, TypeVar
-from StudentSubmission import AbstractStudentSubmission
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from .PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
 from .common import FileTypeMap
 
-Builder = TypeVar("Builder", bound="StudentSubmission")
+Builder = TypeVar("Builder", bound="PythonSubmission")
 
 def filterSearchResults(path: str) -> bool:
     # ignore hidden files
@@ -27,7 +24,7 @@ def filterSearchResults(path: str) -> bool:
     return True
 
 
-class StudentSubmission(AbstractStudentSubmission[CodeType]):
+class PythonSubmission(AbstractStudentSubmission[CodeType]):
     ALLOWED_STRICT_MAIN_NAMES = ["main.py", "submission.py"]
 
     # we are not allowing any files with a space in them

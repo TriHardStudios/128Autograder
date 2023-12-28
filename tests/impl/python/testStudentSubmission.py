@@ -7,7 +7,7 @@ from io import StringIO
 import random
 from StudentSubmission.common import ValidationError
 
-from StudentSubmissionImpl.Python import PythonSubmission
+from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from StudentSubmissionImpl.Python.common import FileTypeMap
 
 
