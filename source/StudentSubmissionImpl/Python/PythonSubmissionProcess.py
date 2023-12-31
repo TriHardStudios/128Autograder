@@ -10,19 +10,18 @@ before attempting to even connect to the object.
 """
 
 from typing import Dict, Optional
-from Executors.Environment import ExecutionEnvironment
+from Executors.Environment import ExecutionEnvironment, PossibleResults
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
+import dill
 import multiprocessing
 import multiprocessing.shared_memory as shared_memory
 import os
 import sys
 from io import StringIO
 
-import dill
-
-from StudentSubmission.common import PossibleResults, MissingOutputDataException
+from Executors.common import MissingOutputDataException
 from StudentSubmission.Runners import Runner
 
 SHARED_MEMORY_SIZE = 2 ** 20
@@ -73,8 +72,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         super().__init__(name="Student Submission")
         self.runner: Runner = _runner
-        self.inputDataMemName: str = "input_data"
-        self.outputDataMemName: str = "output_data"
+        self.inputDataMemName: str = ""
+        self.outputDataMemName: str = ""
         self.executionDirectory: str = _executionDirectory
         self.timeout: int = timeout
 
@@ -271,6 +270,8 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self._deallocate()
 
     def populateResults(self, environment: ExecutionEnvironment):
+        # TODOs
+        # Handle FS changes, Process STDOUT, process exceptions (Might need to be a seperate class), and i think thats it. Basically all the post processing that the Submission Executor used to do should be moved here, as the executor shouldnt really be concerned with the results of the execution, just that they exist
         environment.resultData[PossibleResults.EXCEPTION] = self.exception
 
         if self.outputData:
