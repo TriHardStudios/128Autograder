@@ -21,7 +21,7 @@ import os
 import sys
 from io import StringIO
 
-from Executors.common import MissingOutputDataException
+from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
 from StudentSubmission.Runners import Runner
 
 SHARED_MEMORY_SIZE = 2 ** 20
@@ -274,6 +274,19 @@ class RunnableStudentSubmission(ISubmissionProcess):
         # Handle FS changes, Process STDOUT, process exceptions (Might need to be a seperate class), and i think thats it. Basically all the post processing that the Submission Executor used to do should be moved here, as the executor shouldnt really be concerned with the results of the execution, just that they exist
         environment.resultData[PossibleResults.EXCEPTION] = self.exception
 
-        if self.outputData:
-            environment.resultData = self.outputData
+        if not self.outputData:
+            return
+
+        environment.resultData[PossibleResults.STDOUT] =\
+                filterStdOut(self.outputData[PossibleResults.STDOUT])
+
+        environment.resultData[PossibleResults.FILE_OUT] =\
+                detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
+
+        environment.resultData[PossibleResults.RETURN_VAL] =\
+                self.outputData[PossibleResults.RETURN_VAL]
+
+        environment.resultData[PossibleResults.MOCK_SIDE_EFFECTS] =\
+                self.outputData[PossibleResults.MOCK_SIDE_EFFECTS]
+
 
