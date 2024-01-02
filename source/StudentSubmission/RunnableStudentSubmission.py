@@ -9,6 +9,10 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
+import warnings
+
+warnings.warn("RunnableStudentSubmission is marked for removal in version 2.0", DeprecationWarning, 3)
+
 import multiprocessing
 import multiprocessing.shared_memory as shared_memory
 import os

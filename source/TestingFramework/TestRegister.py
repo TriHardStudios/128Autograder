@@ -2,7 +2,6 @@ import os.path
 import sys
 from unittest import TestSuite
 from unittest import loader
-from .BaseTest import BaseTest
 
 
 class TestRegister(TestSuite):
@@ -36,9 +35,6 @@ class TestRegister(TestSuite):
                 print(f"Warning: Rewrote path as {sys.argv[2]}")
 
             testPath = "studentTests"
-            submissionDirectory = sys.argv[2]
-
-        BaseTest.submissionDirectory = submissionDirectory
 
         self.addTests(loader.defaultTestLoader.discover(testPath))
 

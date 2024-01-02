@@ -1,122 +1,142 @@
 import unittest
 from unittest import skip
 
-from StudentSubmission.RunnableStudentSubmission import RunnableStudentSubmission
+from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
+from Executors.Environment import PossibleResults
 from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
-from StudentSubmission.common import PossibleResults, MissingOutputDataException, MissingFunctionDefinition, \
-    InvalidTestCaseSetupCode
-from TestingFramework import SingleFunctionMock
+from Executors.Environment import ExecutionEnvironment
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
+from Executors.common import MissingOutputDataException
 
 
 class TestRunnableStudentSubmission(unittest.TestCase):
+    def setUp(self):
+        self.environment = ExecutionEnvironment(None) # type: ignore
+        self.environment.SANDBOX_LOCATION = "."
+        self.runnableSubmission = RunnableStudentSubmission()
 
     def testStdIO(self):
         program = \
-            ("\n"
-             "userIn = input()\n"
-             "print(userIn)\n")
+             "\n"\
+             "userIn = input()\n"\
+             "print('OUTPUT', userIn)\n"
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        strInput = ["this is input"]
-        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
-        runnableSubmission.run()
+        self.environment.stdin = ["this is input"]
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        self.assertEqual(strInput, results[PossibleResults.STDOUT])
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
 
     def testStdIOWithMain(self):
         program = \
             "if __name__ == '__main__':\n" \
             "   userIn = input()\n" \
-            "   print(userIn)\n"
+            "   print('OUTPUT', userIn)\n"
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        strInput = ["this is input"]
-        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
-        runnableSubmission.run()
+        self.environment.stdin = ["this is input"]
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        self.assertEqual(strInput, results[PossibleResults.STDOUT])
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
 
     def testFunctionStdIO(self):
         program = \
-            ("\n"
-             "def runMe():\n"
-             "  userIn = input()\n"
-             "  print(userIn)\n"
-             )
+             "def runMe():\n"\
+             "  userIn = input()\n"\
+             "  print('OUTPUT', userIn)\n"
 
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
-        strInput = ["this is input"]
-        runnableSubmission = RunnableStudentSubmission(strInput, runner, ".", 1)
-        runnableSubmission.run()
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        self.assertEqual(strInput, results[PossibleResults.STDOUT])
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
 
     def testFunctionParameterStdIO(self):
         program = \
-            ("\n"
-             "def runMe(value: str):\n"
-             "  print(value)\n"
-             )
+             "def runMe(value: str):\n"\
+             "  print('OUTPUT', value)\n"
 
         strInput = "this was passed as a parameter"
+
         runner = FunctionRunner("runMe", strInput)
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         self.assertEqual([strInput], results[PossibleResults.STDOUT])
 
     def testFunctionParameterReturn(self):
         program = \
-            ("\n"
-             "def runMe(value: int):\n"
+             "def runMe(value: int):\n"\
              "  return value\n"
-             )
 
         intInput = 128
         runner = FunctionRunner("runMe", intInput)
         runner.setSubmission(compile(program, "test_code", "exec"))
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         self.assertEqual(intInput, results[PossibleResults.RETURN_VAL])
 
     def testFunctionMock(self):
         program = \
-            (
-                "\n"
-                "def mockMe(parm1, parm2, parm3):\n"
-                "   pass\n"
-                "\n"
-                "def runMe():\n"
-                "   mockMe(1, 2, 3)\n"
-                "   mockMe(1, 2, 3)\n"
-                "\n"
-            )
+                "def mockMe(parm1, parm2, parm3):\n"\
+                "   pass\n"\
+                "\n"\
+                "def runMe():\n"\
+                "   mockMe(1, 2, 3)\n"\
+                "   mockMe(1, 2, 3)\n"\
+
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setMocks({"mockMe": SingleFunctionMock("mockMe", None)})
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
         mockMeMock: SingleFunctionMock = results[PossibleResults.MOCK_SIDE_EFFECTS]["mockMe"]
 
         mockMeMock.assertCalledWith(1, 2, 3)
@@ -124,10 +144,8 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
     def testFunctionSpy(self):
         program = \
-            (
-                "def mockMe(a, b, c):\n"
-                "    return a + b + c\n"
-            )
+            "def mockMe(a, b, c):\n"\
+            "    return a + b + c\n"
 
         runner = FunctionRunner("mockMe", 1, 2, 3)
         mocks = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
@@ -135,10 +153,13 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner.setMocks(mocks)
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        results = runnableSubmission.getOutputData()
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
         mockMeMock: SingleFunctionMock = results[PossibleResults.MOCK_SIDE_EFFECTS]["mockMe"]
         returnVal = results[PossibleResults.RETURN_VAL]
 
@@ -155,126 +176,153 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         with self.assertRaises(MissingFunctionDefinition):
-            raise runnableSubmission.getException()
+            raise results[PossibleResults.EXCEPTION]
 
     def testTerminateInfiniteLoop(self):
         program = \
-            (
-                "\n"
-                "while True:\n"
+                "while True:\n"\
                 "   print('OUTPUT LOOP:)')\n"
-                "\n"
-            )
+
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        # run for 10 sec to overflow write buffer
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 10)
-        runnableSubmission.run()
+        self.environment.timeout = 5
 
-        self.assertDictEqual({}, runnableSubmission.getOutputData())
-        self.assertTrue(runnableSubmission.getTimeoutOccurred())
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        with self.assertRaises(TimeoutError):
+            raise results[PossibleResults.EXCEPTION]
+
+        self.assertNotIn(PossibleResults.STDOUT, results)
 
     def testTerminateInfiniteLoopWithInput(self):
         program = \
-            (
-                "import time\n"
-                "\n"
-                "while True:\n"
-                "   time.sleep(.25)\n"
-                "   var = input()\n"
+                "import time\n"\
+                "while True:\n"\
+                "   time.sleep(.25)\n"\
+                "   var = input()\n"\
                 "   print(var)\n"
-                "\n"
-            )
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission(("hello\n" * 9999).splitlines(), runner, ".", 5)
-        runnableSubmission.run()
+        self.environment.stdin = ("hello\n" * 9999).splitlines()
+        self.environment.timeout = 5
 
-        self.assertDictEqual({}, runnableSubmission.getOutputData())
-        self.assertTrue(runnableSubmission.getTimeoutOccurred())
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        with self.assertRaises(TimeoutError):
+            raise results[PossibleResults.EXCEPTION]
+
+        self.assertNotIn(PossibleResults.STDOUT, results)
 
     def testHandledExceptionInfiniteRecursion(self):
         program = \
-            (
-                "\n"
-                "def loop():\n"
-                "   print('OUTPUT RECURSION')\n"
-                "   loop()\n"
-                "\n"
+                "def loop():\n"\
+                "   print('OUTPUT RECURSION')\n"\
+                "   loop()\n"\
                 "loop()\n"
-            )
+
+        self.environment.timeout = 5
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 5)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         with self.assertRaises(RecursionError):
-            raise runnableSubmission.getException()
+            raise results[PossibleResults.EXCEPTION]
+
+        self.assertIn(PossibleResults.STDOUT, results)
 
     def testHandledExceptionBlockedInput(self):
         program = \
-            (
-                "\n"
-                "var1 = input()\n"
+                "var1 = input()\n"\
                 "var2 = input()\n"
-                "\n"
-            )
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission(["1"], runner, ".", 5)
-        runnableSubmission.run()
+        self.environment.stdin = ["1"]
+
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         with self.assertRaises(EOFError):
-            raise runnableSubmission.getException()
+            raise results[PossibleResults.EXCEPTION]
 
     def testHandleExit(self):
         program = \
-            (
                 "exit(0)"
-            )
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         with self.assertRaises(MissingOutputDataException):
-            raise runnableSubmission.getException()
+            raise results[PossibleResults.EXCEPTION]
 
     def testHandleManyFailedRuns(self):
         # This test enforces that we prefer a resource leak to crashing tests
         # This might need to be re-evaluated in the future
-        program = \
-            (
-                "print('Hi Mom!')\n"
-            )
-
-        capturedCleanup = RunnableStudentSubmission.cleanup
-        RunnableStudentSubmission.cleanup = lambda self: None
+        program = "print('Hi Mom!')\n"
 
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
+        runnableSubmission = RunnableStudentSubmission()
+        runnableSubmission.setup(self.environment, runner)
         runnableSubmission.run()
+        memToDeallocate = runnableSubmission.inputSharedMem, runnableSubmission.outputSharedMem
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-
-        RunnableStudentSubmission.cleanup = capturedCleanup
-
+        runnableSubmission.setup(self.environment, runner)
         runnableSubmission.run()
+        runnableSubmission.cleanup()
+        
+        if memToDeallocate[0] is None or memToDeallocate[1] is None:
+            return
+
+        memToDeallocate[0].close(); memToDeallocate[0].unlink()
+        memToDeallocate[1].close(); memToDeallocate[1].unlink()
 
     def testImportedFunction(self):
         program = \
@@ -286,15 +334,17 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = FunctionRunner("test")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        if runnableSubmission.getException() is not None:
-            raise AssertionError(runnableSubmission.getException())
+        self.runnableSubmission.populateResults(self.environment)
 
-        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+        results = self.environment.resultData
 
-        self.assertEqual(4, actualOutput)
+        self.assertIsNone(results[PossibleResults.EXCEPTION])
+
+        self.assertEqual(4, results[PossibleResults.RETURN_VAL])
 
     def testRunFunctionSetupCode(self):
         program = \
@@ -310,12 +360,15 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setSetupCode(setup)
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+        self.runnableSubmission.populateResults(self.environment)
 
-        self.assertEqual(4, actualOutput)
+        results = self.environment.resultData
+
+        self.assertEqual(4, results[PossibleResults.RETURN_VAL])
 
     def testBadFunctionSetupCode(self):
         program = \
@@ -330,11 +383,16 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setSetupCode(setup)
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1000)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
 
         with self.assertRaises(InvalidTestCaseSetupCode):
-            raise runnableSubmission.getException()
+            raise results[PossibleResults.EXCEPTION]
 
     @skip("Future feature with mocks")
     def testMockImportedFunction(self):
@@ -348,12 +406,15 @@ class TestRunnableStudentSubmission(unittest.TestCase):
 
         runner.setMocks({"random.randint": SingleFunctionMock("randint", [1])})
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+        self.runnableSubmission.populateResults(self.environment)
 
-        self.assertEqual(1, actualOutput)
+        results = self.environment.resultData
+
+        self.assertEqual(1, results[PossibleResults.RETURN_VAL])
 
     def testFunctionCallsOtherFunction(self):
         program = \
@@ -366,10 +427,18 @@ class TestRunnableStudentSubmission(unittest.TestCase):
         runner = FunctionRunner("test1")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        runnableSubmission = RunnableStudentSubmission([], runner, ".", 1)
-        runnableSubmission.run()
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
 
-        actualOutput = runnableSubmission.getOutputData()[PossibleResults.RETURN_VAL]
+        self.runnableSubmission.populateResults(self.environment)
 
-        self.assertIsNone(runnableSubmission.getException())
-        self.assertEqual("hello from test2", actualOutput)
+        results = self.environment.resultData
+
+        self.assertIsNone(results[PossibleResults.EXCEPTION])
+        self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
+
+
+
+
+

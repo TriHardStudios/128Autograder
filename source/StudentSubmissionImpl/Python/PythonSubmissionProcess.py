@@ -24,6 +24,9 @@ from io import StringIO
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
 from StudentSubmission.Runners import Runner
 
+dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
+multiprocessing.reduction.dump = dill.dump
+
 SHARED_MEMORY_SIZE = 2 ** 20
 
 
@@ -220,7 +223,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         if self.studentSubmissionProcess.is_alive():
             self.studentSubmissionProcess.terminate()
-            self.timeout = True
+            self.timeoutOccurred = True
 
     def _deallocate(self):
         if self.inputSharedMem is None or self.outputSharedMem is None:
@@ -247,18 +250,17 @@ class RunnableStudentSubmission(ISubmissionProcess):
         if self.inputSharedMem is None or self.outputSharedMem is None:
             return
 
-        # If a student exits with `exit()` then we cant trust the output
-
-        outputBytes = self.outputSharedMem.buf.tobytes()
-
-        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
-        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
-            self.exception = MissingOutputDataException(self.outputSharedMem.name)
-            self._deallocate()
-            return
 
         if self.timeoutOccurred:
             self.exception = TimeoutError(f"Submission timed out after {self.timeoutTime} seconds")
+            self._deallocate()
+            return
+
+        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
+        outputBytes = self.outputSharedMem.buf.tobytes()
+
+        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+            self.exception = MissingOutputDataException(self.outputSharedMem.name)
             self._deallocate()
             return
 
@@ -289,4 +291,18 @@ class RunnableStudentSubmission(ISubmissionProcess):
         environment.resultData[PossibleResults.MOCK_SIDE_EFFECTS] =\
                 self.outputData[PossibleResults.MOCK_SIDE_EFFECTS]
 
+    @classmethod
+    def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
+        exception = environment.resultData[PossibleResults.EXCEPTION]
+        
+        if exception is None:
+            return
 
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(exception)
+
+        if isinstance(exception, EOFError):
+            errorMessage += "\n" \
+                            "Are you missing if __name__ == '__main__'?\n" \
+                            "Is your code inside of the branch?"
+
+        raise Exception(errorMessage)
