@@ -10,7 +10,7 @@ from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseS
 from Executors.common import MissingOutputDataException
 
 
-class TestRunnableStudentSubmission(unittest.TestCase):
+class TestPythonSubmissionProcess(unittest.TestCase):
     def setUp(self):
         self.environment = ExecutionEnvironment(None) # type: ignore
         self.environment.SANDBOX_LOCATION = "."
