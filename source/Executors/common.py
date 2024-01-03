@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, List
+from typing import Dict, Iterable, List
 
 
 class MissingOutputDataException(Exception):
@@ -25,10 +25,10 @@ def filterStdOut(stdOut: List[str]) -> List[str]:
 
     return filteredOutput
 
-def detectFileSystemChanges(inFiles: Iterable[str], directoryToCheck: str) -> List[str]:
+def detectFileSystemChanges(inFiles: Iterable[str], directoryToCheck: str) -> Dict[str, str]:
     files = [os.path.join(directoryToCheck, file) for file in os.listdir(directoryToCheck)]
 
-    outputFiles: List[str] = []
+    outputFiles: Dict[str, str] = {}
 
     # This ignores sub folders
     for file in files:
@@ -45,6 +45,6 @@ def detectFileSystemChanges(inFiles: Iterable[str], directoryToCheck: str) -> Li
         if file in inFiles:
             continue
 
-        outputFiles.append(file)
+        outputFiles[os.path.basename(file)] = file
 
     return outputFiles

@@ -473,5 +473,5 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         shutil.rmtree(self.environment.SANDBOX_LOCATION)
 
         self.assertIn(PossibleResults.FILE_OUT, results)
-        self.assertEqual([fileLocation], results[PossibleResults.FILE_OUT])
+        self.assertDictEqual({os.path.basename(fileLocation): fileLocation}, results[PossibleResults.FILE_OUT])
 
