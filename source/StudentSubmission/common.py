@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import List, Any
-from typing_extensions import deprecated
 
-@deprecated("Marked for removal in version 2.0. Use Executors.Environment.PossibleResults instead")
 class PossibleResults(Enum):
     STDOUT = "stdout"
     RETURN_VAL = "return_val"
