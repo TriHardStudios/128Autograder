@@ -38,7 +38,8 @@ def detectFileSystemChanges(inFiles: Iterable[str], directoryToCheck: str) -> Li
         if "__" in file:
             continue
 
-        if file[0] == ".":
+        # ignore hidden files
+        if os.path.basename(file)[0] == ".":
             continue
 
         if file in inFiles:

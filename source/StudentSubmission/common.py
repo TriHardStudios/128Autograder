@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Any
 from typing_extensions import deprecated
 
 @deprecated("Marked for removal in version 2.0. Use Executors.Environment.PossibleResults instead")
@@ -19,17 +19,20 @@ class ValidationHook(Enum):
     VALIDATION = 5
 
 
-# This is a problem for future me, but basically the pickler is not picking these execeptions correctly. It is passing the message into it, 
-# Which also explains that weird error that I was getting eariler in the semester when the MissingFunctionDefination error would appear twice
-# we should prolly look into this
-
-# Not quite sure where these exceptions should be common.
 class MissingFunctionDefinition(Exception):
-    def __init__(self, _functionName: str):
+    def __init__(self, functionName: str):
         super().__init__(
-                f"Failed to find function with name: {_functionName}.\n"
+                f"Failed to find function with name: {functionName}.\n"
                 "Are you missing the function definition?"
         )
+
+        self.functionName = functionName
+
+    # https://stackoverflow.com/questions/16244923/how-to-make-a-custom-exception-class-with-multiple-init-args-pickleable
+    # Basically - reduce has to return something that we constuct the og class from
+    def __reduce__(self):
+        # Need to be (something,) so that it actually gets processed as a tuple in the pickler
+        return (MissingFunctionDefinition, (self.functionName,))
 
 class InvalidTestCaseSetupCode(Exception):
     def __init__(self, *args):

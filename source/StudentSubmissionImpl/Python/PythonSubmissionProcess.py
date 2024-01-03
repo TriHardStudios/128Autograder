@@ -305,4 +305,4 @@ class RunnableStudentSubmission(ISubmissionProcess):
                             "Are you missing if __name__ == '__main__'?\n" \
                             "Is your code inside of the branch?"
 
-        raise Exception(errorMessage)
+        raise AssertionError(errorMessage)

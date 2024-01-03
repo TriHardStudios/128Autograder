@@ -1,14 +1,12 @@
 import shutil
 from typing import Optional
 import unittest
-from unittest.mock import Mock
 import os
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 from StudentSubmission.Runners import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
-from StudentSubmission.common import MissingFunctionDefinition
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironment,PossibleResults
 
@@ -143,57 +141,12 @@ class TestExecutor(unittest.TestCase):
             )
 
         savedRun = MockRunner.run
-        MockRunner.run = lambda self: exec(program)
+        MockRunner.run = lambda _: exec(program) # type: ignore
 
         with self.assertRaises(AssertionError):
             Executor.execute(self.environment, self.runner)
 
         MockRunner.run = savedRun
-
-    @unittest.skip("This will be handled by the 'populateResults' ")
-    def testGeneratedFiles(self):
-        self.environment.files = {
-            self.TEST_FILE_LOCATION: self.OUTPUT_FILE_LOCATION
-        }
-
-        with open(self.TEST_FILE_LOCATION, 'w') as w:
-            w.write("this is a line in the file")
-
-        Executor.setup(self.environment, self.runner)
-
-        with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
-            w.write("this is a line in the file")
-
-        Executor.postRun(self.environment, MockSubmissionProcess(), raiseExceptions=True)
-
-        self.assertIn(PossibleResults.FILE_OUT, self.environment.resultData.keys())
-
-        print(self.environment.resultData)
-        expectedResults = {
-            PossibleResults.FILE_OUT: {
-                os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
-            }
-        }
-
-        self.assertDictEqual(self.environment.resultData, expectedResults)
-
-
-    @unittest.skip("This will be handled by the the python process")
-    def testEOFError(self):
-        actual = Executor._processException(EOFError())
-
-        self.assertIn("missing if __name__ == '__main__'", actual)
-
-
-    @unittest.skip("This will be handled the python process")
-    def testMissingFunctionDefinition(self):
-        functionName = "func1"
-        actual = Executor._processException(MissingFunctionDefinition(functionName))
-
-        self.assertIn(functionName, actual)
-        self.assertIn("missing the function definition", actual)
-        self.assertEqual(actual.count("missing the function definition"), 1)
-
 
     def testSandboxNotCreatedCleanup(self):
         exception = None

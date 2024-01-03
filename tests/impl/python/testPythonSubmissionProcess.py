@@ -1,3 +1,5 @@
+import os
+import shutil
 import unittest
 from unittest import skip
 
@@ -168,13 +170,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
     def testMissingFunctionDeclaration(self):
         program = \
-            (
-                "def ignoreMe():\n"
+                "def ignoreMe():\n"\
                 "   return True\n"
-            )
 
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
+        self.environment.timeout = 10000
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
@@ -184,8 +185,13 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         results = self.environment.resultData
 
-        with self.assertRaises(MissingFunctionDefinition):
+        with self.assertRaises(MissingFunctionDefinition) as ex:
             raise results[PossibleResults.EXCEPTION]
+
+        exceptionText = str(ex.exception)
+
+        self.assertIn("missing the function definition", exceptionText)
+        self.assertEqual(exceptionText.count("missing the function definition"), 1)
 
     def testTerminateInfiniteLoop(self):
         program = \
@@ -260,7 +266,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with self.assertRaises(RecursionError):
             raise results[PossibleResults.EXCEPTION]
 
+        # Make sure that data is still populated even when we have an error
         self.assertIn(PossibleResults.STDOUT, results)
+        self.assertTrue(len(results[PossibleResults.STDOUT]) > 10)
 
     def testHandledExceptionBlockedInput(self):
         program = \
@@ -278,10 +286,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        with self.assertRaises(AssertionError) as ex:
+            self.runnableSubmission.processAndRaiseExceptions(self.environment)
 
-        with self.assertRaises(EOFError):
-            raise results[PossibleResults.EXCEPTION]
+        exceptionText = str(ex.exception)
+
+        self.assertIn("missing if __name__ == '__main__'", exceptionText)
 
     def testHandleExit(self):
         program = \
@@ -438,7 +448,30 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.assertIsNone(results[PossibleResults.EXCEPTION])
         self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
 
+    def testFindNewFiles(self):
+        program = "pass"
 
+        self.environment.SANDBOX_LOCATION = "./sandbox"
+        os.mkdir(self.environment.SANDBOX_LOCATION)
 
+        fileLocation = os.path.join(self.environment.SANDBOX_LOCATION, "file.txt")
 
+        with open(fileLocation, 'w') as w:
+            w.write("this is a line in the file")
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        shutil.rmtree(self.environment.SANDBOX_LOCATION)
+
+        self.assertIn(PossibleResults.FILE_OUT, results)
+        self.assertEqual([fileLocation], results[PossibleResults.FILE_OUT])
 
