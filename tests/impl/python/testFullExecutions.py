@@ -68,10 +68,11 @@ class TestFullExecutions(unittest.TestCase):
         with open(os.path.join(self.DATA_DIRECTORY, self.TEST_FILE_NAME), 'w') as w:
             w.write(expectedOutput)
 
-        self.writePythonFile("main.py", program)
+        self.writePythonFile("test_code.py", program)
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .enableLooseMainMatching()\
                 .load()\
                 .build()\
                 .validate()
@@ -152,7 +153,7 @@ class TestFullExecutions(unittest.TestCase):
                 f"print('OUTPUT {expectedOutput}')\n"\
                 "raise Exception()"
 
-        self.writePythonFile("file.py", program)
+        self.writePythonFile("test_code.py", program)
 
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
