@@ -1,5 +1,5 @@
 import unittest
-from TestingFramework import SingleFunctionMock
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
 class TestSingleFunctionMock(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestSingleFunctionMock(unittest.TestCase):
         def funcToMock():
             return "hello"
 
-        funcToMock = SingleFunctionMock("funcToMock", ["goodbye"])
+        funcToMock = SingleFunctionMock("funcToMock", ["goodbye"]) # type: ignore
 
         self.assertEqual("goodbye", funcToMock())
 
@@ -18,7 +18,7 @@ class TestSingleFunctionMock(unittest.TestCase):
 
         sideEffects = [1, 2, 3, 4, 5]
 
-        funcToMock = SingleFunctionMock("funcToMock", sideEffects)
+        funcToMock = SingleFunctionMock("funcToMock", sideEffects) # type: ignore
 
         actual = []
         for _ in range(10):
@@ -32,7 +32,7 @@ class TestSingleFunctionMock(unittest.TestCase):
         def funcToMock():
             return "hello"
 
-        funcToMock = SingleFunctionMock("funcToMock", None)
+        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
 
         self.assertIsNone(funcToMock())
 
@@ -42,7 +42,7 @@ class TestSingleFunctionMock(unittest.TestCase):
 
         funcToMock()
 
-        funcToMock = SingleFunctionMock("funcToMock", None)
+        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
 
         funcToMock()
 
@@ -53,7 +53,7 @@ class TestSingleFunctionMock(unittest.TestCase):
         def funcToMock():
             return "hello"
 
-        funcToMock = SingleFunctionMock("funcToMock", None)
+        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
 
         funcToMock(1, 2, 3)
 
@@ -63,7 +63,7 @@ class TestSingleFunctionMock(unittest.TestCase):
         def funcToMock():
             return "hello"
 
-        funcToMock = SingleFunctionMock("funcToMock", None)
+        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
 
         for i in range(10):
             funcToMock(i, i, i)
