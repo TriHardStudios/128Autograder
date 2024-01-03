@@ -1,6 +1,6 @@
 import sys
 from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
-from TestingFramework import TestRegister
+from TestingFramework.TestRegister import TestRegister
 from utils.config.Config import AutograderConfiguration, AutograderConfigurationBuilder
 from utils import gradescopePostProcessing
 

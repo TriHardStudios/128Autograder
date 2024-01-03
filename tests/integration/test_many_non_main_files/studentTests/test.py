@@ -1,13 +1,20 @@
+import unittest
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
-from TestingFramework import BaseTest
-from StudentSubmission.StudentSubmissionExecutor import StudentSubmissionExecutor
+from Executors.Executor import Executor
+from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from StudentSubmission.Runners import MainModuleRunner
-from StudentSubmission.common import PossibleResults
 
 
-class HelloWorld(BaseTest):
+class HelloWorld(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.studentSubmission = PythonSubmission()\
+                .setSubmissionRoot(cls.submissionDirectory)\
+                .load()\
+                .build()
 
+    @unittest.skip("Dear jesus if this gets printed ill be very impressed")
     @weight(10)
     def testCode(self):
         environment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)

@@ -11,7 +11,7 @@ class TestRegister(TestSuite):
     def __init__(self):
         super().__init__()
 
-        submissionDirectory: str = "/autograder/submission/"
+        self.submissionDirectory: str = "/autograder/submission/"
         testPath: str = "/autograder/source/studentTests"
         # If we are running locally - use a relative path
         if len(sys.argv) == 2 and sys.argv[1] == "--local":
@@ -37,6 +37,3 @@ class TestRegister(TestSuite):
             testPath = "studentTests"
 
         self.addTests(loader.defaultTestLoader.discover(testPath))
-
-
-
