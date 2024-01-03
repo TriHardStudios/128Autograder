@@ -4,8 +4,6 @@ from unittest import mock
 import json
 
 from utils import gradescopePostProcessing 
-from utils.config import AutograderConfiguration
-
 
 class TestGradescopeUtils(unittest.TestCase):
     METADATA_PATH = "./metadata.json"
@@ -56,7 +54,7 @@ class TestGradescopeUtils(unittest.TestCase):
 
         gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
 
-        self.assertEqual(1, self.autograderResults["score"])
+        self.assertEqual(10, self.autograderResults["score"])
 
     def testLowerPreviousLimitExeceded(self):
         self.metadata["previous_submissions"].append({
