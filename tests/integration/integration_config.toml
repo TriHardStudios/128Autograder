@@ -4,6 +4,8 @@ semester="F22"
 [config]
     autograder_version="1.0.3"
 
+    test_directory = "studentTests"
+
     enforce_submission_limit=true
     submission_limit=3
 

@@ -2,25 +2,34 @@ import unittest
 from gradescope_utils.autograder_utils.decorators import weight, number, visibility
 
 from Executors.Executor import Executor
+from Executors.Environment import ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
+from utils.config.Config import AutograderConfigurationProvider
 from StudentSubmission.Runners import MainModuleRunner
 
 
 class HelloWorld(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.autograderConfig = AutograderConfigurationProvider.get()
+
         cls.studentSubmission = PythonSubmission()\
-                .setSubmissionRoot(cls.submissionDirectory)\
+                .setSubmissionRoot(cls.autograderConfig.config.student_submission_directory)\
+                .enableLooseMainMatching()\
                 .load()\
                 .build()
 
-    @unittest.skip("Dear jesus if this gets printed ill be very impressed")
+    def setUp(self) -> None:
+        self.runner = MainModuleRunner()
+        self.environmentBuilder = ExecutionEnvironmentBuilder(self.studentSubmission)
+
     @weight(10)
     def testCode(self):
-        environment = StudentSubmissionExecutor.generateNewExecutionEnvironment(self.studentSubmission)
-        runner = MainModuleRunner()
+        environment = self.environmentBuilder.build()
 
-        StudentSubmissionExecutor.execute(environment, runner)
 
-        actualOutput = StudentSubmissionExecutor.getOrAssert(environment, PossibleResults.STDOUT)
+        Executor.execute(environment, self.runner)
+
+        actualOutput = getOrAssert(environment, PossibleResults.STDOUT)
+
         self.assertEqual("Hello World", actualOutput[0])

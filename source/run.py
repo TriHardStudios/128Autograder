@@ -1,8 +1,6 @@
 import sys
 import unittest
 from unittest.suite import TestSuite
-from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
-from TestingFramework.TestRegister import TestRegister
 from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
 from utils.Gradescope import gradescopePostProcessing
 import argparse
@@ -15,6 +13,9 @@ def processArgs() -> argparse.Namespace:
 
     parser.add_argument("--test-directory", default=None,
                         help="Set the test directory")
+
+    parser.add_argument("--config-file", default="./config.toml", 
+                        help="Set the location of the config file")
 
     options, remaining = parser.parse_known_args()
     
@@ -35,29 +36,28 @@ def main():
     METADATA_PATH = "/autograder/submission_metadata.json"
 
     autograderConfig = AutograderConfigurationBuilder()\
-        .fromTOML()\
+        .fromTOML(file=options.config_file)\
         .setStudentSubmissionDirectory(options.submission_directory)\
         .setTestDirectory(options.test_directory)\
         .build()
 
     AutograderConfigurationProvider.set(autograderConfig)
 
-    testSuite = TestSuite(
-            unittest.loader.defaultTestLoader\
+    tests = unittest.loader.defaultTestLoader\
                     .discover(autograderConfig.config.test_directory)
-    )
 
     if options.unit_test_only:
         from BetterPyUnitFormat.BetterPyUnitTestRunner import BetterPyUnitTestRunner
         testRunner = BetterPyUnitTestRunner()
-        testRunner.run(testSuite)
+        testRunner.run(tests)
         return
 
     with open(resultsPath, 'w') as results:
+        from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
         testRunner = JSONTestRunner(visibility='visible',
                                     stream=results,
                                     post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfig, METADATA_PATH))
-        testRunner.run(testSuite)
+        testRunner.run(tests)
 
 
 if __name__ == "__main__":

@@ -44,7 +44,7 @@ class StudentSubmissionException(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
 
-class ValidationError(AssertionError):
+class ValidationError(Exception):
     @staticmethod
     def combineErrorMessages(exceptions: List[Exception]) -> str:
         msg = ""
