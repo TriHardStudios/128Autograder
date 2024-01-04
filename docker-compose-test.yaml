@@ -1,8 +1,6 @@
 version: "3"
 services:
   test_submission_name_with_spaces:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
@@ -14,8 +12,6 @@ services:
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
   test_many_non_main_files:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
@@ -27,8 +23,6 @@ services:
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
   test_build_move_test_cases:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
@@ -38,8 +32,6 @@ services:
       - "./tests/integration/test_build_move_test_cases/bin:/app/bin"
 
   test_build_move_starter_code:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
@@ -49,8 +41,6 @@ services:
       - "./tests/integration/test_build_move_starter_code/bin:/app/bin"
 
   test_build_move_data_files:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
