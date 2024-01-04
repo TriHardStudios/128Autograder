@@ -3,9 +3,7 @@ import unittest
 from unittest import mock
 import json
 
-from utils import gradescopePostProcessing 
-from utils.config import AutograderConfiguration
-
+from utils.Gradescope import gradescopePostProcessing 
 
 class TestGradescopeUtils(unittest.TestCase):
     METADATA_PATH = "./metadata.json"
@@ -31,19 +29,19 @@ class TestGradescopeUtils(unittest.TestCase):
     def testNoPriorSubmissions(self):
         self.writeMetadata()
 
+        self.autograderResults["score"] = 10
 
-        self.autograderConfig.config.submission_limit = 1000
+        self.autograderConfig.config.submission_limit = 3
         self.autograderConfig.config.take_highest = True
-
 
         gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
 
-        self.assertEqual(0, self.autograderResults["score"])
+        self.assertEqual(10, self.autograderResults["score"])
 
     def testHigherPriorSubmission(self):
         self.metadata["previous_submissions"].append({
             "results": {
-                "score": 1
+                "score": 10
             }
 
         })
@@ -56,10 +54,85 @@ class TestGradescopeUtils(unittest.TestCase):
 
         gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
 
-        self.assertEqual(1, self.autograderResults["score"])
+        self.assertEqual(10, self.autograderResults["score"])
+
+    def testLowerPreviousLimitExeceded(self):
+        self.metadata["previous_submissions"].append({
+            "results": {
+                "score": 9
+            }
+        })
+
+        self.metadata["previous_submissions"].append({
+            "results": {
+                "score": 9.5
+            }
+        })
+
+        self.metadata["previous_submissions"].append({
+            "results": {
+                "score": 2
+            }
+        })
+
+        self.autograderResults["score"] = 10
+
+        self.writeMetadata()
+
+        self.autograderConfig.config.submission_limit = 3
+        self.autograderConfig.config.take_highest = True
 
 
+        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+
+        self.assertEqual(9.5, self.autograderResults["score"])
+
+    def testLowerPrevious(self):
+        self.metadata["previous_submissions"].append({
+            "results": {
+                "score": 9
+            }
+        })
+
+        self.metadata["previous_submissions"].append({
+            "results": {
+                "score": 9.5
+            }
+        })
+
+        self.autograderResults["score"] = 10
+
+        self.writeMetadata()
+
+        self.autograderConfig.config.submission_limit = 3
+        self.autograderConfig.config.take_highest = True
 
 
+        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+
+        self.assertEqual(10, self.autograderResults["score"])
+
+    def testInvalidPreviousSubmission(self):
+        # This is a fix for the broken behavoir that we see if GS crashes
+
+        self.metadata["previous_submissions"].append({
+            "results": {}
+        })
+
+        self.metadata["previous_submissions"].append({
+            "results": {}
+        })
+
+        self.autograderResults["score"] = 10
+
+        self.writeMetadata()
+
+        self.autograderConfig.config.submission_limit = 3
+        self.autograderConfig.config.take_highest = True
+
+
+        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+
+        self.assertEqual(10, self.autograderResults["score"])
 
 

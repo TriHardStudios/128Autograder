@@ -1,10 +1,11 @@
-from typing import Dict, Generic, List, Optional as OptionalType, TypeVar
+import os
+from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
 from dataclasses import dataclass
 import requests
 
 from schema import And, Optional, Regex, Schema, SchemaError
 
-from .common import BaseSchema, MissingParsingLibrary, InvalidConfigException
+from utils.config.common import BaseSchema, MissingParsingLibrary, InvalidConfigException
 
 
 @dataclass(frozen=True)
@@ -44,8 +45,12 @@ class BasicConfiguration:
 
     This class defines the basic autograder configuration
     """
+    student_submission_directory: str
+    """The folder that the student submission is in"""
     autograder_version: str
     """The autograder version tag. Autograder will be kept at this version"""
+    test_directory: str
+    """The directory that the tests are in"""
     enforce_submission_limit: bool
     """Whether or not the submission limit should be enforced"""
     submission_limit: int
@@ -120,7 +125,9 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                 "assignment_name": And(str, Regex(r"^(\w+-?)+$")),
                 "semester": And(str, Regex(r"^(F|S|SUM)\d{2}$")),
                 "config": {
+                    Optional("student_submission_directory", default="."): And(str, os.path.exists),
                     "autograder_version": And(str, lambda x: x in self.TAGS),
+                    "test_directory": And(str, os.path.exists),
                     "enforce_submission_limit": bool,
                     Optional("submission_limit", default=1000): And(int, lambda x: x >= 1),
                     Optional("take_highest", default=True): bool,
@@ -184,6 +191,8 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 # Using generics as PyRight and mypy are able to infer what `T` should be from the Schema
 #  as it inherits from BaseSchema
 T = TypeVar("T")
+Builder = TypeVar("Builder", bound="AutograderConfigurationBuilder[Any]")
+
 class AutograderConfigurationBuilder(Generic[T]):
     """
     AutograderConfigurationBuilder
@@ -206,7 +215,7 @@ class AutograderConfigurationBuilder(Generic[T]):
         self.data: Dict = {}
 
 
-    def fromTOML(self, file=DEFAULT_CONFIG_FILE):
+    def fromTOML(self: Builder, file=DEFAULT_CONFIG_FILE) -> Builder:
         try:
             from tomli import load
         except ModuleNotFoundError:
@@ -220,11 +229,59 @@ class AutograderConfigurationBuilder(Generic[T]):
     # Really easy to add support for other file formats. 
     # YAML or JSON would work as well
 
-    # For now, not allowing any configuration in code. Thankfully thats really easy to add in the future
+    @staticmethod
+    def _createKeyIfDoesntExist(source: Dict[str, Any], key: str):
+        if key in source:
+            return
+
+        source[key] = {}
+
+    def setStudentSubmissionDirectory(self: Builder, studentSubmissionDirectory: OptionalType[str]) -> Builder:
+        if studentSubmissionDirectory is None:
+            return self
+
+        self._createKeyIfDoesntExist(self.data, "config")
+
+        self.data["config"]["student_submission_directory"] = studentSubmissionDirectory
+
+        return self
+
+    def setTestDirectory(self: Builder, testDirectory: str) -> Builder:
+        if testDirectory is None:
+            return self
+
+        self._createKeyIfDoesntExist(self.data, "config")
+
+        self.data["config"]["test_directory"] = testDirectory
+
+        return self
     
     def build(self) -> T:
         self.data = self.schema.validate(self.data)
         return self.schema.build(self.data)
 
-    
+class AutograderConfigurationProvider:
+    """
+    AutograderConfigurationProvider
+    ===============================
+
+    This class allows access to the same config acrossn the entire program.
+    This is using a similar pattern to signletons, however, its a bit better as its a seperate provider.
+    """
+    config: OptionalType[AutograderConfiguration] = None
+
+    @classmethod
+    def get(cls) -> AutograderConfiguration:
+        if cls.config is None:
+            raise AttributeError("Configuration has not been set!")
+
+        return cls.config
+
+    @classmethod
+    def set(cls, config: AutograderConfiguration):
+        if cls.config is not None:
+            raise AttributeError("Configuration has already been set!")
+
+        cls.config = config
+
 
