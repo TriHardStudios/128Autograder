@@ -51,11 +51,6 @@ class PythonFileValidator(AbstractValidator):
         if len(filteredFiles) != 1:
             self.addError(TooManyFilesError(filteredFiles))
 
-
-
-
-
-        
 class RequirementsValidator(AbstractValidator):
     @staticmethod
     def getValidationHook() -> ValidationHook:
