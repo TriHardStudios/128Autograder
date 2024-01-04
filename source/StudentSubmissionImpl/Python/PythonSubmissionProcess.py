@@ -22,7 +22,7 @@ import sys
 from io import StringIO
 
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from StudentSubmission.Runners import Runner
+from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
 
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
@@ -56,7 +56,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, _runner: Runner, _executionDirectory: str, timeout: int = 10):
+    def __init__(self, _runner: GenericPythonRunner, _executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -74,7 +74,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
-        self.runner: Runner = _runner
+        self.runner: GenericPythonRunner = _runner
         self.inputDataMemName: str = ""
         self.outputDataMemName: str = ""
         self.executionDirectory: str = _executionDirectory
@@ -179,7 +179,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.inputSharedMem: Optional[shared_memory.SharedMemory] = None
         self.outputSharedMem: Optional[shared_memory.SharedMemory] = None
 
-        self.runner: Optional[Runner] = None
+        self.runner: Optional[GenericPythonRunner] = None
         self.executionDirectory: str = "."
         self.studentSubmissionProcess: Optional[StudentSubmissionProcess] = None
         self.exception: Optional[Exception] = None
@@ -187,7 +187,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.timeoutOccurred: bool = False
         self.timeoutTime: int =  0
         
-    def setup(self, environment: ExecutionEnvironment, runner: Runner):
+    def setup(self, environment: ExecutionEnvironment, runner: GenericPythonRunner):
         """
         Description
         ---

@@ -5,7 +5,7 @@ from unittest import skip
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
 from Executors.Environment import PossibleResults
-from StudentSubmission.Runners import MainModuleRunner, FunctionRunner
+from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
 from Executors.Environment import ExecutionEnvironment
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode

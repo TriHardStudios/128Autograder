@@ -4,7 +4,7 @@ import unittest
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, PossibleResults, getOrAssert
-from StudentSubmission.Runners import MainModuleRunner
+from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 
 
@@ -16,13 +16,6 @@ class TestFullExecutions(unittest.TestCase):
 
     PYTHON_PROGRAM_DIRECTORY: str = "./testPrograms"
     TEST_IMPORT_NAME = os.path.join(PYTHON_PROGRAM_DIRECTORY, "mod1.py")
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-        from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
-        # This will need to be handled a bit differently imo
-        SubmissionProcessFactory.register(PythonSubmission, RunnableStudentSubmission)
 
     def setUp(self) -> None:
         self.runner: MainModuleRunner = MainModuleRunner()
