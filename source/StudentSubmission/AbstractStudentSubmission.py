@@ -1,5 +1,4 @@
 import abc
-from os import PathLike
 from typing import Generic, List, Set, TypeVar, Any, Union, Dict
 
 from .common import ValidationError, ValidationHook

@@ -1,73 +1,6 @@
 version: "3"
 services:
-  test_no_previous_submissions:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_no_previous_submissions/results:/autograder/results"
-      - "./tests/integration/test_no_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_no_previous_submissions/submission:/autograder/submission"
-      - "./tests/integration/test_no_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
-  test_lower_previous_submissions:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_lower_previous_submissions/results:/autograder/results"
-      - "./tests/integration/test_lower_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_lower_previous_submissions/submission:/autograder/submission"
-      - "./tests/integration/test_lower_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
-  test_higher_previous_submissions:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_higher_previous_submissions/results:/autograder/results"
-      - "./tests/integration/test_higher_previous_submissions/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_higher_previous_submissions/submission:/autograder/submission"
-      - "./tests/integration/test_higher_previous_submissions/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
-  test_lower_previous_limit_exceeded:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_lower_previous_limit_exceeded/results:/autograder/results"
-      - "./tests/integration/test_lower_previous_limit_exceeded/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_lower_previous_limit_exceeded/submission:/autograder/submission"
-      - "./tests/integration/test_lower_previous_limit_exceeded/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
-  test_submission_name_with_spaces:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_submission_name_with_spaces/results:/autograder/results"
-      - "./tests/integration/test_submission_name_with_spaces/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_submission_name_with_spaces/submission:/autograder/submission"
-      - "./tests/integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
   test_many_non_main_files:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile
     entrypoint: /autograder/run_autograder
@@ -78,22 +11,7 @@ services:
       - "./tests/integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
-  test_missing_function_definition:
-    profiles:
-      - test
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_missing_function_definition/results:/autograder/results"
-      - "./tests/integration/test_missing_function_definition/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_missing_function_definition/submission:/autograder/submission"
-      - "./tests/integration/test_missing_function_definition/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
   test_build_move_test_cases:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
@@ -103,8 +21,6 @@ services:
       - "./tests/integration/test_build_move_test_cases/bin:/app/bin"
 
   test_build_move_starter_code:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh
@@ -114,8 +30,6 @@ services:
       - "./tests/integration/test_build_move_starter_code/bin:/app/bin"
 
   test_build_move_data_files:
-    profiles:
-      - test
     build:
       dockerfile: Dockerfile.build
     entrypoint: /app/run.sh

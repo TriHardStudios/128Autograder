@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Any
 
 class PossibleResults(Enum):
     STDOUT = "stdout"
@@ -17,22 +17,20 @@ class ValidationHook(Enum):
     VALIDATION = 5
 
 
-# This is a problem for future me, but basically the pickler is not picking these execeptions correctly. It is passing the message into it, 
-# Which also explains that weird error that I was getting eariler in the semester when the MissingFunctionDefination error would appear twice
-# we should prolly look into this
-class MissingOutputDataException(Exception):
-    def __init__(self, _outputFileName):
-        super().__init__("Output results are NULL.\n"
-                         f"Failed to parse results in {_outputFileName}.\n"
-                         f"Submission possibly crashed or terminated before harness could write to {_outputFileName}.")
-
-
 class MissingFunctionDefinition(Exception):
-    def __init__(self, _functionName: str):
+    def __init__(self, functionName: str):
         super().__init__(
-                f"Failed to find function with name: {_functionName}.\n"
+                f"Failed to find function with name: {functionName}.\n"
                 "Are you missing the function definition?"
         )
+
+        self.functionName = functionName
+
+    # https://stackoverflow.com/questions/16244923/how-to-make-a-custom-exception-class-with-multiple-init-args-pickleable
+    # Basically - reduce has to return something that we constuct the og class from
+    def __reduce__(self):
+        # Need to be (something,) so that it actually gets processed as a tuple in the pickler
+        return (MissingFunctionDefinition, (self.functionName,))
 
 class InvalidTestCaseSetupCode(Exception):
     def __init__(self, *args):
@@ -46,7 +44,7 @@ class StudentSubmissionException(Exception):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
 
-class ValidationError(AssertionError):
+class ValidationError(Exception):
     @staticmethod
     def combineErrorMessages(exceptions: List[Exception]) -> str:
         msg = ""
@@ -60,19 +58,3 @@ class ValidationError(AssertionError):
 
         super().__init__("Validation Errors:\n" + msg)
 
-def filterStdOut(_stdOut: list[str]) -> list[str]:
-    """
-    This function takes in a list representing the output from the program. It includes ALL output,
-    so lines may appear as 'NUMBER> OUTPUT 3' where we only care about what is right after the OUTPUT statement
-    This is adapted from John Henke's implementation
-
-    :param _stdOut: The raw stdout from the program
-    :returns: the same output with the garbage removed
-    """
-
-    filteredOutput: list[str] = []
-    for line in _stdOut:
-        if "output " in line.lower():
-            filteredOutput.append(line[line.lower().find("output ") + 7:])
-
-    return filteredOutput

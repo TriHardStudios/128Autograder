@@ -90,7 +90,7 @@ command_line = "-m unittest"
 concurrency = ["multiprocessing"]
 # Omit testing files, omit dynamic files, omit __init__.py
 # Doing it at the run level as it will that means they wont be run in the first place
-omit = ["sandbox/*", "test_code", "setup_code", "TestRegister.py", "BaseTest.py", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "StudentSubmission.py", "StudentSubmissionExecutor.py"]
+omit = ["sandbox/*", "test_code", "test_code.py", "setup_code", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "StudentSubmission.py", "StudentSubmissionExecutor.py"]
 
 [tool.coverage.report]
 fail_under = 75

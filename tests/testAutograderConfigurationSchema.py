@@ -3,7 +3,7 @@ import re
 import unittest
 import unittest.mock as mock
 
-from utils.config import AutograderConfigurationSchema, InvalidConfigException
+from utils.config.Config import AutograderConfigurationSchema, InvalidConfigException
 
 
 def mockRequestsGet(url, **kwargs):
@@ -33,6 +33,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
             "semester": "F99",
             "config": {
                 "autograder_version": "2.0.0",
+                "test_directory": ".",
                 "enforce_submission_limit": True,
                 "perfect_score": 10,
                 "max_score": 10,
