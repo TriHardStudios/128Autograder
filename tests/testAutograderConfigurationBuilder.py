@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 import shutil
 import unittest
 
-from utils.config import AutograderConfigurationBuilder
+from utils.config.Config import AutograderConfigurationBuilder
 from utils.config.common import BaseSchema
 
 
@@ -11,6 +11,7 @@ from utils.config.common import BaseSchema
 class MockConfiguration:
     string_property: str
     int_property: int
+    config: dict = field(default_factory=dict)
 
 class MockSchema(BaseSchema[MockConfiguration]):
     def __init__(self) -> None:
@@ -71,5 +72,22 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
             AutograderConfigurationBuilder(configSchema=MockSchema())\
                 .fromTOML(file=self.DATA_FILE)\
                 .build()
+
+    def testCreateKeyAsNeeded(self):
+        expectedDir = "./huzzah"
+
+        with open(self.DATA_FILE, 'w') as w:
+            w.write(
+                f"string_property = 'hello'\n"\
+                f"int_property = 0\n"
+            )
+
+        actual = \
+                AutograderConfigurationBuilder(configSchema=MockSchema())\
+                .fromTOML(file=self.DATA_FILE)\
+                .setStudentSubmissionDirectory(expectedDir)\
+                .build()
+
+        self.assertEqual(expectedDir, actual.config["student_submission_directory"])
 
 
