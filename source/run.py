@@ -1,9 +1,7 @@
-import sys
 import unittest
-from unittest.suite import TestSuite
+import argparse
 from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
 from utils.Gradescope import gradescopePostProcessing
-import argparse
 
 def processArgs() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")

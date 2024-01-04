@@ -3,7 +3,7 @@ import os
 import shutil
 import unittest
 
-from utils.config.Config import AutograderConfigurationBuilder
+from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
 from utils.config.common import BaseSchema
 
 
@@ -90,4 +90,47 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
         self.assertEqual(expectedDir, actual.config["student_submission_directory"])
 
+    def testNoneDoesntModifyConfig(self):
+        with open(self.DATA_FILE, 'w') as w:
+            w.write(
+                f"string_property = 'hello'\n"\
+                f"int_property = 0\n"
+            )
 
+        actual = \
+                AutograderConfigurationBuilder(configSchema=MockSchema())\
+                .fromTOML(file=self.DATA_FILE)\
+                .setStudentSubmissionDirectory(None)\
+                .setTestDirectory(None)\
+                .build()
+
+        self.assertNotIn("test_directory", actual.config)
+        self.assertNotIn("student_submission_directory", actual.config)
+
+
+
+class TestAutograderConfigurationProvider(unittest.TestCase):
+    # Ig i need tests for this??
+    CONFIG = MockConfiguration("string!", 10)
+
+    def testOnlyOneSetAllowed(self):
+        AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+
+        with self.assertRaises(AttributeError):
+            AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+
+        AutograderConfigurationProvider.config = None
+
+    def testEmptyGetError(self):
+        with self.assertRaises(AttributeError):
+            AutograderConfigurationProvider.get()
+
+        AutograderConfigurationProvider.config = None
+
+    def testGetConfig(self):
+        AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+
+        self.assertEqual(self.CONFIG, AutograderConfigurationProvider.get())
+
+        AutograderConfigurationProvider.config = None
+        
