@@ -1,11 +1,11 @@
 import unittest
-from gradescope_utils.autograder_utils.decorators import weight, number, visibility
+from gradescope_utils.autograder_utils.decorators import weight
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
-from StudentSubmission.Runners import MainModuleRunner
+from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner
 
 
 class HelloWorld(unittest.TestCase):
