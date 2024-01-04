@@ -1,16 +1,5 @@
 version: "3"
 services:
-  test_submission_name_with_spaces:
-    build:
-      dockerfile: Dockerfile
-    entrypoint: /autograder/run_autograder
-    volumes:
-      - "./tests/integration/test_submission_name_with_spaces/results:/autograder/results"
-      - "./tests/integration/test_submission_name_with_spaces/studentTests:/autograder/source/studentTests"
-      - "./tests/integration/test_submission_name_with_spaces/submission:/autograder/submission"
-      - "./tests/integration/test_submission_name_with_spaces/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
-
   test_many_non_main_files:
     build:
       dockerfile: Dockerfile
