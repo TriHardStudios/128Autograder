@@ -8,11 +8,10 @@ on:
 jobs:
   build:
 
-    runs-on: ${{matrix.windows-version}}
+    runs-on: "windows-latest"
     strategy:
       matrix:
         python-version: ["3.10", "3.11" ]
-        windows-version: ["windows-2022", "windows-2019"]
 
     steps:
       - uses: actions/checkout@v3

@@ -13,6 +13,9 @@ which is nice.
 :author: Gregory Bell
 :date: 6/24/23
 """
+import warnings
+
+warnings.warn("StudentSubmissionExecutor is marked for removal in version 2.0", DeprecationWarning, 3)
 
 import dataclasses
 import multiprocessing

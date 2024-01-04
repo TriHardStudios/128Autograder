@@ -12,6 +12,10 @@ MUST SUPPORT:
 -   supporting multiple files
 
 """
+import warnings
+
+warnings.warn("StudentSubmission is marked for removal in version 2.0", DeprecationWarning, 3)
+
 import ast
 import os
 import sys

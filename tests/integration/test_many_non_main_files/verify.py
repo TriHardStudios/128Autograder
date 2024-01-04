@@ -14,4 +14,4 @@ files = os.listdir('./submission')
 files.sort()
 
 assert "Validation Error" in testResult["output"]
-assert str(files) in testResult["output"]
+assert ", ".join(files) in testResult["output"]

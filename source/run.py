@@ -1,33 +1,62 @@
-import sys
-from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
-from TestingFramework import TestRegister
-from utils.config.Config import AutograderConfiguration, AutograderConfigurationBuilder
-from utils import gradescopePostProcessing
+import unittest
+import argparse
+from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
+from utils.Gradescope import gradescopePostProcessing
 
-def main(runUnitTestsOnly: bool, resultsPath: str, autograderConfiguration: AutograderConfiguration):
-    testSuite = TestRegister()
+def processArgs() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")
 
-    if runUnitTestsOnly:
+    parser.add_argument("--unit-test-only", action="store_true",
+                        help="Only run the unit tests associated with this autograder")
+
+    parser.add_argument("--test-directory", default=None,
+                        help="Set the test directory")
+
+    parser.add_argument("--config-file", default="./config.toml", 
+                        help="Set the location of the config file")
+
+    options, remaining = parser.parse_known_args()
+    
+    options.submission_directory = "/autograder/submission"
+    
+    if options.unit_test_only:
+        parser.add_argument("--submission-directory", required=True,
+                            help="Set the directory for the student's submission")
+
+    options = parser.parse_args(args=remaining, namespace=options)
+
+    return options
+
+def main():
+    options = processArgs()
+
+    resultsPath: str = "/autograder/results/results.json"
+    METADATA_PATH = "/autograder/submission_metadata.json"
+
+    autograderConfig = AutograderConfigurationBuilder()\
+        .fromTOML(file=options.config_file)\
+        .setStudentSubmissionDirectory(options.submission_directory)\
+        .setTestDirectory(options.test_directory)\
+        .build()
+
+    AutograderConfigurationProvider.set(autograderConfig)
+
+    tests = unittest.loader.defaultTestLoader\
+                    .discover(autograderConfig.config.test_directory)
+
+    if options.unit_test_only:
         from BetterPyUnitFormat.BetterPyUnitTestRunner import BetterPyUnitTestRunner
         testRunner = BetterPyUnitTestRunner()
-        testRunner.run(testSuite)
+        testRunner.run(tests)
         return
 
-    METADATA_PATH = "/autograder/submission_metadata.json"
-    with open(resultsPath, 'w+') as results:
+    with open(resultsPath, 'w') as results:
+        from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
         testRunner = JSONTestRunner(visibility='visible',
                                     stream=results,
-                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfiguration, METADATA_PATH))
-        testRunner.run(testSuite)
+                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfig, METADATA_PATH))
+        testRunner.run(tests)
 
 
 if __name__ == "__main__":
-    resultsPath: str = "/autograder/results/results.json"
-    if len(sys.argv) == 2 and sys.argv[1] == "--local":
-        resultsPath = "../student/results/results.json"
-
-    autograderConfig = AutograderConfigurationBuilder()\
-        .fromTOML()\
-        .build()
-
-    main(len(sys.argv) == 3 and sys.argv[1] == "--unit-test-only", resultsPath, autograderConfig)
+    main()

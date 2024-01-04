@@ -9,20 +9,23 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
-import warnings
+from typing import Dict, Optional
+from Executors.Environment import ExecutionEnvironment, PossibleResults
 
-warnings.warn("RunnableStudentSubmission is marked for removal in version 2.0", DeprecationWarning, 3)
+from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
+import dill
 import multiprocessing
 import multiprocessing.shared_memory as shared_memory
 import os
 import sys
 from io import StringIO
 
-import dill
+from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
+from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
 
-from StudentSubmission.common import PossibleResults, MissingOutputDataException
-from StudentSubmission.Runners import Runner
+dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
+multiprocessing.reduction.dump = dill.dump
 
 SHARED_MEMORY_SIZE = 2 ** 20
 
@@ -53,7 +56,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, _runner: Runner, _executionDirectory: str, timeout: int = 10):
+    def __init__(self, _runner: GenericPythonRunner, _executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -71,9 +74,9 @@ class StudentSubmissionProcess(multiprocessing.Process):
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
-        self.runner: Runner = _runner
-        self.inputDataMemName: str = "input_data"
-        self.outputDataMemName: str = "output_data"
+        self.runner: GenericPythonRunner = _runner
+        self.inputDataMemName: str = ""
+        self.outputDataMemName: str = ""
         self.executionDirectory: str = _executionDirectory
         self.timeout: int = timeout
 
@@ -111,7 +114,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         os.chdir(self.executionDirectory)
         sys.path.append(os.getcwd())
 
-        sharedInput = multiprocessing.shared_memory.SharedMemory(self.inputDataMemName)
+        sharedInput = shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())
         # Reformat the stdin so that we
         sys.stdin = StringIO("".join([line + "\n" for line in deserializedData]))
@@ -170,44 +173,49 @@ class StudentSubmissionProcess(multiprocessing.Process):
         multiprocessing.Process.join(self, timeout=0)
 
 
-class RunnableStudentSubmission:
+class RunnableStudentSubmission(ISubmissionProcess):
 
-    def __init__(self, _stdin: list[str], _runner: Runner, _executionDirectory: str, _timeout: int):
-        self.stdin: list[str] = _stdin
-        self.inputSharedMem: shared_memory.SharedMemory | None = None
-        self.outputSharedMem: shared_memory.SharedMemory | None = None
+    def __init__(self):
+        self.inputSharedMem: Optional[shared_memory.SharedMemory] = None
+        self.outputSharedMem: Optional[shared_memory.SharedMemory] = None
 
-        self.runner = _runner
-        self.executionDirectory = _executionDirectory
-        self.studentSubmissionProcess = StudentSubmissionProcess(_runner, _executionDirectory, _timeout)
+        self.runner: Optional[GenericPythonRunner] = None
+        self.executionDirectory: str = "."
+        self.studentSubmissionProcess: Optional[StudentSubmissionProcess] = None
+        self.exception: Optional[Exception] = None
+        self.outputData: Dict[PossibleResults, object] = {}
         self.timeoutOccurred: bool = False
-        self.exception: Exception | None = None
-        self.outputData: dict[PossibleResults, object] = {}
-
-    def setup(self, _memorySize: int):
+        self.timeoutTime: int =  0
+        
+    def setup(self, environment: ExecutionEnvironment, runner: GenericPythonRunner):
         """
-        This function sets up the data that will be shared between the two processes.
+        Description
+        ---
+
+        This function allocates the shared memory that will be passed to the student's submission
 
         Setting up the data here then tearing it down in the ref:`RunnableStudentSubmission.cleanup` fixes
         the issue with windows GC cleaning up the memory before we are done with it as there will be at least one
         active hook for each memory resource til ``cleanup`` is called.
 
-        :param _memorySize: The amount of memory that should be allocated to each memory resource. Defaults to 1 MiB
-        """
 
-        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
-        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=_memorySize)
+        """
+        self.studentSubmissionProcess = \
+                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, environment.timeout)
+
+        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
+        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
 
         self.studentSubmissionProcess.setInputDataMemName(self.inputSharedMem.name)
         self.studentSubmissionProcess.setOutputDataMenName(self.outputSharedMem.name)
 
-    def run(self):
-        self.setup(SHARED_MEMORY_SIZE)
-
-        # allocate 1 mb for the shared memory
-        serializedStdin = dill.dumps(self.stdin, dill.HIGHEST_PROTOCOL)
+        serializedStdin = dill.dumps(environment.stdin, dill.HIGHEST_PROTOCOL)
 
         self.inputSharedMem.buf[:len(serializedStdin)] = serializedStdin
+
+    def run(self):
+        if self.studentSubmissionProcess is None:
+            raise AttributeError("Process has not be initalized!")
 
         self.studentSubmissionProcess.start()
 
@@ -216,37 +224,11 @@ class RunnableStudentSubmission:
         if self.studentSubmissionProcess.is_alive():
             self.studentSubmissionProcess.terminate()
             self.timeoutOccurred = True
-            # If a timeout occurred, we can't trust any of the data in the shared memory. So don't even bother trying to
-            #  read it. Esp as the student already failed
-            self.cleanup()
+
+    def _deallocate(self):
+        if self.inputSharedMem is None or self.outputSharedMem is None:
             return
 
-        # If a student exits with `exit()` then we cant trust the output
-
-        outputBytes = self.outputSharedMem.buf.tobytes()
-
-        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
-        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
-            self.cleanup()
-
-            self.exception = MissingOutputDataException(self.outputSharedMem.name)
-
-            return
-
-        deserializedData: dict[PossibleResults, object] = dill.loads(outputBytes)
-
-        self.exception = deserializedData[PossibleResults.EXCEPTION]
-        self.outputData = deserializedData
-
-        self.cleanup()
-
-    def cleanup(self):
-        """
-        This function cleans up the shared memory object by closing the parent hook and then unlinking it.
-
-        After it is unlinked, the python garbage collector cleans it up.
-        On windows, the GC runs as soon as the last hook is closed and `unlink` is a noop
-        """
         # `close` closes the current hook
         self.inputSharedMem.close()
         # `unlink` tells the gc that it is ok to clean up this resource
@@ -256,11 +238,71 @@ class RunnableStudentSubmission:
         self.outputSharedMem.close()
         self.outputSharedMem.unlink()
 
-    def getTimeoutOccurred(self) -> bool:
-        return self.timeoutOccurred
 
-    def getException(self) -> Exception:
-        return self.exception
+    def cleanup(self):
+        """
+        This function cleans up the shared memory object by closing the parent hook and then unlinking it.
 
-    def getOutputData(self) -> dict[PossibleResults, any]:
-        return self.outputData
+        After it is unlinked, the python garbage collector cleans it up.
+        On windows, the GC runs as soon as the last hook is closed and `unlink` is a noop
+        """
+
+        if self.inputSharedMem is None or self.outputSharedMem is None:
+            return
+
+
+        if self.timeoutOccurred:
+            self.exception = TimeoutError(f"Submission timed out after {self.timeoutTime} seconds")
+            self._deallocate()
+            return
+
+        # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
+        outputBytes = self.outputSharedMem.buf.tobytes()
+
+        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+            self.exception = MissingOutputDataException(self.outputSharedMem.name)
+            self._deallocate()
+            return
+
+        deserializedData: dict[PossibleResults, object] = dill.loads(outputBytes)
+
+        self.exception = deserializedData[PossibleResults.EXCEPTION]
+        self.outputData = deserializedData
+
+        self._deallocate()
+
+    def populateResults(self, environment: ExecutionEnvironment):
+        # TODOs
+        # Handle FS changes, Process STDOUT, process exceptions (Might need to be a seperate class), and i think thats it. Basically all the post processing that the Submission Executor used to do should be moved here, as the executor shouldnt really be concerned with the results of the execution, just that they exist
+        environment.resultData[PossibleResults.EXCEPTION] = self.exception
+
+        if not self.outputData:
+            return
+
+        environment.resultData[PossibleResults.STDOUT] =\
+                filterStdOut(self.outputData[PossibleResults.STDOUT])
+
+        environment.resultData[PossibleResults.FILE_OUT] =\
+                detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
+
+        environment.resultData[PossibleResults.RETURN_VAL] =\
+                self.outputData[PossibleResults.RETURN_VAL]
+
+        environment.resultData[PossibleResults.MOCK_SIDE_EFFECTS] =\
+                self.outputData[PossibleResults.MOCK_SIDE_EFFECTS]
+
+    @classmethod
+    def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
+        exception = environment.resultData[PossibleResults.EXCEPTION]
+        
+        if exception is None:
+            return
+
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(exception)
+
+        if isinstance(exception, EOFError):
+            errorMessage += "\n" \
+                            "Are you missing if __name__ == '__main__'?\n" \
+                            "Is your code inside of the branch?"
+
+        raise AssertionError(errorMessage)
