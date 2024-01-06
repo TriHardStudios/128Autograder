@@ -7,7 +7,7 @@ SUBMISSION_DIR=$(ROOT)/student/submission
 RESULTS_DIR=$(ROOT)/student/results
 
 SRC_DIR=$(ROOT)/source
-UTIL_DIR=$(ROOT)/util
+UTIL_DIR=$(SRC_DIR)/utils
 
 BUILD_DIR=$(ROOT)/bin
 GENERATION_DIR=$(BUILD_DIR)/generation
@@ -40,8 +40,8 @@ build: $(CLEAN)
 	@echo "	Generating autograder source in $(GENERATION_DIR) from $(SRC_DIR)..."
 	@mkdir -p $(GRADESCOPE_GENERATION_DIR)
 	@mkdir -p $(STUDENT_GENERATION_DIR)
-	@bash util/prepare_for_gradescope.sh $(GRADESCOPE_GENERATION_DIR) $(SRC_DIR)
-	@bash util/prepare_for_student.sh $(STUDENT_GENERATION_DIR) $(UTIL_DIR) $(SRC_DIR)
+	@bash source/utils/prepare_for_gradescope.sh $(GRADESCOPE_GENERATION_DIR) $(SRC_DIR)
+	@bash source/utils/prepare_for_student.sh $(STUDENT_GENERATION_DIR) $(UTIL_DIR) $(SRC_DIR)
 	@echo "	Building Gradescope autograder in $(UPLOAD_DIR)/$(autograder_name).zip..."
 	@mkdir -p $(UPLOAD_DIR)
 	@echo "		Creating zip..."

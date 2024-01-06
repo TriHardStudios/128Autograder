@@ -1,72 +1,62 @@
-import sys
-import os
-import json
-from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
-from TestingFramework import TestRegister
+import unittest
+import argparse
+from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
+from utils.Gradescope import gradescopePostProcessing
 
+def processArgs() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")
 
-def gradescopePostProcessing(_results: dict, _submissionLimit: int, _takeHighest: bool):
-    if not os.path.exists("/autograder/submission_metadata.json"):
-        return
+    parser.add_argument("--unit-test-only", action="store_true",
+                        help="Only run the unit tests associated with this autograder")
 
-    # Enforce submission limit
-    submissionMetadata: dict = {}
-    with open("/autograder/submission_metadata.json", 'r') as submissionMetadataIn:
-        submissionMetadata = json.load(submissionMetadataIn)
+    parser.add_argument("--test-directory", default=None,
+                        help="Set the test directory")
 
-    previousSubmissions: list[dict] = submissionMetadata['previous_submissions']
+    parser.add_argument("--config-file", default="./config.toml", 
+                        help="Set the location of the config file")
 
-    _results['output'] = f"Submission {len(previousSubmissions) + 1} of {_submissionLimit}.\n"
+    options, remaining = parser.parse_known_args()
+    
+    options.submission_directory = "/autograder/submission"
+    
+    if options.unit_test_only:
+        parser.add_argument("--submission-directory", required=True,
+                            help="Set the directory for the student's submission")
 
-    validSubmissions: list[dict] = \
-        [previousSubmissionMetadata['results']
-         for previousSubmissionMetadata in previousSubmissions
-         if 'results' in previousSubmissionMetadata.keys()
-         ]
+    options = parser.parse_args(args=remaining, namespace=options)
 
-    validSubmissions.append(_results)
+    return options
 
-    # submission limit exceeded
-    if len(validSubmissions) > _submissionLimit:
-        _results['output'] += f"Submission limit exceeded.\n" \
-                              f"Autograder has been run on your code so you can see how you did\n" \
-                              f"but, your score will be highest of your valid submissions.\n"
-        validSubmissions = validSubmissions[:_submissionLimit]
-        # We should take the highest valid submission
-        _takeHighest = True
+def main():
+    options = processArgs()
 
-    # sorts in descending order
-    validSubmissions.sort(reverse=True, key=lambda submission: submission['score'])
+    resultsPath: str = "/autograder/results/results.json"
+    METADATA_PATH = "/autograder/submission_metadata.json"
 
-    if _takeHighest and validSubmissions[0] != _results:
-        _results['output'] += f"Score has been set to your highest valid score.\n"
-        _results['score'] = validSubmissions[0]['score']
+    autograderConfig = AutograderConfigurationBuilder()\
+        .fromTOML(file=options.config_file)\
+        .setStudentSubmissionDirectory(options.submission_directory)\
+        .setTestDirectory(options.test_directory)\
+        .build()
 
-    # ensure that negative scores arent possible
-    if _results['score'] < 0:
-        _results['output'] += f"Score has been set to a floor of 0 to ensure no negative scores.\n"
-        _results['score'] = 0
+    AutograderConfigurationProvider.set(autograderConfig)
 
+    tests = unittest.loader.defaultTestLoader\
+                    .discover(autograderConfig.config.test_directory)
 
-def main(runUnitTestsOnly: bool, _resultsPath: str | None):
-    testSuite = TestRegister()
-
-    if runUnitTestsOnly:
+    if options.unit_test_only:
         from BetterPyUnitFormat.BetterPyUnitTestRunner import BetterPyUnitTestRunner
         testRunner = BetterPyUnitTestRunner()
-        testRunner.run(testSuite)
+        testRunner.run(tests)
         return
 
-    with open(_resultsPath, 'w+') as results:
+    with open(resultsPath, 'w') as results:
+        from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
         testRunner = JSONTestRunner(visibility='visible',
                                     stream=results,
-                                    post_processor=lambda _resultsDict: gradescopePostProcessing(_resultsDict, 3, True))
-        testRunner.run(testSuite)
+                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict, autograderConfig, METADATA_PATH))
+        testRunner.run(tests)
 
 
 if __name__ == "__main__":
-    resultsPath: str = "/autograder/results/results.json"
-    if len(sys.argv) == 2 and sys.argv[1] == "--local":
-        resultsPath = "../student/results/results.json"
-
-    main(len(sys.argv) == 3 and sys.argv[1] == "--unit-test-only", resultsPath)
+    main()

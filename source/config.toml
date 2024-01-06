@@ -1,0 +1,38 @@
+assignment_name=""
+semester=""
+
+[config]
+    autograder_version=""
+
+    test_directory="./students_tests"
+
+    enforce_sumission_limit=false
+    submssion_limit=3
+
+    take_highest=true
+
+    allow_extra_credit=false
+    perfect_score=0
+    max_score=0
+
+
+[config.python]
+    # Python spefic configuration
+
+    extra_packages=[]
+    
+
+
+[build]
+    # Things that need to be considered when building
+    use_starter_code=false
+    use_data_files=false
+    
+    allow_private=true
+
+
+    private_tests_regex='^private_?\w\.py$'
+    public_tests_regex='^public_?\w\.py$'
+
+    data_file_source="./"
+
