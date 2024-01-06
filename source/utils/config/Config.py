@@ -22,6 +22,18 @@ class BuildConfiguration:
     """Whether datafiles should be pulled into the autograder"""
     allow_private: bool
     """Whether the private tests and datafiles should be kept private"""
+    build_student: bool
+    """If we should build the student autograder"""
+    build_gradescope: bool
+    """If we should build the gradescope autograder"""
+    data_files_source: str
+    """The folder that contains the datafiles for use with the autograder"""
+    student_work_folder: str
+    """The folder that should be created for the student"""
+    private_tests_regex: str
+    """The pattern that should be used to identify private tests"""
+    public_tests_regex: str
+    """The pattern that should be used to identify public tests"""
 
 @dataclass(frozen=True)
 class PythonConfiguration:
@@ -45,6 +57,8 @@ class BasicConfiguration:
 
     This class defines the basic autograder configuration
     """
+    impl_to_use: str
+    """The StudentSubmission Implementation to use"""
     student_submission_directory: str
     """The folder that the student submission is in"""
     autograder_version: str
@@ -136,9 +150,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     Optional("allow_extra_credit", default=False): bool,
                     "perfect_score": And(int, lambda x: x >= 1),
                     "max_score": And(int, lambda x: x >= 1),
-                    Optional("python"): {
-                        Optional("private_tests_regex", default=r"^private_?\w\.py$"): str,
-                        Optional("public_tests_regex", default=r"^public_?\w\.py$"): str,
+                    Optional("python", default=None): {
                         Optional("extra_packages", default=lambda: []): [{
                             "name": str,
                             "version": str,
@@ -150,8 +162,10 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     "use_data_files": bool,
                     Optional("allow_private", default=True): bool,
                     Optional("data_files_source", default="."): And(str, os.path.exists, os.path.isdir),
-                    Optional("stater_code_source", default="."): And(str, os.path.exists, ),
+                    Optional("stater_code_source", default="."): And(str, os.path.exists),
                     Optional("student_work_folder", default="student_work"): str,
+                    Optional("private_tests_regex", default=r"^private_?\w\.py$"): str,
+                    Optional("public_tests_regex", default=r"^public_?\w\.py$"): str,
                 }
             },
             ignore_extra_keys=False, name="ConfigSchema"
@@ -176,7 +190,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         impl_to_use = validated["config"]["impl_to_use"].lower()
 
-        if impl_to_use not in validated["config"]:
+        if validated["config"][impl_to_use] is None:
             raise InvalidConfigException(f"Missing Implementation Config for config.{impl_to_use}")
 
         return validated
