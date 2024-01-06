@@ -6,6 +6,9 @@ from utils.Gradescope import gradescopePostProcessing
 def processArgs() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")
 
+    parser.add_argument("--build", action="store_true", 
+                        help="Build Autograder according to config file")
+
     parser.add_argument("--unit-test-only", action="store_true",
                         help="Only run the unit tests associated with this autograder")
 
@@ -39,6 +42,11 @@ def main():
         .setTestDirectory(options.test_directory)\
         .build()
 
+
+    if options.build:
+        from utils.Build import Build
+        
+    # Only need to set the provider if we are running tests
     AutograderConfigurationProvider.set(autograderConfig)
 
     tests = unittest.loader.defaultTestLoader\

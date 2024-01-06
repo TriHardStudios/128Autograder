@@ -2,6 +2,7 @@ assignment_name=""
 semester=""
 
 [config]
+    impl_to_use=""
     autograder_version=""
 
     test_directory="./students_tests"
@@ -19,20 +20,25 @@ semester=""
 [config.python]
     # Python spefic configuration
 
+    private_tests_regex='^private_?\w\.py$'
+    public_tests_regex='^public_?\w\.py$'
     extra_packages=[]
     
 
 
 [build]
+
     # Things that need to be considered when building
     use_starter_code=false
     use_data_files=false
     
     allow_private=true
 
+    build_student=true
 
-    private_tests_regex='^private_?\w\.py$'
-    public_tests_regex='^public_?\w\.py$'
+    build_gradescope=true
 
     data_file_source="./"
+
+    student_work_folder="student_work"
 
