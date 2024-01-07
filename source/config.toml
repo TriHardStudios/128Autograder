@@ -20,8 +20,6 @@ semester=""
 [config.python]
     # Python spefic configuration
 
-    private_tests_regex='^private_?\w\.py$'
-    public_tests_regex='^public_?\w\.py$'
     extra_packages=[]
     
 
@@ -39,6 +37,9 @@ semester=""
     build_gradescope=true
 
     data_file_source="./"
+    starter_code_source="./"
 
     student_work_folder="student_work"
+    private_tests_regex='^private_?\w\.py$'
+    public_tests_regex='^public_?\w\.py$'
 
