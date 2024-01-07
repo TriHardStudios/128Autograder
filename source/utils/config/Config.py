@@ -134,6 +134,24 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         return [el["name"] for el in tags]
 
+    @staticmethod
+    def validateImplSource(implName: str) -> bool:
+        return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
+
+    @staticmethod
+    def validateDataFilesSource(dataFilesSource: str) -> bool:
+        if dataFilesSource is None:
+            return True
+
+        return os.path.exists(dataFilesSource) and os.path.isdir(dataFilesSource)
+
+    @staticmethod
+    def validateStarterCodeSource(starterCodeSource: OptionalType[str]) -> bool:
+        if starterCodeSource is None:
+            return True
+
+        return os.path.exists(starterCodeSource) and os.path.isfile(starterCodeSource)
+
     def __init__(self):
         self.TAGS = self.getAvailableTags()
 
@@ -142,7 +160,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                 "assignment_name": And(str, Regex(r"^(\w+-?)+$")),
                 "semester": And(str, Regex(r"^(F|S|SUM)\d{2}$")),
                 "config": {
-                    "impl_to_use": And(str, lambda x: x in os.listdir(self.IMPL_SOURCE)),
+                    "impl_to_use": And(str, AutograderConfigurationSchema.validateImplSource),
                     Optional("student_submission_directory", default="."): And(str, os.path.exists, os.path.isdir),
                     "autograder_version": And(str, lambda x: x in self.TAGS),
                     "test_directory": And(str, os.path.exists),
@@ -163,8 +181,10 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     "use_starter_code": bool,
                     "use_data_files": bool,
                     Optional("allow_private", default=True): bool,
-                    Optional("data_files_source", default=None): And(str, os.path.exists, os.path.isdir),
-                    Optional("stater_code_source", default=None): And(str, os.path.exists, os.path.isfile),
+                    Optional("data_files_source", default=None): And(str, AutograderConfigurationSchema.validateDataFilesSource),
+                    Optional("stater_code_source", default=None): And(str, AutograderConfigurationSchema.validateStarterCodeSource),
+                    "build_student": bool,
+                    "build_gradescope": bool,
                     Optional("student_work_folder", default="student_work"): str,
                     Optional("private_tests_regex", default=r"^private_?\w\.py$"): str,
                     Optional("public_tests_regex", default=r"^public_?\w\.py$"): str,
@@ -192,7 +212,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         impl_to_use = validated["config"]["impl_to_use"].lower()
 
-        if validated["config"][impl_to_use] is None:
+        if impl_to_use not in validated["config"] or validated["config"][impl_to_use] is None:
             raise InvalidConfigException(f"Missing Implementation Config for config.{impl_to_use}")
 
         if validated["build"]["use_starter_code"] and validated["build"]["stater_code_source"] is None:

@@ -23,6 +23,9 @@ class TestBuildFileDiscovery(unittest.TestCase):
         self.privateFiles = ["test_private_1.py", "test_private_test2.py"]
         self.publicFiles = ["test.py", "test_public.py", "test_im_crying.py"]
 
+        self.privateDataFiles = ["private_data.dat", os.path.join("private", "data.dat"), os.path.join("public", "private", "data.dat")]
+        self.publicDataFiles = ["file.dat", os.path.join("nested", "nested", "file.dat")]
+
     def setUpConfig(self):
         # There has to be a better way to setup this mock
         self.config.config.test_directory = self.TEST_ROOT
@@ -49,9 +52,21 @@ class TestBuildFileDiscovery(unittest.TestCase):
             with open(os.path.join(self.TEST_ROOT, file), "w") as w:
                 w.write("Public!")
 
+    def writeDataFiles(self):
+        for file in self.privateDataFiles:
+            path = os.path.join(self.DATA_SOURCE_ROOT, file)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as w:
+                w.write("Private!")
+
+        for file in self.publicDataFiles:
+            path = os.path.join(self.DATA_SOURCE_ROOT, file)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as w:
+                w.write("Public!")
 
     def testDiscoverPublicAndPrivateTests(self):
-        build = Build(self.config) # type: ignore
+        build = Build(self.config)
 
         self.writeTestFiles()
 
@@ -62,7 +77,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
 
     def testPrivateTestFilesWhenConflict(self):
         self.config.build.private_tests_regex=r"^test_?\w*\.py$"
-        build = Build(self.config) # type: ignore
+        build = Build(self.config)
 
         self.writeTestFiles()
 
@@ -74,7 +89,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
     def testAllPublicWhenPrivateFalse(self):
         self.config.build.allow_private = False
 
-        build = Build(self.config) # type: ignore
+        build = Build(self.config)
 
         self.writeTestFiles()
 
@@ -82,3 +97,48 @@ class TestBuildFileDiscovery(unittest.TestCase):
 
         self.assertEqual(0, len(result[FilesEnum.PRIVATE_TEST]))
         self.assertEqual(len(self.privateFiles) + len(self.publicFiles), len(result[FilesEnum.PUBLIC_TEST]))
+
+
+    def testDataFileDiscoveryIgnoresTestFiles(self):
+        self.config.build.use_data_files = True
+        self.config.build.data_files_source = self.TEST_ROOT
+
+        build = Build(self.config)
+
+        self.writeTestFiles()
+
+        result = build.discoverFiles()
+
+        self.assertEqual(0, len(result[FilesEnum.PRIVATE_DATA]))
+        self.assertEqual(0, len(result[FilesEnum.PUBLIC_DATA]))
+
+    def testDiscoverPublicAndPrivateDataFiles(self):
+        self.config.build.use_data_files = True
+
+        build = Build(self.config) 
+
+        self.writeDataFiles()
+
+        result = build.discoverFiles()
+
+        self.assertEqual(len(self.privateDataFiles), len(result[FilesEnum.PRIVATE_DATA]))
+        self.assertEqual(len(self.publicDataFiles), len(result[FilesEnum.PUBLIC_DATA]))
+
+    def testIgnoresHiddenFiles(self):
+        self.config.build.use_data_files = True
+
+        with open(os.path.join(self.DATA_SOURCE_ROOT, ".data.dat"), "w") as w:
+            w.write("Ignore!")
+
+        os.makedirs(os.path.join(self.DATA_SOURCE_ROOT, ".hidden"), exist_ok=True)
+
+        with open(os.path.join(self.DATA_SOURCE_ROOT, ".hidden", "data.dat"), "w") as w:
+            w.write("Ignore!")
+        
+        build = Build(self.config) 
+
+        result = build.discoverFiles()
+
+        self.assertEqual(0, len(result[FilesEnum.PRIVATE_DATA]))
+        self.assertEqual(0, len(result[FilesEnum.PUBLIC_DATA]))
+
