@@ -83,10 +83,6 @@ class Build():
                 Build._discoverDataFiles(allowPrivate, path, discoveredPrivateFiles, discoveredPublicFiles)
                 continue
 
-            # This might be a touch redunent, but doesnt hurt
-            if not os.path.exists(path) or not os.path.isfile(path):
-                continue
-
             if allowPrivate and "private" in path.lower():
                 discoveredPrivateFiles.append(path)
                 continue
@@ -105,7 +101,7 @@ class Build():
         """
         config = self.config.build
 
-        files: Dict[FilesEnum, List] = {
+        files: Dict[FilesEnum, List[str]] = {
             FilesEnum.PUBLIC_TEST: [],
             FilesEnum.PRIVATE_TEST: [],
             FilesEnum.PUBLIC_DATA: [],

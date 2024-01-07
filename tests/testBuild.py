@@ -142,3 +142,20 @@ class TestBuildFileDiscovery(unittest.TestCase):
         self.assertEqual(0, len(result[FilesEnum.PRIVATE_DATA]))
         self.assertEqual(0, len(result[FilesEnum.PUBLIC_DATA]))
 
+    def testAddsStarterCode(self):
+        starterCodePath = os.path.join(self.SANDBOX, "starterCode.py")
+
+        self.config.build.use_stater_code = True
+        self.config.build.starter_code_source = starterCodePath
+
+        with open(starterCodePath, 'w') as w:
+            w.write("Starter Code!")
+
+        build = Build(self.config) 
+
+        result = build.discoverFiles()
+
+        self.assertEqual(1, len(result[FilesEnum.STARTER_CODE]))
+
+
+
