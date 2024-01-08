@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 from typing import Dict, List 
 from utils.config.Config import AutograderConfiguration
 from enum import Enum
@@ -12,8 +13,15 @@ class FilesEnum(Enum):
     STARTER_CODE = 4
 
 class Build():
+    IGNORE = ["__pycache__"]
+    IGNORE_FOR_STUDENT = ["setup.sh", "run_autograder"]
+    SOURCE_DIR = os.getcwd()
+    BUILD_DIR = os.path.join("bin")
+
     def __init__(self, config: AutograderConfiguration) -> None:
         self.config = config
+        self.generationDirectory = "."
+        self.distDirectory = "."
 
     @staticmethod
     def _discoverTestFiles(allowPrivate: bool, 
@@ -125,5 +133,109 @@ class Build():
 
         return files
 
+    @staticmethod
+    def buildUtilsPath() -> List[str]:
+        configSource = os.path.join("utils", "config")
+        studentUtilsSource = os.path.join("utils", "student")
+        gradescopeUtilsSource = os.path.join("utils", "Gradescope.py")
+        utilsModuleSource = os.path.join("utils", "__init__.py")
+
+        return [configSource, studentUtilsSource, gradescopeUtilsSource, utilsModuleSource]
+
+    @staticmethod
+    def buildStudentSubmissionPath(implToUse) -> List[str]:
+        implSource = os.path.join("StudentSubmissionImpl", implToUse)
+        studentSubmissionSource = os.path.join("StudentSubmission")
+
+        return [implSource, studentSubmissionSource]
+
+    @staticmethod
+    def buildTestingFramworkPath() -> List[str]:
+        testingFrameworkSource = os.path.join("TestingFramework")
+
+        return [testingFrameworkSource] 
+
+    @staticmethod
+    def buildExecutorsPath() -> List[str]:
+        executorsSource = os.path.join("Executors")
+
+        return [executorsSource]
+
+    @staticmethod
+    def buildBasePath() -> List[str]:
+        runSource = "run.py"
+        setupSource = "setup.sh"
+        configSource = "config.toml"
+        requirementsSource = "requirements.txt"
+        runAutograderSource = "run_autograder"
+
+        return [runSource, setupSource, configSource, requirementsSource, runAutograderSource]
+
+    def createFolders(self):
+        # up a directory
+        os.chdir("..")
+
+        # clean build if it exists
+        if os.path.exists(self.BUILD_DIR):
+            shutil.rmtree(self.BUILD_DIR)
+
+        self.generationDirectory = os.path.join(os.getcwd(), self.BUILD_DIR, "generation")
+        self.distDirectory = os.path.join(os.getcwd(), self.BUILD_DIR, "dist")
+
+        os.makedirs(self.generationDirectory, exist_ok=True)
+        os.makedirs(self.distDirectory, exist_ok=True)
+
+        os.chdir(self.SOURCE_DIR)
+
+
+    @staticmethod
+    def generateGradescope(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str]):
+        generationPath = os.path.join(generationPath, "gradescope")
+        os.makedirs(generationPath, exist_ok=True)
+        
+        for file in autograderFiles:
+            destPath = os.path.join(generationPath, "source", file)
+            os.makedirs(os.path.dirname(generationPath), exist_ok=True)
+            shutil.copytree(file, destPath)
+        
+        for listOfFiles in files.values():
+            for file in listOfFiles:
+                destPath = os.path.join(generationPath, file)
+                os.makedirs(os.path.dirname(generationPath), exist_ok=True)
+                shutil.copy(file, generationPath)
+
+    @staticmethod
+    def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str]):
+        generationPath = os.path.join(generationPath, "student")
+        os.makedirs(generationPath, exist_ok=True)
+        
+        for file in autograderFiles:
+            destPath = os.path.join(generationPath, file)
+            os.makedirs(os.path.dirname(generationPath), exist_ok=True)
+            shutil.copytree(file, destPath)
+        
+        for listOfFiles in files.values():
+            for file in listOfFiles:
+                destPath = os.path.join(generationPath, file)
+                os.makedirs(os.path.dirname(generationPath), exist_ok=True)
+                shutil.copy(file, generationPath)
+
     def build(self):
         files = self.discoverFiles()
+
+        autograderFiles = []
+
+        autograderFiles.extend(self.buildUtilsPath())
+        autograderFiles.extend(self.buildStudentSubmissionPath(self.config.config.impl_to_use))
+        autograderFiles.extend(self.buildTestingFramworkPath())
+        autograderFiles.extend(self.buildExecutorsPath())
+        autograderFiles.extend(self.buildBasePath())
+
+        self.createFolders()
+
+        if self.config.build.build_gradescope:
+            self.generateGradescope(self.generationDirectory, files, autograderFiles)
+
+        if self.config.build.build_student:
+            self.generateStudent(self.generationDirectory, files, autograderFiles)
+
