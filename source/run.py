@@ -9,6 +9,12 @@ def processArgs() -> argparse.Namespace:
     parser.add_argument("--build", action="store_true", 
                         help="Build Autograder according to config file")
 
+    parser.add_argument("--source", default=".", 
+                        help="The source directory of the autograder that is being built")
+
+    parser.add_argument("-o", default="bin",
+                        help="The output folder for build")
+
     parser.add_argument("--unit-test-only", action="store_true",
                         help="Only run the unit tests associated with this autograder")
 
@@ -45,6 +51,8 @@ def main():
 
     if options.build:
         from utils.Build import Build
+        build = Build(autograderConfig, sourceRoot=options.source, binRoot=options.o)
+        build.build()
         
     # Only need to set the provider if we are running tests
     AutograderConfigurationProvider.set(autograderConfig)

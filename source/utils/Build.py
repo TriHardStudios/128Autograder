@@ -18,8 +18,8 @@ class Build():
 
     def __init__(self, config: AutograderConfiguration, sourceRoot = os.getcwd(), binRoot = "bin") -> None:
         self.config = config
-        self.generationDirectory = "."
-        self.distDirectory = "."
+        self.generationDirectory = os.path.join(binRoot, "generation")
+        self.distDirectory = os.path.join(binRoot, "dist")
         self.binRoot = binRoot
         self.sourceDir = sourceRoot
 
@@ -180,20 +180,13 @@ class Build():
         return [gradescopeUpload, testWork]
 
     def createFolders(self):
-        # up a directory
-        os.chdir("..")
-
         # clean build if it exists
         if os.path.exists(self.binRoot):
             shutil.rmtree(self.binRoot)
 
-        self.generationDirectory = os.path.join(os.getcwd(), self.binRoot, "generation")
-        self.distDirectory = os.path.join(os.getcwd(), self.binRoot, "dist")
-
+        # create directories
         os.makedirs(self.generationDirectory, exist_ok=True)
         os.makedirs(self.distDirectory, exist_ok=True)
-
-        os.chdir(self.sourceDir)
 
 
     @staticmethod

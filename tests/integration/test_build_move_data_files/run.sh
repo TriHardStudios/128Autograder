@@ -3,4 +3,4 @@
 
 rm -rf bin/*
 
-make CLEAN= build autograder_name=test_build
+python source/run.py --config-file ./config.toml --build --source source -o ./bin
