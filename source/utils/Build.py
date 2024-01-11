@@ -46,6 +46,7 @@ class Build():
 
         # test discovery is non recursive for now
         test_files = [file for file in os.listdir(testDirectory) if os.path.isfile(os.path.join(testDirectory, file))]
+        print(test_files)
 
         for file in test_files:
             path = os.path.join(testDirectory, file)
@@ -130,7 +131,6 @@ class Build():
         if config.use_data_files:
             self._discoverDataFiles(config.allow_private, config.data_files_source,
                                     files[FilesEnum.PRIVATE_DATA], files[FilesEnum.PUBLIC_DATA])
-
         return files
 
     @staticmethod
@@ -179,10 +179,22 @@ class Build():
 
         return [gradescopeUpload, testWork]
 
+    @staticmethod
+    def copy(src, dest):
+        if os.path.isdir(src):
+            shutil.copytree(src, dest)
+            return
+
+        shutil.copy(src, dest)
+
+
     def createFolders(self):
         # clean build if it exists
         if os.path.exists(self.binRoot):
-            shutil.rmtree(self.binRoot)
+            try:
+                shutil.rmtree(self.binRoot, ignore_errors=True)
+            except OSError:
+                print("WARN: Failed to clean bin directory")
 
         # create directories
         os.makedirs(self.generationDirectory, exist_ok=True)
@@ -197,13 +209,13 @@ class Build():
         for file in autograderFiles:
             destPath = os.path.join(generationPath, "source", file)
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-            shutil.copytree(file, destPath)
+            Build.copy(file, destPath)
         
         for listOfFiles in files.values():
             for file in listOfFiles:
                 destPath = os.path.join(generationPath, file)
                 os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-                shutil.copy(file, generationPath)
+                Build.copy(file, generationPath)
 
     @staticmethod
     def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str], studentFiles: List[str]):
@@ -216,17 +228,18 @@ class Build():
 
             destPath = os.path.join(generationPath, file)
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-            shutil.copytree(file, destPath)
+            Build.copy(file, destPath)
         
         for listOfFiles in files.values():
             for file in listOfFiles:
                 destPath = os.path.join(generationPath, file)
                 os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-                shutil.copy(file, generationPath)
+                print(file)
+                Build.copy(file, generationPath)
 
         for file in studentFiles:
             destPath = os.path.join(generationPath, os.path.basename(file))
-            shutil.copy(file, destPath)
+            Build.copy(file, destPath)
     
     @staticmethod
     def createDist(distType: str, generationPath: str, distPath: str, assignmentName: str):

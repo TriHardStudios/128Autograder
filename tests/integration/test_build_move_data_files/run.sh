@@ -3,4 +3,6 @@
 
 rm -rf bin/*
 
-python source/run.py --config-file ./config.toml --build --source source -o ./bin
+cd source
+
+python run.py --config-file ../config.toml --build -o ../bin

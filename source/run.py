@@ -53,7 +53,8 @@ def main():
         from utils.Build import Build
         build = Build(autograderConfig, sourceRoot=options.source, binRoot=options.o)
         build.build()
-        
+        return
+
     # Only need to set the provider if we are running tests
     AutograderConfigurationProvider.set(autograderConfig)
 

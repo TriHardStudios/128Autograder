@@ -186,8 +186,8 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     "build_student": bool,
                     "build_gradescope": bool,
                     Optional("student_work_folder", default="student_work"): str,
-                    Optional("private_tests_regex", default=r"^private_?\w\.py$"): str,
-                    Optional("public_tests_regex", default=r"^public_?\w\.py$"): str,
+                    Optional("private_tests_regex", default=r"^test(_p|P)rivate_?\w\.py$"): str,
+                    Optional("public_tests_regex", default=r"^test(_p|P)ublic_?\w\.py$"): str,
                 }
             },
             ignore_extra_keys=False, name="ConfigSchema"

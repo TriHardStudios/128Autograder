@@ -14,7 +14,7 @@ services:
   test_build_move_test_cases:
     build:
       dockerfile: Dockerfile.build
-    entrypoint: /app/run.sh
+    entrypoint: sh /app/run.sh
     volumes:
       - "./tests/integration/test_build_move_test_cases/studentTests:/app/source/studentTests"
       - "./tests/integration/test_build_move_test_cases/run.sh:/app/run.sh"
