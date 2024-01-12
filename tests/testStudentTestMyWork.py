@@ -1,8 +1,11 @@
 import unittest
 from unittest.mock import patch
+import sys
 import os
 import shutil
 from io import StringIO
+import subprocess
+import importlib.util
 import test_my_work as testMyWork
 import random
 import string
@@ -58,7 +61,6 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertIn("No valid files found", capturedStdout.getvalue())
 
-
     def testStudentWorkPresentManyFiles(self):
         for _ in range(10):
             fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)]) + ".py"
@@ -69,7 +71,6 @@ class TestStudentTestMyWork(unittest.TestCase):
         result = testMyWork.verifyStudentWorkPresent(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
-
 
     def testCleanPrevSubmission(self):
         for _ in range(10):
@@ -84,8 +85,6 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertFalse(len(os.listdir(self.TEST_DIRECTORY)) > 1)
 
-
-    
     def testChangesDetectedFirstRun(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
             w.write("First run!")
@@ -93,8 +92,6 @@ class TestStudentTestMyWork(unittest.TestCase):
         result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
-
-    
 
     def testChangesDetectedManyRuns(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
@@ -111,7 +108,6 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertTrue(result)
 
-
     def testUnchangedDetected(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
             w.write("Frist run!")
@@ -123,7 +119,6 @@ class TestStudentTestMyWork(unittest.TestCase):
         result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
 
         self.assertFalse(result)
-
 
     def testChangesInManyFiles(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission1.py"), 'w') as w:
@@ -143,7 +138,6 @@ class TestStudentTestMyWork(unittest.TestCase):
         
         self.assertTrue(result)
 
-
     def testEmptyJson(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, testMyWork.FILE_HASHES_NAME), "w") as _:
             pass
@@ -152,5 +146,22 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertTrue(result)
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def testMissingPackage(self, _):
+        self.assertIsNone(importlib.util.find_spec("pip_install_test"))
+
+        testMyWork.verifyRequiredPackages({"pip_install_test": "pip-install-test"})
+
+        self.assertIsNotNone(importlib.util.find_spec("pip_install_test"))
+
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "pip-install-test"])
         
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def testPackagesPresent(self, _):
+        self.assertIsNotNone(importlib.util.find_spec("dill"))
+
+        testMyWork.verifyRequiredPackages({"dill": "dill-install-test"})
+
+        self.assertIsNotNone(importlib.util.find_spec("dill"))
 
