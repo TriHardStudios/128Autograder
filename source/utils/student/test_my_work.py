@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import json
+import importlib.util
 import hashlib
 
 PACKAGE_ERROR: str = "Required Package Error"
@@ -13,88 +14,66 @@ RESET_COLOR: str = u"\u001b[0m"
 SUBMISSION_REGEX: re.Pattern = re.compile(r"^(\w|\s)+\.py$")
 FILE_HASHES_NAME: str = ".filehashes" 
 
+REQUIRED_PACKAGES = {"gradescope_utils":"gradescope-utils", "dill":"dill", "BetterPytUnitFormat":"Better-PyUnit-Format", "schema":"schema", "requests":"requests", "tomli":"tomli"}
 
-def printErrorMessage(_errorType: str, _errorText: str) -> None:
+def printErrorMessage(errorType: str, errorText: str) -> None:
     """
     This function prints out a validation error message as they occur.
     The error type is colored red when it is printed
     the format used is `[<error_type>] <error_text>`
-    :param _errorType: The error type
-    :param _errorText: the text for the error
+    :param errorType: The error type
+    :param errorText: the text for the error
     :return:
     """
-    print(f"[{RED_COLOR}{_errorType}{RESET_COLOR}]: {_errorText}")
+    print(f"[{RED_COLOR}{errorType}{RESET_COLOR}]: {errorText}")
 
 
-def printWarningMessage(_warningType: str, _warningText: str) -> None:
-    print(f"[{YELLOW_COLOR}{_warningType}{RESET_COLOR}]: {_warningText}")
+def printWarningMessage(warningType: str, warningText: str) -> None:
+    print(f"[{YELLOW_COLOR}{warningType}{RESET_COLOR}]: {warningText}")
 
-def verifyRequiredPackages() -> bool:
+def verifyRequiredPackages(packagesToVerify: dict[str, str]) -> bool:
     """
     This function verifies that all the required packages needed for the actual autograder are installed
     :return: true if they are false if not.
     """
     errorOccurred: bool = False
 
-    try:
-        import BetterPyUnitFormat
-    except ModuleNotFoundError:
-        printErrorMessage(PACKAGE_ERROR,
-                          "BetterPyUnitFormat was not found. "
-                          "Please ensure that you have run 'pip install Better-PyUnit-Format'")
-        errorOccurred = True
-
-    try:
-        import gradescope_utils
-    except ModuleNotFoundError:
-        printErrorMessage(PACKAGE_ERROR,
-                          "Gradescope Utils was not found. "
-                          "Please ensure that you have run 'pip install gradescope-utils'")
-        errorOccurred = True
-
-    try:
-        import dill
-    except ModuleNotFoundError:
-        printErrorMessage(PACKAGE_ERROR,
-                          "Dill was not found. "
-                          "Please ensure that you have run 'pip install dill'")
-        errorOccurred = True
+    for name, package in packagesToVerify.items():
+        if importlib.util.find_spec(name) is None:
+            print(f"Installing missing dependancy: {package}")
+            subprocess.run([sys.executable, "-m", "pip", "install", package])
 
     return not errorOccurred
 
 
-def verifyStudentWorkPresent(_submissionDirectory: str) -> bool:
+def verifyStudentWorkPresent(submissionDirectory: str) -> bool:
     """
     This function verifies that the student has work in the submission directory
     :param _submissionDirectory: the directory that the student did their work in.
     :return: true if the student has work present
     """
 
-    if not os.path.exists(_submissionDirectory):
-        printErrorMessage(SUBMISSION_ERROR, f"Failed to locate student work in {_submissionDirectory}")
-        return False
-
-    if not os.path.isdir(_submissionDirectory):
-        printErrorMessage(SUBMISSION_ERROR, f"{_submissionDirectory} is not a directory.")
+    if not os.path.exists(submissionDirectory):
+        printErrorMessage(SUBMISSION_ERROR, f"Failed to locate student work in {submissionDirectory}")
         return False
 
     # this doesn't catch files in folders. Something to be aware of for students
-    files = [file for file in os.listdir(_submissionDirectory) if SUBMISSION_REGEX.match(file)]
+    files = [file for file in os.listdir(submissionDirectory) if SUBMISSION_REGEX.match(file)]
 
     if len(files) < 1:
         printErrorMessage(SUBMISSION_ERROR,
                           f"No valid files found in submission directory. "
-                          f"Found {os.listdir(_submissionDirectory)}")
+                          f"Found {os.listdir(submissionDirectory)}")
         return False
 
     return True
 
-def cleanPreviousSubmissions(_directory: str) -> None:
+def cleanPreviousSubmissions(directory: str) -> None:
     """
     This function cleans out previous submissions if they exist.
     :param _directory: the directory to run the detection in.
     """
-    zipFiles = [os.path.join(_directory, file) for file in os.listdir(_directory) if file[-4:] == ".zip"]
+    zipFiles = [os.path.join(directory, file) for file in os.listdir(directory) if file[-4:] == ".zip"]
     if len(zipFiles) > 0:
         print("Previous submissions found. Cleaning out old submission files...")
         for file in zipFiles:
@@ -102,7 +81,7 @@ def cleanPreviousSubmissions(_directory: str) -> None:
             os.remove(file)
 
 
-def generateHashes(_submissionDirectory: str) -> dict[str, str]:
+def generateHashes(submissionDirectory: str) -> dict[str, str]:
     """
     This function generates hashes for the files in submission directory.
 
@@ -110,8 +89,8 @@ def generateHashes(_submissionDirectory: str) -> dict[str, str]:
     """
 
     pythonFiles = [
-             os.path.join(_submissionDirectory, file) 
-             for file in os.listdir(_submissionDirectory) 
+             os.path.join(submissionDirectory, file) 
+             for file in os.listdir(submissionDirectory) 
              if SUBMISSION_REGEX.match(file)
          ]
     
@@ -127,7 +106,7 @@ def generateHashes(_submissionDirectory: str) -> dict[str, str]:
     return fileHashes
 
 
-def verifyFileChanged(_submissionDirectory: str) -> bool:
+def verifyFileChanged(submissionDirectory: str) -> bool:
     """
     This function checks to see if a file has changed since the last run of this script.
 
@@ -139,7 +118,7 @@ def verifyFileChanged(_submissionDirectory: str) -> bool:
 
     """
 
-    FILE_HASHES_PATH = os.path.join(_submissionDirectory, FILE_HASHES_NAME)
+    FILE_HASHES_PATH = os.path.join(submissionDirectory, FILE_HASHES_NAME)
 
     if not os.path.exists(FILE_HASHES_PATH):
         with open(FILE_HASHES_PATH, 'w') as w:
@@ -153,7 +132,7 @@ def verifyFileChanged(_submissionDirectory: str) -> bool:
             existingHashes = None
         
 
-    newHashes = generateHashes(_submissionDirectory)
+    newHashes = generateHashes(submissionDirectory)
 
     
     with open(FILE_HASHES_PATH, 'w') as w:
@@ -168,14 +147,7 @@ if __name__ == "__main__":
 
     submissionDirectory = "student_work/"
 
-    if len(sys.argv) == 2:
-        submissionDirectory = sys.argv[1]
-
-    # need to make sure to that we have a / at the end of the path
-    if submissionDirectory[-1:] != '/':
-        submissionDirectory += "/"
-
-    if not verifyRequiredPackages():
+    if not verifyRequiredPackages(REQUIRED_PACKAGES):
         sys.exit(1)
 
     if not verifyStudentWorkPresent(submissionDirectory):
@@ -183,11 +155,12 @@ if __name__ == "__main__":
 
     fileChanged: bool = verifyFileChanged(submissionDirectory)
 
-    command: list[str] = [sys.executable, "run.py", "--unit-test-only", submissionDirectory]
+    command: list[str] = [sys.executable, "run.py", "--unit-test-only", "--submission-directory", submissionDirectory]
 
     with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
-        for line in p.stdout:
-            print(line, end="")
+        if p.stdout is not None:
+            for line in p.stdout:
+                print(line, end="")
 
     if not fileChanged:
         printWarningMessage("Student Submission Warning", "Student submision may not have changed")
