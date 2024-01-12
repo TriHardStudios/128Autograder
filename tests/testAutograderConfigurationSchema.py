@@ -126,3 +126,26 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.assertIsNotNone(actual.config.python)
         self.assertIsNotNone(actual.config.python.extra_packages) # type: ignore
 
+    def testMissingLocationStarterCode(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["build"]["use_starter_code"] = True
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
+    def testMissingLocationDataFiles(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["build"]["use_data_files"] = True
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
+    def testMissingImplConfig(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["config"]["python"] = None
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
