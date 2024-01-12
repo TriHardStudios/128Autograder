@@ -46,7 +46,6 @@ class Build():
 
         # test discovery is non recursive for now
         test_files = [file for file in os.listdir(testDirectory) if os.path.isfile(os.path.join(testDirectory, file))]
-        print(test_files)
 
         for file in test_files:
             path = os.path.join(testDirectory, file)
@@ -85,7 +84,7 @@ class Build():
             path = os.path.join(dataFilesSource, file)
 
             # ignore any and all test files
-            if "test" in path.lower():
+            if os.path.isfile(path) and "test" in file.lower():
                 continue
 
             if os.path.isdir(path):
@@ -126,11 +125,12 @@ class Build():
         # imo, this is not worth moving into its function atm
         if config.use_starter_code:
             # we can assume that the file exists if the config has it
-            files[FilesEnum.STARTER_CODE].append(config.stater_code_source)
+            files[FilesEnum.STARTER_CODE].append(config.starter_code_source)
 
         if config.use_data_files:
             self._discoverDataFiles(config.allow_private, config.data_files_source,
                                     files[FilesEnum.PRIVATE_DATA], files[FilesEnum.PUBLIC_DATA])
+
         return files
 
     @staticmethod
@@ -211,17 +211,24 @@ class Build():
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
             Build.copy(file, destPath)
         
-        for listOfFiles in files.values():
+        for key, listOfFiles in files.items():
+            if key is FilesEnum.STARTER_CODE:
+                continue
+
             for file in listOfFiles:
                 destPath = os.path.join(generationPath, file)
-                os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-                Build.copy(file, generationPath)
+                os.makedirs(os.path.dirname(destPath), exist_ok=True)
+                Build.copy(file, destPath)
 
     @staticmethod
     def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str], studentFiles: List[str]):
         generationPath = os.path.join(generationPath, "student")
         os.makedirs(generationPath, exist_ok=True)
         
+        # create student_work folder
+        studentWorkFolder = os.path.join(generationPath, "student_work")
+        os.makedirs(studentWorkFolder, exist_ok=True)
+
         for file in autograderFiles:
             if os.path.basename(file) in Build.IGNORE_FOR_STUDENT:
                 continue
@@ -229,17 +236,33 @@ class Build():
             destPath = os.path.join(generationPath, file)
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
             Build.copy(file, destPath)
+
         
-        for listOfFiles in files.values():
-            for file in listOfFiles:
-                destPath = os.path.join(generationPath, file)
-                os.makedirs(os.path.dirname(generationPath), exist_ok=True)
-                print(file)
-                Build.copy(file, generationPath)
+        for file in files[FilesEnum.PUBLIC_TEST]:
+            destPath = os.path.join(generationPath, file)
+            os.makedirs(os.path.dirname(destPath), exist_ok=True)
+            Build.copy(file, destPath)
+
+        for file in files[FilesEnum.PUBLIC_DATA]:
+            destPath = os.path.join(generationPath, file)
+            os.makedirs(os.path.dirname(destPath), exist_ok=True)
+            Build.copy(file, destPath)
+            # also add to student work folder
+            destPath = os.path.join(studentWorkFolder, os.path.basename(file))
+            Build.copy(file, destPath)
+
+        for file in files[FilesEnum.STARTER_CODE]:
+            destPath = os.path.join(studentWorkFolder, os.path.basename(file))
+            Build.copy(file, destPath)
 
         for file in studentFiles:
             destPath = os.path.join(generationPath, os.path.basename(file))
             Build.copy(file, destPath)
+
+
+        # create .keep so that we dont loose the file
+        with open(os.path.join(studentWorkFolder, ".keep"), "w") as w:
+            w.write("DO NOT WRITE YOUR CODE HERE!\nCreate a *new* file in this directory!!!")
     
     @staticmethod
     def createDist(distType: str, generationPath: str, distPath: str, assignmentName: str):
@@ -256,6 +279,7 @@ class Build():
 
     def build(self):
         files = self.discoverFiles()
+        print(files)
 
         autograderFiles = []
 

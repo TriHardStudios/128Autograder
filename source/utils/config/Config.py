@@ -28,7 +28,7 @@ class BuildConfiguration:
     """If we should build the gradescope autograder"""
     data_files_source: str
     """The folder that contains the datafiles for use with the autograder"""
-    stater_code_source: str
+    starter_code_source: str
     """The path for the starter code that should be provided to the student"""
     student_work_folder: str
     """The folder that should be created for the student"""
@@ -138,20 +138,6 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
     def validateImplSource(implName: str) -> bool:
         return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
 
-    @staticmethod
-    def validateDataFilesSource(dataFilesSource: str) -> bool:
-        if dataFilesSource is None:
-            return True
-
-        return os.path.exists(dataFilesSource) and os.path.isdir(dataFilesSource)
-
-    @staticmethod
-    def validateStarterCodeSource(starterCodeSource: OptionalType[str]) -> bool:
-        if starterCodeSource is None:
-            return True
-
-        return os.path.exists(starterCodeSource) and os.path.isfile(starterCodeSource)
-
     def __init__(self):
         self.TAGS = self.getAvailableTags()
 
@@ -181,13 +167,13 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     "use_starter_code": bool,
                     "use_data_files": bool,
                     Optional("allow_private", default=True): bool,
-                    Optional("data_files_source", default=None): And(str, AutograderConfigurationSchema.validateDataFilesSource),
-                    Optional("stater_code_source", default=None): And(str, AutograderConfigurationSchema.validateStarterCodeSource),
+                    Optional("data_files_source", default=None): str,
+                    Optional("starter_code_source", default=None): str,
                     "build_student": bool,
                     "build_gradescope": bool,
                     Optional("student_work_folder", default="student_work"): str,
-                    Optional("private_tests_regex", default=r"^test(_p|P)rivate_?\w\.py$"): str,
-                    Optional("public_tests_regex", default=r"^test(_p|P)ublic_?\w\.py$"): str,
+                    Optional("private_tests_regex", default=r"^test_private_?\w*\.py$"): str,
+                    Optional("public_tests_regex", default=r"^test_?\w*\.py$"): str,
                 }
             },
             ignore_extra_keys=False, name="ConfigSchema"
@@ -215,7 +201,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
         if impl_to_use not in validated["config"] or validated["config"][impl_to_use] is None:
             raise InvalidConfigException(f"Missing Implementation Config for config.{impl_to_use}")
 
-        if validated["build"]["use_starter_code"] and validated["build"]["stater_code_source"] is None:
+        if validated["build"]["use_starter_code"] and validated["build"]["starter_code_source"] is None:
             raise InvalidConfigException("Missing starter code file location")
 
         if validated["build"]["use_data_files"] and validated["build"]["data_files_source"] is None:

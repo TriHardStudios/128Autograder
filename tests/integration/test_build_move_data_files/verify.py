@@ -3,6 +3,33 @@ import os
 assert os.path.exists("./bin/generation/student/")
 assert os.path.exists("./bin/generation/gradescope/")
 
+gradescopeExpectedTestFiles = [file for file in os.listdir("./studentTests/") if os.path.isfile(os.path.join("studentTests", file))]
+gradescopeExpectedTestFiles.sort()
+
+studentExpectedFiles = [file for file in gradescopeExpectedTestFiles if "test_public" in file]
+studentExpectedFiles.sort()
+
+gradescopeActualTestFiles = [file for file in os.listdir("./bin/generation/gradescope/studentTests/") if os.path.isfile(os.path.join("./bin/generation/gradescope/studentTests/", file))]
+gradescopeActualTestFiles.sort()
+
+studentActualFiles = [file for file in os.listdir("./bin/generation/student/studentTests/") if os.path.isfile(os.path.join("./bin/generation/student/studentTests/", file))]
+studentActualFiles.sort()
+
+
+assert gradescopeExpectedTestFiles == gradescopeActualTestFiles
+assert studentExpectedFiles == studentActualFiles
+
+expectedStarterCode = os.listdir("./starter_code/")
+
+actualStarterCode = os.listdir("./bin/generation/student/student_work/")
+actualStarterCode = [file for file in actualStarterCode if file[-3:] == ".py"]
+
+assert len(actualStarterCode) == 1
+assert expectedStarterCode == actualStarterCode
+
+# assert that it did not get pulled in to gradescope
+assert not os.path.exists("./bin/generation/gradescope/starter_code/")
+
 
 expected_public = os.listdir("./studentTests/data/files/test_public/")
 expected_public.sort()
@@ -45,6 +72,4 @@ gradescope_actual_private_files.sort()
 
 assert gradescope_actual_private_files == expected_private
 assert gradescope_actual_public_files == expected_public
-
-
 

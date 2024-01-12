@@ -20,7 +20,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
         self.config = Mock()
         self.setUpConfig()
 
-        self.privateFiles = ["test_private_1.py", "test_private_test2.py"]
+        self.privateFiles = ["test_private.py", "test_private1.py", "test_private_1.py", "test_private_test2.py"]
         self.publicFiles = ["test.py", "test_public.py", "test_im_crying.py"]
 
         self.privateDataFiles = ["private_data.dat", os.path.join("private", "data.dat"), os.path.join("public", "private", "data.dat")]

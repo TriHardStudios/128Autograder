@@ -11,25 +11,6 @@ services:
       - "./tests/integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
-  test_build_move_test_cases:
-    build:
-      dockerfile: Dockerfile.build
-    entrypoint: sh /app/run.sh
-    volumes:
-      - "./tests/integration/test_build_move_test_cases/studentTests:/app/source/studentTests"
-      - "./tests/integration/test_build_move_test_cases/run.sh:/app/run.sh"
-      - "./tests/integration/test_build_move_test_cases/bin:/app/bin"
-      - "./tests/integration/integration_config.toml:/app/config.toml"
-
-  test_build_move_starter_code:
-    build:
-      dockerfile: Dockerfile.build
-    entrypoint: /app/run.sh
-    volumes:
-      - "./tests/integration/test_build_move_starter_code/studentTests:/app/source/studentTests"
-      - "./tests/integration/integration_config.toml:/app/config.toml"
-      - "./tests/integration/test_build_move_starter_code/run.sh:/app/run.sh"
-      - "./tests/integration/test_build_move_starter_code/bin:/app/bin"
 
   test_build_move_data_files:
     build:
@@ -40,6 +21,7 @@ services:
       - "./tests/integration/test_build_move_data_files/run.sh:/app/run.sh"
       - "./tests/integration/test_build_move_data_files/bin:/app/bin"
       - "./tests/integration/integration_config.toml:/app/config.toml"
+      - "./tests/integration/test_build_move_data_files/starter_code/:/app/source/starter_code"
 
 
 
