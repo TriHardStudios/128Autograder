@@ -24,10 +24,11 @@ command_line = "-m unittest"
 concurrency = ["multiprocessing"]
 # Omit testing files, omit dynamic files, omit __init__.py
 # Doing it at the run level as it will that means they wont be run in the first place
-omit = ["sandbox/*", "test_code", "test_code.py", "setup_code", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "StudentSubmission.py", "StudentSubmissionExecutor.py"]
+# Ignore build.py as its it is primarly covered by integration tests
+omit = ["sandbox/*", "test_code", "test_code.py", "setup_code", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "Build.py"]
 
 [tool.coverage.report]
-fail_under = 75
+fail_under = 90
 skip_empty = true
 exclude_also = [
     # Dont flag error conditions that cant be reached
