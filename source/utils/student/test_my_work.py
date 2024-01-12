@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     fileChanged: bool = verifyFileChanged(submissionDirectory)
 
-    command: list[str] = [sys.executable, "run.py", "--unit-test-only", submissionDirectory]
+    command: list[str] = [sys.executable, "run.py", "--unit-test-only", "--submission-directory", submissionDirectory]
 
     with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
         if p.stdout is not None:
