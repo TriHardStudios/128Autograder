@@ -24,6 +24,7 @@ def mockRequestsGet(url, **kwargs):
 
         return Response(data, 200)
 
+def mockValidateImpl(_) -> bool: return True
 
 class TestAutograderConfigurationSchema(unittest.TestCase):
 
@@ -32,21 +33,26 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
             "assignment_name": "HelloWold",
             "semester": "F99",
             "config": {
+                "impl_to_use": "Python",
                 "autograder_version": "2.0.0",
                 "test_directory": ".",
                 "enforce_submission_limit": True,
                 "perfect_score": 10,
                 "max_score": 10,
+                "python": {},
             },
             "build": {
                 "use_starter_code": False,
                 "use_data_files": False,
+                "build_student": True,
+                "build_gradescope": True,
             }
         }
 
     @staticmethod
     def createAutograderConfigurationSchema() -> AutograderConfigurationSchema:
         with mock.patch('requests.get', side_effect=mockRequestsGet):
+            AutograderConfigurationSchema.validateImplSource = mockValidateImpl # type: ignore
             return AutograderConfigurationSchema()
 
     def testValidNoOptionalFields(self):
@@ -54,8 +60,6 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         actual = schema.validate(self.configFile)
         self.assertIn("submission_limit", actual["config"])
-        self.assertIn("python", actual["config"])
-        self.assertIsNone(actual["config"]["python"])
 
     def testValidOptionalFields(self):
         schema = self.createAutograderConfigurationSchema()
@@ -120,5 +124,28 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         actual = schema.build(data)
 
         self.assertIsNotNone(actual.config.python)
-        self.assertIsNotNone(actual.config.python.extra_packages)
+        self.assertIsNotNone(actual.config.python.extra_packages) # type: ignore
 
+    def testMissingLocationStarterCode(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["build"]["use_starter_code"] = True
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
+    def testMissingLocationDataFiles(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["build"]["use_data_files"] = True
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
+    def testMissingImplConfig(self):
+        schema = self.createAutograderConfigurationSchema()
+
+        self.configFile["config"]["python"] = None
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)

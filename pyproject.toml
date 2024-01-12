@@ -7,7 +7,7 @@ maintainers = [
     { name = "Gregory Bell" }
 ]
 
-version = "1.1.0"
+version = "2.1.0"
 requires-python = ">=3.9.0"
 
 [tool.pyright]
@@ -19,81 +19,16 @@ executionEnvironments = [
     {root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
 ]
 
-
-[tool.pylint.main]
-fail-under = 8
-ignore = []
-disable = ["W0122"]
-ignore-patterns = ["^\\.#", "test*"]
-py-version = "3.10"
-jobs = 0
-suggestion-mode = false
-max-line-length = 120
-
-[tool.pylint.basic]
-argument-rgx = "_?[a-z]+((\\d)|([A-Z0-9][a-z0-9]+))*([A-Z])?"
-attr-naming-style = "camelCase"
-class-attribute-naming-style = "any"
-class-const-naming-style = "UPPER_CASE"
-class-naming-style = "PascalCase"
-const-naming-style = "UPPER_CASE"
-docstring-min-length = -1
-function-naming-style = "camelCase"
-good-names = ["i", "j", "k", "ex", "el", "Run", "_"]
-inlinevar-naming-style = "any"
-method-naming-style = "camelCase"
-module-naming-style = "PascalCase"
-no-docstring-rgx = "^_"
-property-classes = ["abc.abstractproperty"]
-variable-naming-style = "camelCase"
-
-
-[tool.pylint.classes]
-defining-attr-methods = ["__init__", "__new__", "setUp", "asyncSetUp", "__post_init__"]
-exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make", "os._exit"]
-valid-classmethod-first-arg = ["cls"]
-valid-metaclass-classmethod-first-arg = ["mcs"]
-
-
-[tool.pylint.design]
-max-args = 5
-max-attributes = 7
-max-bool-expr = 3
-max-branches = 4
-max-locals = 15
-max-parents = 7
-max-public-methods = 20
-max-returns = 6
-max-statements = 50
-min-public-methods = 2
-
-
-[tool.pylint.exceptions]
-overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
-
-
-
-[tool.pylint.reports]
-evaluation = "max(0, 0 if fatal else 10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10))"
-output-format = "colorized"
-score = true
-
-[tool.pylint.similarities]
-ignore-comments = true
-ignore-docstrings = true
-ignore-imports = true
-ignore-signatures = true
-min-similarity-lines = 4
-
 [tool.coverage.run]
 command_line = "-m unittest"
 concurrency = ["multiprocessing"]
 # Omit testing files, omit dynamic files, omit __init__.py
 # Doing it at the run level as it will that means they wont be run in the first place
-omit = ["sandbox/*", "test_code", "test_code.py", "setup_code", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "StudentSubmission.py", "StudentSubmissionExecutor.py"]
+# Ignore build.py as its it is primarly covered by integration tests
+omit = ["sandbox/*", "test_code", "test_code.py", "setup_code", "studentTests/*", "tests/*", "*/student_submission", "__init__.py", "Build.py"]
 
 [tool.coverage.report]
-fail_under = 75
+fail_under = 90
 skip_empty = true
 exclude_also = [
     # Dont flag error conditions that cant be reached

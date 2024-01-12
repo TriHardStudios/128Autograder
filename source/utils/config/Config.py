@@ -3,7 +3,7 @@ from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
 from dataclasses import dataclass
 import requests
 
-from schema import And, Optional, Regex, Schema, SchemaError
+from schema import And, Optional, Or, Regex, Schema, SchemaError
 
 from utils.config.common import BaseSchema, MissingParsingLibrary, InvalidConfigException
 
@@ -22,6 +22,20 @@ class BuildConfiguration:
     """Whether datafiles should be pulled into the autograder"""
     allow_private: bool
     """Whether the private tests and datafiles should be kept private"""
+    build_student: bool
+    """If we should build the student autograder"""
+    build_gradescope: bool
+    """If we should build the gradescope autograder"""
+    data_files_source: str
+    """The folder that contains the datafiles for use with the autograder"""
+    starter_code_source: str
+    """The path for the starter code that should be provided to the student"""
+    student_work_folder: str
+    """The folder that should be created for the student"""
+    private_tests_regex: str
+    """The pattern that should be used to identify private tests"""
+    public_tests_regex: str
+    """The pattern that should be used to identify public tests"""
 
 @dataclass(frozen=True)
 class PythonConfiguration:
@@ -45,6 +59,8 @@ class BasicConfiguration:
 
     This class defines the basic autograder configuration
     """
+    impl_to_use: str
+    """The StudentSubmission Implementation to use"""
     student_submission_directory: str
     """The folder that the student submission is in"""
     autograder_version: str
@@ -101,6 +117,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
     This class builds to :ref:`AutograderConfiguration` for easy typing.
     """
     TAGS_ENDPOINT = "https://api.github.com/repos/CSCI128/128Autograder/tags"
+    IMPL_SOURCE = "./StudentSubmissionImpl"
 
     @staticmethod
     def getAvailableTags() -> List[str]:
@@ -117,6 +134,10 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         return [el["name"] for el in tags]
 
+    @staticmethod
+    def validateImplSource(implName: str) -> bool:
+        return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
+
     def __init__(self):
         self.TAGS = self.getAvailableTags()
 
@@ -125,7 +146,8 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                 "assignment_name": And(str, Regex(r"^(\w+-?)+$")),
                 "semester": And(str, Regex(r"^(F|S|SUM)\d{2}$")),
                 "config": {
-                    Optional("student_submission_directory", default="."): And(str, os.path.exists),
+                    "impl_to_use": And(str, AutograderConfigurationSchema.validateImplSource),
+                    Optional("student_submission_directory", default="."): And(str, os.path.exists, os.path.isdir),
                     "autograder_version": And(str, lambda x: x in self.TAGS),
                     "test_directory": And(str, os.path.exists),
                     "enforce_submission_limit": bool,
@@ -134,18 +156,24 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     Optional("allow_extra_credit", default=False): bool,
                     "perfect_score": And(int, lambda x: x >= 1),
                     "max_score": And(int, lambda x: x >= 1),
-                    Optional("python", default=None): {
+                    Optional("python", default=None): Or({
                         Optional("extra_packages", default=lambda: []): [{
                             "name": str,
                             "version": str,
                         }],
-                    },
+                    }, None),
                 },
                 "build": {
                     "use_starter_code": bool,
                     "use_data_files": bool,
                     Optional("allow_private", default=True): bool,
-
+                    Optional("data_files_source", default=None): str,
+                    Optional("starter_code_source", default=None): str,
+                    "build_student": bool,
+                    "build_gradescope": bool,
+                    Optional("student_work_folder", default="student_work"): str,
+                    Optional("private_tests_regex", default=r"^test_private_?\w*\.py$"): str,
+                    Optional("public_tests_regex", default=r"^test_?\w*\.py$"): str,
                 }
             },
             ignore_extra_keys=False, name="ConfigSchema"
@@ -162,10 +190,26 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
         :param data: The data to validate
         :return: The data if it is able to be validated
         """
+        validated = {}
         try:
-            return self.currentSchema.validate(data)
+            validated = self.currentSchema.validate(data)
         except SchemaError as schemaError:
             raise InvalidConfigException(str(schemaError))
+
+        impl_to_use = validated["config"]["impl_to_use"].lower()
+
+        if impl_to_use not in validated["config"] or validated["config"][impl_to_use] is None:
+            raise InvalidConfigException(f"Missing Implementation Config for config.{impl_to_use}")
+
+        if validated["build"]["use_starter_code"] and validated["build"]["starter_code_source"] is None:
+            raise InvalidConfigException("Missing starter code file location")
+
+        if validated["build"]["use_data_files"] and validated["build"]["data_files_source"] is None:
+            raise InvalidConfigException("Missing directory for data files!")
+
+
+
+        return validated
 
 
     def build(self, data: Dict) -> AutograderConfiguration:

@@ -1,10 +1,11 @@
 FROM alpine:latest
 
-RUN apk add --no-cache make \
-    && apk add --no-cache zip \
-    && apk add --no-cache bash
+RUN apk add --no-cache python3 py3-pip git
 
 ADD source /app/source
-ADD makefile /app/makefile
+
+RUN mkdir -p /autograder/submission
+
+RUN python3 -m pip install --break-system-package -r /app/source/requirements.txt 
 
 WORKDIR app
