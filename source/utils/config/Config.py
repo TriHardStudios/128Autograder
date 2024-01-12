@@ -3,7 +3,7 @@ from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
 from dataclasses import dataclass
 import requests
 
-from schema import And, Optional, Regex, Schema, SchemaError
+from schema import And, Optional, Or, Regex, Schema, SchemaError
 
 from utils.config.common import BaseSchema, MissingParsingLibrary, InvalidConfigException
 
@@ -156,12 +156,12 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                     Optional("allow_extra_credit", default=False): bool,
                     "perfect_score": And(int, lambda x: x >= 1),
                     "max_score": And(int, lambda x: x >= 1),
-                    Optional("python", default=None): {
+                    Optional("python", default=None): Or({
                         Optional("extra_packages", default=lambda: []): [{
                             "name": str,
                             "version": str,
                         }],
-                    },
+                    }, None),
                 },
                 "build": {
                     "use_starter_code": bool,
