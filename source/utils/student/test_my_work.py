@@ -57,10 +57,6 @@ def verifyStudentWorkPresent(submissionDirectory: str) -> bool:
         printErrorMessage(SUBMISSION_ERROR, f"Failed to locate student work in {submissionDirectory}")
         return False
 
-    if not os.path.isdir(submissionDirectory):
-        printErrorMessage(SUBMISSION_ERROR, f"{submissionDirectory} is not a directory.")
-        return False
-
     # this doesn't catch files in folders. Something to be aware of for students
     files = [file for file in os.listdir(submissionDirectory) if SUBMISSION_REGEX.match(file)]
 
