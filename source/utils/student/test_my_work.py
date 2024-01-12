@@ -151,13 +151,6 @@ if __name__ == "__main__":
 
     submissionDirectory = "student_work/"
 
-    if len(sys.argv) == 2:
-        submissionDirectory = sys.argv[1]
-
-    # need to make sure to that we have a / at the end of the path
-    if submissionDirectory[-1:] != '/':
-        submissionDirectory += "/"
-
     if not verifyRequiredPackages(REQUIRED_PACKAGES):
         sys.exit(1)
 
