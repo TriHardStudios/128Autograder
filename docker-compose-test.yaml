@@ -12,16 +12,16 @@ services:
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
 
-  test_build_move_data_files:
+  test_build:
     build:
       dockerfile: Dockerfile.build
-    entrypoint: /app/run.sh
+    entrypoint: sh /app/run.sh
     volumes:
-      - "./tests/integration/test_build_move_data_files/studentTests:/app/source/studentTests"
-      - "./tests/integration/test_build_move_data_files/run.sh:/app/run.sh"
-      - "./tests/integration/test_build_move_data_files/bin:/app/bin"
-      - "./tests/integration/integration_config.toml:/app/config.toml"
-      - "./tests/integration/test_build_move_data_files/starter_code/:/app/source/starter_code"
+      - "./tests/integration/test_build/studentTests:/app/source/studentTests"
+      - "./tests/integration/test_build/run.sh:/app/run.sh"
+      - "./tests/integration/test_build/bin:/app/bin"
+      - "./tests/integration/integration_config.toml:/app/source/config.toml"
+      - "./tests/integration/test_build/starter_code/:/app/source/starter_code"
 
 
 
