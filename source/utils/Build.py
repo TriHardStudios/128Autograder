@@ -14,7 +14,7 @@ class FilesEnum(Enum):
 
 class Build():
     IGNORE = ["__pycache__"]
-    IGNORE_FOR_STUDENT = ["setup.sh", "run_autograder"]
+    GRADESCOPE_ROOT = ["setup.sh", "run_autograder"]
 
     def __init__(self, config: AutograderConfiguration, sourceRoot = os.getcwd(), binRoot = "bin") -> None:
         self.config = config
@@ -208,15 +208,19 @@ class Build():
         
         for file in autograderFiles:
             destPath = os.path.join(generationPath, "source", file)
+
+            if os.path.basename(file) in Build.GRADESCOPE_ROOT:
+                destPath = os.path.join(generationPath, file)
+
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
             Build.copy(file, destPath)
-        
+
         for key, listOfFiles in files.items():
             if key is FilesEnum.STARTER_CODE:
                 continue
 
             for file in listOfFiles:
-                destPath = os.path.join(generationPath, file)
+                destPath = os.path.join(generationPath, "source", file)
                 os.makedirs(os.path.dirname(destPath), exist_ok=True)
                 Build.copy(file, destPath)
 
@@ -230,7 +234,7 @@ class Build():
         os.makedirs(studentWorkFolder, exist_ok=True)
 
         for file in autograderFiles:
-            if os.path.basename(file) in Build.IGNORE_FOR_STUDENT:
+            if os.path.basename(file) in Build.GRADESCOPE_ROOT:
                 continue
 
             destPath = os.path.join(generationPath, file)
