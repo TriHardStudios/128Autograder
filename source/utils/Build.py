@@ -207,10 +207,7 @@ class Build():
         os.makedirs(generationPath, exist_ok=True)
         
         for file in autograderFiles:
-            destPath = os.path.join(generationPath, "source", file)
-
-            if os.path.basename(file) in Build.GRADESCOPE_ROOT:
-                destPath = os.path.join(generationPath, file)
+            destPath = os.path.join(generationPath, file)
 
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
             Build.copy(file, destPath)
@@ -220,7 +217,7 @@ class Build():
                 continue
 
             for file in listOfFiles:
-                destPath = os.path.join(generationPath, "source", file)
+                destPath = os.path.join(generationPath, file)
                 os.makedirs(os.path.dirname(destPath), exist_ok=True)
                 Build.copy(file, destPath)
 
