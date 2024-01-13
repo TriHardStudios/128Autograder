@@ -24,15 +24,13 @@ def processArgs() -> argparse.Namespace:
     parser.add_argument("--config-file", default="./config.toml", 
                         help="Set the location of the config file")
 
-    options, remaining = parser.parse_known_args()
+    parser.add_argument("--submission-directory", default="/autograder/submission",
+                        help="Set the directory for the student's submission")
     
-    options.submission_directory = "/autograder/submission"
-    
-    if options.unit_test_only:
-        parser.add_argument("--submission-directory", required=True,
-                            help="Set the directory for the student's submission")
+    options = parser.parse_args()
 
-    options = parser.parse_args(args=remaining, namespace=options)
+    if options.build:
+        options.submission_directory = "."
 
     return options
 
