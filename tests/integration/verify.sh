@@ -16,6 +16,7 @@ for f in *; do
           exit 1;
       else
           echo "Passed"
+          rm output
       fi;
       cd ..;
   fi;
