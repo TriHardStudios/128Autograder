@@ -1,0 +1,47 @@
+version: "3"
+services:
+  test_many_non_main_files:
+    build:
+      dockerfile: gradescope.dockerfile
+    volumes:
+      - "./tests/integration/test_many_non_main_files/results:/autograder/results"
+      - "./tests/integration/test_many_non_main_files/student_tests:/autograder/source/student_tests"
+      - "./tests/integration/test_many_non_main_files/submission:/autograder/submission"
+      - "./tests/integration/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
+
+  test_requirements_in_submission:
+    build:
+      dockerfile: gradescope.dockerfile
+    volumes:
+      - "./tests/integration/test_requirements_in_submission/results:/autograder/results"
+      - "./tests/integration/test_requirements_in_submission/student_tests:/autograder/source/student_tests"
+      - "./tests/integration/test_requirements_in_submission/submission:/autograder/submission"
+      - "./tests/integration/test_requirements_in_submission/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
+
+  test_data_file_in_submission:
+    build:
+      dockerfile: gradescope.dockerfile
+    volumes:
+      - "./tests/integration/test_data_file_in_submission/results:/autograder/results"
+      - "./tests/integration/test_data_file_in_submission/student_tests:/autograder/source/student_tests"
+      - "./tests/integration/test_data_file_in_submission/submission:/autograder/submission"
+      - "./tests/integration/test_data_file_in_submission/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
+
+  test_build:
+    build:
+      dockerfile: run.dockerfile
+    command: 
+      - "--build"
+      - "-o"
+      - "/app/bin"
+    volumes:
+      - "./tests/integration/test_build/student_tests:/app/source/student_tests"
+      - "./tests/integration/test_build/bin:/app/bin"
+      - "./tests/integration/integration_config.toml:/app/source/config.toml"
+      - "./tests/integration/test_build/starter_code/:/app/source/starter_code"
+
+
+
