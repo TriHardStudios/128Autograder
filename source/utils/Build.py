@@ -280,7 +280,6 @@ class Build():
 
     def build(self):
         files = self.discoverFiles()
-        print(files)
 
         autograderFiles = []
 
