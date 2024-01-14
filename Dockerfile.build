@@ -1,9 +1,0 @@
-FROM alpine:latest
-
-RUN apk add --no-cache python3 py3-pip git
-
-ADD source /app/source
-
-RUN python3 -m pip install --break-system-package -r /app/source/requirements.txt 
-
-WORKDIR app
