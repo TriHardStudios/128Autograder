@@ -5,7 +5,7 @@ semester="S24"
     autograder_version="2.0.0"
     impl_to_use = "Python"
 
-    test_directory = "studentTests"
+    test_directory = "student_tests"
 
     enforce_submission_limit=true
     submission_limit=3
@@ -29,6 +29,6 @@ semester="S24"
     build_student=true
     build_gradescope=true
 
-    data_files_source="studentTests/data"
+    data_files_source="student_tests/data"
 
     starter_code_source="starter_code/submission.py"

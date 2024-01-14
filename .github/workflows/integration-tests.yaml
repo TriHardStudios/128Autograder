@@ -14,28 +14,13 @@ jobs:
     - name: Setup python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "3.11"
 
     - name: Build container for tests
-      run: docker compose -f docker-compose-test.yaml build
+      run: docker compose build
 
     - name: Run tests
-      run: docker compose -f docker-compose-test.yaml up
+      run: docker compose up
 
     - name: Verify test outputs
-      run: |
-        cd tests/integration
-        for f in *; do 
-          if [ -d $f  -a ! -h $f ];  
-          then  
-              cd -- "$f";  
-              echo "Running verify.py for $f";
-              python3 verify.py;
-              if [ $? -ne 0 ];
-              then 
-                  echo "Failed on $f"
-                  exit 1;
-              fi;
-              cd ..;
-          fi;
-        done;
+      run: bash tests/integration/verify.sh
