@@ -6,24 +6,6 @@ import unittest.mock as mock
 from utils.config.Config import AutograderConfigurationSchema, InvalidConfigException
 
 
-def mockRequestsGet(url, **kwargs):
-    class Response:
-        def __init__(self, jsonData, status: int):
-            self.jsonData = jsonData
-            self.statusCode = status
-
-        def json(self):
-            return self.jsonData
-
-    if re.match(r"https://api\.github\.com/repos/(\w|\d)+/(\w|\d)+/tags", url):
-        data = \
-            [
-                {"name": "1.0.0"},
-                {"name": "2.0.0"}
-            ]
-
-        return Response(data, 200)
-
 def mockValidateImpl(_) -> bool: return True
 
 class TestAutograderConfigurationSchema(unittest.TestCase):
@@ -51,9 +33,8 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
     @staticmethod
     def createAutograderConfigurationSchema() -> AutograderConfigurationSchema:
-        with mock.patch('requests.get', side_effect=mockRequestsGet):
-            AutograderConfigurationSchema.validateImplSource = mockValidateImpl # type: ignore
-            return AutograderConfigurationSchema()
+        AutograderConfigurationSchema.validateImplSource = mockValidateImpl # type: ignore
+        return AutograderConfigurationSchema()
 
     def testValidNoOptionalFields(self):
         schema = self.createAutograderConfigurationSchema()
@@ -98,7 +79,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
     def testInvalidAutograderVersion(self):
         schema = self.createAutograderConfigurationSchema()
 
-        self.configFile["config"]["autograder_version"] = "0.0.0"
+        self.configFile["config"]["autograder_version"] = "0.0"
 
         with self.assertRaises(InvalidConfigException):
             schema.validate(self.configFile)

@@ -139,7 +139,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
         return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
 
     def __init__(self):
-        self.TAGS = self.getAvailableTags()
+        # self.TAGS = self.getAvailableTags()
 
         self.currentSchema: Schema = Schema(
             {
@@ -148,7 +148,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                 "config": {
                     "impl_to_use": And(str, AutograderConfigurationSchema.validateImplSource),
                     Optional("student_submission_directory", default="."): And(str, os.path.exists, os.path.isdir),
-                    "autograder_version": And(str, lambda x: x in self.TAGS),
+                    "autograder_version": And(str, Regex(r"\d+\.\d+\.\d+")),
                     "test_directory": And(str, os.path.exists),
                     "enforce_submission_limit": bool,
                     Optional("submission_limit", default=1000): And(int, lambda x: x >= 1),
