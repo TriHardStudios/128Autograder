@@ -116,31 +116,13 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
     This class builds to :ref:`AutograderConfiguration` for easy typing.
     """
-    TAGS_ENDPOINT = "https://api.github.com/repos/CSCI128/128Autograder/tags"
     IMPL_SOURCE = "./StudentSubmissionImpl"
-
-    @staticmethod
-    def getAvailableTags() -> List[str]:
-        """
-        Description
-        ---
-        This method gets the currently available version tags from GitHub.
-        This ensures that any version of the autorgader is using a spefic version of the autograder.
-        :return: a list of all the valid tags from GitHub
-        """
-        headers = {"X-GitHub-Api-Version": "2022-11-28"}
-
-        tags = requests.get(url=AutograderConfigurationSchema.TAGS_ENDPOINT, headers=headers).json()
-
-        return [el["name"] for el in tags]
 
     @staticmethod
     def validateImplSource(implName: str) -> bool:
         return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
 
     def __init__(self):
-        # self.TAGS = self.getAvailableTags()
-
         self.currentSchema: Schema = Schema(
             {
                 "assignment_name": And(str, Regex(r"^(\w+-?)+$")),
