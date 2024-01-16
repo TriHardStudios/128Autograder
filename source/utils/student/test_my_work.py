@@ -14,7 +14,7 @@ RESET_COLOR: str = u"\u001b[0m"
 SUBMISSION_REGEX: re.Pattern = re.compile(r"^(\w|\s)+\.py$")
 FILE_HASHES_NAME: str = ".filehashes" 
 
-REQUIRED_PACKAGES = {"gradescope_utils":"gradescope-utils", "dill":"dill", "BetterPytUnitFormat":"Better-PyUnit-Format", "schema":"schema", "requests":"requests", "tomli":"tomli"}
+REQUIRED_PACKAGES = {"gradescope_utils":"gradescope-utils", "dill":"dill", "BetterPyUnitFormat":"Better-PyUnit-Format", "schema":"schema", "requests":"requests", "tomli":"tomli"}
 
 def printErrorMessage(errorType: str, errorText: str) -> None:
     """
@@ -40,8 +40,9 @@ def verifyRequiredPackages(packagesToVerify: dict[str, str]) -> bool:
 
     for name, package in packagesToVerify.items():
         if importlib.util.find_spec(name) is None:
-            print(f"Installing missing dependancy: {package}")
-            subprocess.run([sys.executable, "-m", "pip", "install", package])
+            print(f"Installing missing dependancy: {package}...", end="")
+            subprocess.run([sys.executable, "-m", "pip", "install", package], stdout=subprocess.DEVNULL)
+            print(f"Done.")
 
     return not errorOccurred
 
@@ -157,10 +158,7 @@ if __name__ == "__main__":
 
     command: list[str] = [sys.executable, "run.py", "--unit-test-only", "--submission-directory", submissionDirectory]
 
-    with subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
-        if p.stdout is not None:
-            for line in p.stdout:
-                print(line, end="")
+    subprocess.run(command)
 
     if not fileChanged:
         printWarningMessage("Student Submission Warning", "Student submision may not have changed")
