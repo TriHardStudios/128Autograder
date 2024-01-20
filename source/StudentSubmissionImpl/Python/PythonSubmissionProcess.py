@@ -213,6 +213,8 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         self.inputSharedMem.buf[:len(serializedStdin)] = serializedStdin
 
+        self.timeoutTime = environment.timeout
+
     def run(self):
         if self.studentSubmissionProcess is None:
             raise AttributeError("Process has not be initalized!")

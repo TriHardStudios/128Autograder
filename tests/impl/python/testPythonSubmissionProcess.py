@@ -243,6 +243,32 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.assertNotIn(PossibleResults.STDOUT, results)
 
+    def testCorrectTimeoutError(self):
+        program = \
+                "while True:\n"\
+                "   print('OUTPUT LOOP:)')\n"
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        self.environment.timeout = 5
+
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        with self.assertRaises(TimeoutError) as ex:
+            raise results[PossibleResults.EXCEPTION]
+        
+        exceptionText = str(ex.exception)
+        self.assertIn("timed out after 5 seconds", exceptionText)
+
+        self.assertNotIn(PossibleResults.STDOUT, results)
+
     def testHandledExceptionInfiniteRecursion(self):
         program = \
                 "def loop():\n"\
