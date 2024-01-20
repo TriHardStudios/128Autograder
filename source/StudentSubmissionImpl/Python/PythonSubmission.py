@@ -4,8 +4,8 @@ import sys
 from types import CodeType
 from typing import Dict, Iterable, List, Optional, TypeVar
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from .PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
-from .common import FileTypeMap
+from StudentSubmissionImpl.Python.PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
+from StudentSubmissionImpl.Python.common import FileTypeMap
 
 Builder = TypeVar("Builder", bound="PythonSubmission")
 
