@@ -1,14 +1,6 @@
 from enum import Enum
 from typing import List, Any
 
-class PossibleResults(Enum):
-    STDOUT = "stdout"
-    RETURN_VAL = "return_val"
-    FILE_OUT = "file_out"
-    FILE_HASH = "file_hash"
-    MOCK_SIDE_EFFECTS = "mock"
-    EXCEPTION = "exception"
-
 class ValidationHook(Enum):
     PRE_LOAD = 1
     POST_LOAD = 2
@@ -31,6 +23,14 @@ class MissingFunctionDefinition(Exception):
     def __reduce__(self):
         # Need to be (something,) so that it actually gets processed as a tuple in the pickler
         return (MissingFunctionDefinition, (self.functionName,))
+
+class TimeoutError(Exception):
+    def __init__(self, timeout: int):
+        super().__init__(f"Submission timed out after {timeout} seconds")
+        self.timeout = timeout
+
+    def __reduce__(self):
+        return (TimeoutError, (self.timeout,))
 
 class InvalidTestCaseSetupCode(Exception):
     def __init__(self, *args):

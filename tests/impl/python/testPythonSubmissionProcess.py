@@ -10,6 +10,7 @@ from Executors.Environment import ExecutionEnvironment
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
+from StudentSubmission.common import TimeoutError
 
 
 class TestPythonSubmissionProcess(unittest.TestCase):
@@ -240,6 +241,32 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         with self.assertRaises(TimeoutError):
             raise results[PossibleResults.EXCEPTION]
+
+        self.assertNotIn(PossibleResults.STDOUT, results)
+
+    def testCorrectTimeoutError(self):
+        program = \
+                "while True:\n"\
+                "   print('OUTPUT LOOP:)')\n"
+
+        runner = MainModuleRunner()
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        self.environment.timeout = 5
+
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        with self.assertRaises(TimeoutError) as ex:
+            raise results[PossibleResults.EXCEPTION]
+        
+        exceptionText = str(ex.exception)
+        self.assertIn("timed out after 5 seconds", exceptionText)
 
         self.assertNotIn(PossibleResults.STDOUT, results)
 
