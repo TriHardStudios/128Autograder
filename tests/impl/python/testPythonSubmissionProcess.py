@@ -10,7 +10,6 @@ from Executors.Environment import ExecutionEnvironment
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
-from StudentSubmission.common import TimeoutError
 
 
 class TestPythonSubmissionProcess(unittest.TestCase):

@@ -22,7 +22,6 @@ import sys
 from io import StringIO
 
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from StudentSubmission.common import TimeoutError
 from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
 
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
@@ -255,7 +254,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
 
         if self.timeoutOccurred:
-            self.exception = TimeoutError(self.timeoutTime)
+            self.exception = TimeoutError(f"Submission timed out after {self.timeoutTime} seconds")
             self._deallocate()
             return
 

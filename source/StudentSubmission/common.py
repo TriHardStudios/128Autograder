@@ -24,14 +24,6 @@ class MissingFunctionDefinition(Exception):
         # Need to be (something,) so that it actually gets processed as a tuple in the pickler
         return (MissingFunctionDefinition, (self.functionName,))
 
-class TimeoutError(Exception):
-    def __init__(self, timeout: int):
-        super().__init__(f"Submission timed out after {timeout} seconds")
-        self.timeout = timeout
-
-    def __reduce__(self):
-        return (TimeoutError, (self.timeout,))
-
 class InvalidTestCaseSetupCode(Exception):
     def __init__(self, *args):
         super().__init__(
