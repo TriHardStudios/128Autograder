@@ -22,6 +22,15 @@ semester=""
 
     extra_packages=[]
     
+[config.c]
+    # c/c-like config
+    use_makefile = true
+
+    c_matching = false
+    cpp_matching = false
+
+    compiler = "gcc"
+    min_gcc_version = "10.1"
 
 
 [build]
