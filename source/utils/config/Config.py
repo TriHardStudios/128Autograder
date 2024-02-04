@@ -52,6 +52,28 @@ class PythonConfiguration:
     """
 
 @dataclass(frozen=True)
+class CConfiguration:
+    """
+    C/C++/C-Like Configuration
+    ==========================
+
+    This defines the extra parameters for when the autograder is running for c like languages
+    """
+
+    use_makefile: bool
+    """
+    If a makefile should be used for building
+    """
+    clean_target: str
+    """
+    The target that should be used to clean. Invoked as `make {clean_target}`
+    """
+    submission_name: str
+    """
+    The file name that should be executed
+    """
+
+@dataclass(frozen=True)
 class BasicConfiguration:
     """
     Basic Configuration
@@ -84,6 +106,8 @@ class BasicConfiguration:
     """
     python: OptionalType[PythonConfiguration] = None
     """Extra python spefic configuration. See :ref:`PythonConfiguration` for options"""
+    c: OptionalType[CConfiguration] = None
+    """Extra C/C-like spefic configuration. See :ref:`CConfiguration` for options"""
 
 @dataclass(frozen=True)
 class AutograderConfiguration:
@@ -144,6 +168,11 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                             "version": str,
                         }],
                     }, None),
+                    Optional("c", default=None): Or({
+                        "use_makefile": bool,
+                        "clean_target": str,
+                        "submission_name": And(str, lambda x: len(x) >= 1)
+                        }, None),
                 },
                 "build": {
                     "use_starter_code": bool,
@@ -189,8 +218,6 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
         if validated["build"]["use_data_files"] and validated["build"]["data_files_source"] is None:
             raise InvalidConfigException("Missing directory for data files!")
 
-
-
         return validated
 
 
@@ -208,6 +235,8 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
         if data["config"]["python"] is not None:
             data["config"]["python"] = PythonConfiguration(**data["config"]["python"])
 
+        if data["config"]["c"] is not None:
+            data["config"]["c"] = CConfiguration(**data["config"]["c"])
 
         data["config"] = BasicConfiguration(**data["config"])
         data["build"] = BuildConfiguration(**data["build"])

@@ -30,7 +30,7 @@ semester=""
 
     # the name that we expect to exist after running the makefile
     clean_name = "clean"
-    target_name = ""
+    submission_name = ""
 
 
 
