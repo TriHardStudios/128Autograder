@@ -3,8 +3,12 @@ from enum import Enum
 
 class FileTypeMap(Enum):
     MAKEFILE = 0
-    C_FILE = 1
-    H_FILE = 2
-    CPP_FILE = 3
-    HPP_FILE = 4
 
+
+class MissingMakefile(Exception):
+    def __init__(self) -> None:
+        super().__init__("No makefiles found!\nEnsure that there is exactly 1 makefiles in the submission root.")
+
+class TooManyMakefiles(Exception):
+    def __init__(self) -> None:
+        super().__init__("Too many makefiles found!\nEnsure that there is exactly 1 makefile in the submission root.")

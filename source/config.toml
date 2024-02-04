@@ -26,11 +26,12 @@ semester=""
     # c/c-like config
     use_makefile = true
 
-    c_matching = false
-    cpp_matching = false
+    # Only supporting makefiles for now.
 
-    compiler = "gcc"
-    min_gcc_version = "10.1"
+    # the name that we expect to exist after running the makefile
+    clean_name = "clean"
+    target_name = ""
+
 
 
 [build]
