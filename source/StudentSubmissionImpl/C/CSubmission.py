@@ -6,6 +6,7 @@ import subprocess
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmissionImpl.C.common import FileTypeMap, decodeBytes
+from source.StudentSubmissionImpl.C.CValidators import ExecutableCreated, MakeAvailable, MakefileExists
 
 Builder = TypeVar("Builder", bound="CSubmission")
 
@@ -20,7 +21,11 @@ class CSubmission(AbstractStudentSubmission[str]):
         self.submissionName: str = submissionName
         self.cleanTargetName: str = "clean"
 
-        self.discoveredFileMap: Dict[FileTypeMap, List[str]]
+        self.discoveredFileMap: Dict[FileTypeMap, List[str]] = {}
+
+        self.addValidator(MakeAvailable())
+        self.addValidator(MakefileExists())
+        self.addValidator(ExecutableCreated())
 
     def enableMakefile(self: Builder, enableMakefile: bool = True) -> Builder:
         self.makefilesEnabled = enableMakefile
@@ -75,12 +80,12 @@ class CSubmission(AbstractStudentSubmission[str]):
         os.chdir(self.submissionRoot)
 
         # we dont care if the clean target passes or fails
-        subprocess.run([f"make {self.cleanTargetName}"], timeout=self.buildTimeout, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run([f"make", self.cleanTargetName], timeout=self.buildTimeout, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         try:
             # we only care if the main building succeeds
             subprocess.run(["make"], check=True, timeout=self.buildTimeout, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to build!\n{decodeBytes(e.output)}")
+            raise Exception(f"Failed to build!\n{decodeBytes(e.output)}\n{decodeBytes(e.stderr)}")
 
         os.chdir(current_directory)
 

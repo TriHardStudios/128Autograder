@@ -22,9 +22,9 @@ class MakeAvailable(AbstractValidator):
         command = ["make --version"]
 
         try:
-            subprocess.run(command, check=True, shell=True, timeout=1, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+            subprocess.run(command, check=True, shell=True, timeout=1,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            self.addError(MakeUnavailable(decodeBytes(e.output)))
+            self.addError(MakeUnavailable(decodeBytes(e.output) + "\n" + decodeBytes(e.stderr)))
 
 class MakefileExists(AbstractValidator):
     @staticmethod
@@ -46,7 +46,7 @@ class MakefileExists(AbstractValidator):
         if len(self.makefiles) > 1:
             self.addError(TooManyMakefiles())
 
-class ExecutableCreatedAndFound(AbstractValidator):
+class ExecutableCreated(AbstractValidator):
     @staticmethod
     def getValidationHook() -> ValidationHook:
         return ValidationHook.POST_BUILD
