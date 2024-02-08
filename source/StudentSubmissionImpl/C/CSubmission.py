@@ -85,6 +85,7 @@ class CSubmission(AbstractStudentSubmission[str]):
             # we only care if the main building succeeds
             subprocess.run(["make"], check=True, timeout=self.buildTimeout, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
+            os.chdir(current_directory)
             raise Exception(f"Failed to build!\n{decodeBytes(e.output)}\n{decodeBytes(e.stderr)}")
 
         os.chdir(current_directory)
