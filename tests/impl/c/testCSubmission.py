@@ -31,6 +31,7 @@ class CSubmissionTests(unittest.TestCase):
     def tearDown(self) -> None:
         if os.path.exists(self.SANDBOX_LOCATION):
             shutil.rmtree(self.SANDBOX_LOCATION)
+
         self.mock.reset_mock()
 
     @classmethod
