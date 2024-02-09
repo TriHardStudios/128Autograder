@@ -302,6 +302,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
+                            "Do you have the correct number of input statements?\n"\
                             "Are you missing if __name__ == '__main__'?\n" \
                             "Is your code inside of the branch?"
 
