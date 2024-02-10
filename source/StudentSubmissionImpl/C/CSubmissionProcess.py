@@ -39,7 +39,7 @@ class CSubmissionProcess(ISubmissionProcess):
                 process.kill()
                 self.timeoutOccurred = True
             except Exception as e:
-                self.exception = Exception(f"An error occured while running student submission! Error is:\n{str(e)}")
+                self.exception = RuntimeError(f"An error occured while running student submission! {str(e)}")
         except OSError as e:
             self.exception = Exception(f"Failed to start student submission! Error is:\n{str(e)}")
 
@@ -52,7 +52,7 @@ class CSubmissionProcess(ISubmissionProcess):
     def populateResults(self, environment: ExecutionEnvironment):
         environment.resultData[PossibleResults.EXCEPTION] = self.exception
 
-        environment.resultData[PossibleResults.STDOUT] = self.stdout.decode()
+        environment.resultData[PossibleResults.STDOUT] = self.stdout.decode().splitlines()
 
         environment.resultData[PossibleResults.FILE_OUT] =\
                 detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
