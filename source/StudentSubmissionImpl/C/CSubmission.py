@@ -6,7 +6,7 @@ import subprocess
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmissionImpl.C.common import FileTypeMap, decodeBytes
-from source.StudentSubmissionImpl.C.CValidators import ExecutableCreated, MakeAvailable, MakefileExists
+from StudentSubmissionImpl.C.CValidators import ExecutableCreated, MakeAvailable, MakefileExists
 
 Builder = TypeVar("Builder", bound="CSubmission")
 

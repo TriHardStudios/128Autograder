@@ -26,7 +26,7 @@ class CSubmissionProcess(ISubmissionProcess):
         self.timeoutOccurred: bool = False
 
         # move submission into sandbox
-        shutil.copy(runner.getSubmission(), self.exPath)
+        shutil.copy(runner.getSubmission(), os.path.dirname(self.exPath))
         # currently only stdOut is only supported
         
     def run(self):

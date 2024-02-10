@@ -29,7 +29,7 @@ semester=""
     # Only supporting makefiles for now.
 
     # the name that we expect to exist after running the makefile
-    clean_name = "clean"
+    clean_target = "clean"
     submission_name = ""
 
 

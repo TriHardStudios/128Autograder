@@ -30,6 +30,16 @@ services:
       - "./tests/integration/test_data_file_in_submission/submission_metadata.json:/autograder/submission_metadata.json"
       - "./tests/integration/integration_config.toml:/autograder/source/config.toml"
 
+  test_c_build:
+    build:
+      dockerfile: gradescope.dockerfile
+    volumes:
+      - "./tests/integration/test_c_build/results:/autograder/results"
+      - "./tests/integration/test_c_build/student_tests:/autograder/source/student_tests"
+      - "./tests/integration/test_c_build/submission:/autograder/submission"
+      - "./tests/integration/test_c_build/submission_metadata.json:/autograder/submission_metadata.json"
+      - "./tests/integration/test_c_build/config.toml:/autograder/source/config.toml"
+
   test_build:
     build:
       dockerfile: run.dockerfile
