@@ -39,9 +39,9 @@ class CSubmissionProcess(ISubmissionProcess):
                 process.kill()
                 self.timeoutOccurred = True
             except Exception as e:
-                self.exception = RuntimeError(f"An error occured while running student submission! {str(e)}")
+                self.exception = e
         except OSError as e:
-            self.exception = Exception(f"Failed to start student submission! Error is:\n{str(e)}")
+            self.exception = EnvironmentError(f"Failed to start student submission! Error is:\n{str(e)}")
 
     def cleanup(self):
         if self.timeoutOccurred:

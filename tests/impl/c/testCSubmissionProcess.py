@@ -1,4 +1,3 @@
-import copy
 import unittest
 from unittest.mock import MagicMock
 import subprocess
@@ -96,11 +95,13 @@ class CSubmissionProcessTests(unittest.TestCase):
         self.submissionProcess.cleanup()
 
         self.submissionProcess.populateResults(self.environment)
+        
+        self.submissionProcess.processAndRaiseExceptions(self.environment)
 
         self.assertEqual(self.environment.stdin, self.environment.resultData[PossibleResults.STDOUT])
 
     def testExceptionRaised(self):
-        self.mock.communicate.side_effect = Exception("This is an exception raised by the child!")
+        self.mock.communicate.side_effect = AttributeError("This is an exception raised by the child!")
 
         self.submissionProcess.setup(self.environment, self.runner)
         self.submissionProcess.run()
@@ -108,8 +109,49 @@ class CSubmissionProcessTests(unittest.TestCase):
 
         self.submissionProcess.populateResults(self.environment)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(AttributeError):
             raise self.environment.resultData[PossibleResults.EXCEPTION] # type: ignore
 
+    def testExceptionRaisedDuringProcessCreation(self):
+        subprocess.Popen.__new__.side_effect = OSError("The process totally failed to spawn") # type: ignore
+
+        self.submissionProcess.setup(self.environment, self.runner)
+        self.submissionProcess.run()
+        self.submissionProcess.cleanup()
+
+        self.submissionProcess.populateResults(self.environment)
+
+        with self.assertRaises(EnvironmentError) as ex:
+            raise self.environment.resultData[PossibleResults.EXCEPTION] # type: ignore
+
+        exceptionText = str(ex.exception)
+
+        self.assertIn("Failed to start student submission", exceptionText)
+
+    def testFileIO(self):
+        fileToCreate = os.path.join(self.environment.SANDBOX_LOCATION, "written_file.txt")
+        with open(fileToCreate, 'w') as w:
+            w.write("")
+
+        self.submissionProcess.setup(self.environment, self.runner)
+        self.submissionProcess.populateResults(self.environment)
+
+        self.assertIn(os.path.basename(fileToCreate), self.environment.resultData[PossibleResults.FILE_OUT]) # type: ignore
 
 
+    def testEOFError(self):
+        self.mock.communicate.side_effect = EOFError()
+
+        self.submissionProcess.setup(self.environment, self.runner)
+        self.submissionProcess.run()
+        self.submissionProcess.cleanup()
+
+        self.submissionProcess.populateResults(self.environment)
+
+        with self.assertRaises(AssertionError) as ex:
+            self.submissionProcess.processAndRaiseExceptions(self.environment)
+
+        exceptionText = str(ex.exception)
+
+        self.assertIn("EOFError", exceptionText)
+        self.assertIn("Do you have the correct number of input statements?", exceptionText)
