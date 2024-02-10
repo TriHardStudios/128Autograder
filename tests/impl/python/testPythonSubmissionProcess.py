@@ -239,7 +239,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         results = self.environment.resultData
 
         with self.assertRaises(TimeoutError):
-            raise results[PossibleResults.EXCEPTION]
+            raise results[PossibleResults.EXCEPTION] # type: ignore
 
         self.assertNotIn(PossibleResults.STDOUT, results)
 

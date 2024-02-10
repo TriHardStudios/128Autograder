@@ -1,11 +1,12 @@
 import os
 import re
 import sys
+import subprocess
 from types import CodeType
 from typing import Dict, Iterable, List, Optional, TypeVar
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from .PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
-from .common import FileTypeMap
+from StudentSubmissionImpl.Python.PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
+from StudentSubmissionImpl.Python.common import FileTypeMap
 
 Builder = TypeVar("Builder", bound="PythonSubmission")
 
@@ -121,7 +122,6 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
         if not self.getRequirementsEnabled() or not self.extraPackages:
             return
 
-        import subprocess
         for package, version in self.extraPackages.items():
             subprocess.check_call([sys.executable, "-m", "pip", "install", 
                                    f"{package}=={version}" if version else package], 
@@ -173,7 +173,6 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
         if not self.getRequirementsEnabled() or not self.extraPackages:
             return
 
-        import subprocess
         for package in self.extraPackages.keys():
             subprocess.check_call([sys.executable, "-m", "pip", "uninstall", 
                                    "-y", package], 

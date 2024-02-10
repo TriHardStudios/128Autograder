@@ -1,0 +1,6 @@
+from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
+
+from StudentSubmissionImpl.C.CSubmission import CSubmission
+from StudentSubmissionImpl.C.CSubmissionProcess import CSubmissionProcess
+
+SubmissionProcessFactory.register(CSubmission, CSubmissionProcess)

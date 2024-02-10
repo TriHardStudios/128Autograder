@@ -107,6 +107,34 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.assertIsNotNone(actual.config.python)
         self.assertIsNotNone(actual.config.python.extra_packages) # type: ignore
 
+    def testBuildWithCImpl(self):
+        schema = self.createAutograderConfigurationSchema()
+        self.configFile["config"]["impl_to_use"] = "C"
+        self.configFile["config"]["c"] = {}
+        self.configFile["config"]["c"]["use_makefile"] = True
+        self.configFile["config"]["c"]["clean_target"] = "clean"
+        self.configFile["config"]["c"]["submission_name"] = "PROJECT"
+
+        data = schema.validate(self.configFile)
+
+        actual = schema.build(data)
+
+        self.assertIsNotNone(actual.config.c)
+        self.assertIsNotNone(actual.config.c.use_makefile) # type: ignore
+        self.assertIsNotNone(actual.config.c.submission_name) # type: ignore
+
+    def testBuildWithCImplInvalidName(self):
+        schema = self.createAutograderConfigurationSchema()
+        self.configFile["config"]["impl_to_use"] = "C"
+
+        self.configFile["config"]["c"] = {}
+        self.configFile["config"]["c"]["use_makefile"] = True
+        self.configFile["config"]["c"]["clean_target"] = "clean"
+        self.configFile["config"]["c"]["submission_name"] = ""
+
+        with self.assertRaises(InvalidConfigException):
+            schema.validate(self.configFile)
+
     def testMissingLocationStarterCode(self):
         schema = self.createAutograderConfigurationSchema()
 

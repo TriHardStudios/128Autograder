@@ -22,6 +22,16 @@ semester=""
 
     extra_packages=[]
     
+[config.c]
+    # c/c-like config
+    use_makefile = true
+
+    # Only supporting makefiles for now.
+
+    # the name that we expect to exist after running the makefile
+    clean_target = "clean"
+    submission_name = ""
+
 
 
 [build]

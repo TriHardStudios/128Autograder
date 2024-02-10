@@ -15,8 +15,6 @@ from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 class Executor:
     @classmethod
     def setup(cls, environment: ExecutionEnvironment, runner: IRunner) -> ISubmissionProcess:
-        process = SubmissionProcessFactory.createProcess(environment, runner)
-
         if os.path.exists(environment.SANDBOX_LOCATION):
             shutil.rmtree(environment.SANDBOX_LOCATION)
 
@@ -25,6 +23,8 @@ class Executor:
             os.mkdir(environment.SANDBOX_LOCATION)
         except OSError as ex:
             raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {ex}")
+
+        process = SubmissionProcessFactory.createProcess(environment, runner)
 
         if environment.files:
             for src, dest in environment.files.items():

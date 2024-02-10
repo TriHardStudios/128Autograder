@@ -187,7 +187,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.timeoutOccurred: bool = False
         self.timeoutTime: int =  0
         
-    def setup(self, environment: ExecutionEnvironment, runner: GenericPythonRunner):
+    def setup(self, environment: ExecutionEnvironment, runner: GenericPythonRunner): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Description
         ---
@@ -304,6 +304,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
+                            "Do you have the correct number of input statements?\n"\
                             "Are you missing if __name__ == '__main__'?\n" \
                             "Is your code inside of the branch?"
 
