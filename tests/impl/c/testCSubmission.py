@@ -88,6 +88,7 @@ class CSubmissionTests(unittest.TestCase):
         submission = CSubmission(os.path.basename(self.EXEC_FILE_LOCATION))\
             .setSubmissionRoot(self.SANDBOX_LOCATION)\
             .enableMakefile()\
+            .setBuildTimeout(10)\
             .load()\
             .build()
 
@@ -100,9 +101,14 @@ class CSubmissionTests(unittest.TestCase):
             w.write("")
 
         binLoc = os.path.join(self.SANDBOX_LOCATION, "bin", os.path.basename(self.EXEC_FILE_LOCATION))
+        otherDir = os.path.join(os.path.dirname(binLoc), "ignore", os.path.basename(self.EXEC_FILE_LOCATION))
         os.makedirs(os.path.dirname(binLoc), exist_ok=True)
+        os.makedirs(os.path.dirname(otherDir), exist_ok=True)
 
         with open(binLoc, "w") as w:
+            w.write("")
+
+        with open(otherDir, "w") as w:
             w.write("")
 
         submission = CSubmission(os.path.basename(self.EXEC_FILE_LOCATION))\
@@ -125,6 +131,7 @@ class CSubmissionTests(unittest.TestCase):
         submission = CSubmission(os.path.basename(self.EXEC_FILE_LOCATION))\
             .setSubmissionRoot(self.SANDBOX_LOCATION)\
             .enableMakefile()\
+            .setCleanTargetName("clear")\
             .load()\
             .build()
 
