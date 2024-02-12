@@ -21,7 +21,10 @@ class CSubmission(AbstractStudentSubmission[str]):
         self.submissionName: str = submissionName
         self.cleanTargetName: str = "clean"
 
-        self.discoveredFileMap: Dict[FileTypeMap, List[str]] = {}
+        self.discoveredFileMap: Dict[FileTypeMap, List[str]] = {
+            FileTypeMap.MAKEFILE: [],
+            FileTypeMap.EXECUTABLE: [],
+        }
 
         self.addValidator(MakeAvailable())
         self.addValidator(MakefileExists())

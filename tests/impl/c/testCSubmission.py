@@ -157,3 +157,43 @@ class CSubmissionTests(unittest.TestCase):
         exText = str(ex.exception)
 
         self.assertIn(buildErrorMessage.decode(), exText)
+
+    def testBuildNoMakefileExists(self):
+        self.setUpSubprocess([0, 1, 0], [b"", b"", b""], [b"", b"", b""])
+
+        # make sure at least one file exists so we actually trigger this error
+        with open(self.EXEC_FILE_LOCATION, "w") as w:
+            w.write("")
+
+        with self.assertRaises(ValidationError) as ex:
+            CSubmission(os.path.basename(self.EXEC_FILE_LOCATION))\
+                .setSubmissionRoot(self.SANDBOX_LOCATION)\
+                .enableMakefile()\
+                .load()
+
+        exText = str(ex.exception)
+
+        self.assertIn("No makefiles found", exText)
+
+
+    def testBuildNoExecutableCreated(self):
+        self.setUpSubprocess([0, 1, 0], [b"", b"", b""], [b"", b"", b""])
+
+        with open(self.MAKEFILE_LOCATION, "w") as w:
+            w.write("")
+
+        
+        with self.assertRaises(ValidationError) as ex:
+            CSubmission(os.path.basename(self.EXEC_FILE_LOCATION))\
+                .setSubmissionRoot(self.SANDBOX_LOCATION)\
+                .enableMakefile()\
+                .load()\
+                .build()
+
+
+        exText = str(ex.exception)
+
+        self.assertIn("No executable found with name", exText)
+
+
+
