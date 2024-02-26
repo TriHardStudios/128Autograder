@@ -1,9 +1,7 @@
 import shutil
 import os
 
-from typing import List, Optional
-
-from .Environment import ExecutionEnvironment, PossibleResults
+from Executors.Environment import ExecutionEnvironment
 
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 
@@ -39,6 +37,7 @@ class Executor:
     @classmethod
     def execute(cls, environment: ExecutionEnvironment, runner: IRunner, raiseExceptions: bool = True) -> None:
         runner.setSubmission(environment.submission.getExecutableSubmission())
+        runner.setParameters(environment.parameters)
 
         submissionProcess: ISubmissionProcess = cls.setup(environment, runner)
 
