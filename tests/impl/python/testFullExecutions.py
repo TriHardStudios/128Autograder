@@ -4,7 +4,7 @@ import unittest
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, PossibleResults, getOrAssert
-from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner
+from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 
 
@@ -80,6 +80,37 @@ class TestFullExecutions(unittest.TestCase):
         actualOutput = getOrAssert(environment, PossibleResults.FILE_OUT, file=self.OUTPUT_FILE_NAME)
 
         self.assertEqual(expectedOutput, actualOutput)
+
+    def testExecutorSetsParameters(self):
+        program = \
+                "def fun(param, *args):\n"\
+                f"    return (param, *args)"
+
+        self.writePythonFile("test_code.py", program)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .enableLooseMainMatching()\
+                .load()\
+                .build()\
+                .validate()
+
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .addParameter(1)\
+                .addParameter(2)\
+                .addParameter(3)\
+                .build()
+        runner = FunctionRunner("fun")
+
+        Executor.execute(environment, runner)
+
+        actualOutput = getOrAssert(environment, PossibleResults.PARAMETERS)
+
+        self.assertEqual(3, len(actualOutput))
+        self.assertEqual(3, actualOutput[2])
+
+
+
 
     @unittest.skip("This will be implmeneted once imports are supported")
     def testImportFullExecution(self):

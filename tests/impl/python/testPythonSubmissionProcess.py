@@ -86,8 +86,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         strInput = "this was passed as a parameter"
 
-        runner = FunctionRunner("runMe", strInput)
+        runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
+        runner.setParameters((strInput,))
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
@@ -105,8 +106,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
              "  return value\n"
 
         intInput = 128
-        runner = FunctionRunner("runMe", intInput)
+        runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
+        runner.setParameters((intInput,))
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
@@ -117,6 +119,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         results = self.environment.resultData
 
         self.assertEqual(intInput, results[PossibleResults.RETURN_VAL])
+        self.assertEqual(intInput, results[PossibleResults.PARAMETERS][0])
 
     def testFunctionMock(self):
         program = \
@@ -149,10 +152,11 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def mockMe(a, b, c):\n"\
             "    return a + b + c\n"
 
-        runner = FunctionRunner("mockMe", 1, 2, 3)
+        runner = FunctionRunner("mockMe")
         mocks = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
 
         runner.setMocks(mocks)
+        runner.setParameters((1, 2, 3))
         runner.setSubmission(compile(program, "test_code", "exec"))
 
         self.runnableSubmission.setup(self.environment, runner)
@@ -473,6 +477,28 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.assertIsNone(results[PossibleResults.EXCEPTION])
         self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
+
+    def testFunctionMutableParameters(self):
+        program = \
+            "def test1(lst):\n"\
+            "   lst.append(1)\n"
+
+        listToUpdate = [0]
+        runner = FunctionRunner("test1")
+        runner.setParameters((listToUpdate,))
+
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        self.runnableSubmission.setup(self.environment, runner)
+        self.runnableSubmission.run()
+        self.runnableSubmission.cleanup()
+
+        self.runnableSubmission.populateResults(self.environment)
+
+        results = self.environment.resultData
+
+        self.assertEqual(len(results[PossibleResults.PARAMETERS][0]), 2)
+        self.assertIn(1, results[PossibleResults.PARAMETERS][0])
 
     def testFindNewFiles(self):
         program = "pass"

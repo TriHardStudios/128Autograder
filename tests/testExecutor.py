@@ -1,5 +1,5 @@
 import shutil
-from typing import Optional
+from typing import Optional, Tuple, Any
 import unittest
 import os
 
@@ -31,6 +31,9 @@ class MockRunner(IRunner[str]):
 
     def setSubmission(self, submission: str):
         self.code = submission
+
+    def setParameters(self, parameters: Tuple[Any]):
+        pass
 
     def run(self) -> Optional[str]:
         return self.code

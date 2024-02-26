@@ -9,7 +9,7 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 from Executors.Environment import ExecutionEnvironment, PossibleResults
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
@@ -23,6 +23,7 @@ from io import StringIO
 
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
 from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
 multiprocessing.reduction.dump = dill.dump
@@ -56,7 +57,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, _runner: GenericPythonRunner, _executionDirectory: str, timeout: int = 10):
+    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -74,13 +75,13 @@ class StudentSubmissionProcess(multiprocessing.Process):
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
-        self.runner: GenericPythonRunner = _runner
+        self.runner: GenericPythonRunner = runner
         self.inputDataMemName: str = ""
         self.outputDataMemName: str = ""
-        self.executionDirectory: str = _executionDirectory
+        self.executionDirectory: str = executionDirectory
         self.timeout: int = timeout
 
-    def setInputDataMemName(self, _inputSharedMemName):
+    def setInputDataMemName(self, inputSharedMemName):
         """
         Updates the input data memory name from the default
 
@@ -89,9 +90,9 @@ class StudentSubmissionProcess(multiprocessing.Process):
         and must be processed into a format understood by ``StringIO``.
         The data must exist before the child is started.
         """
-        self.inputDataMemName: str = _inputSharedMemName
+        self.inputDataMemName: str = inputSharedMemName
 
-    def setOutputDataMenName(self, _outputDataMemName):
+    def setOutputDataMenName(self, outputDataMemName):
         """
         Updates the output data memory name from the default.
 
@@ -99,7 +100,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         return values.
         This is created by the child and will be connected to by the parent once the child exits.
         """
-        self.outputDataMemName = _outputDataMemName
+        self.outputDataMemName = outputDataMemName
 
     def _setup(self) -> None:
         """
@@ -121,8 +122,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, _stdout: StringIO | None = None, _exception: Exception | None = None,
-                  _returnValue: object | None = None, _mocks: dict[str, object] | None = None) -> None:
+    def _teardown(self, stdout: StringIO, exception: Optional[Exception],
+                  returnValue: Any, parameters: Tuple[Any], mocks: Optional[Dict[str, SingleFunctionMock]]) -> None:
         """
 .       This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
@@ -134,11 +135,12 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
 
         # Pickle both the exceptions and the return value
-        dataToSerialize: dict[PossibleResults, object] = {
-            PossibleResults.STDOUT: _stdout.getvalue().splitlines(),
-            PossibleResults.EXCEPTION: _exception,
-            PossibleResults.RETURN_VAL: _returnValue,
-            PossibleResults.MOCK_SIDE_EFFECTS: _mocks
+        dataToSerialize: Dict[PossibleResults, object] = {
+            PossibleResults.STDOUT: stdout.getvalue().splitlines(),
+            PossibleResults.EXCEPTION: exception,
+            PossibleResults.RETURN_VAL: returnValue,
+            PossibleResults.PARAMETERS: parameters,
+            PossibleResults.MOCK_SIDE_EFFECTS: mocks
         }
 
         serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
@@ -151,7 +153,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         self._setup()
 
         returnValue: object = None
-        exception: Exception | None = None
+        exception: Optional[Exception] = None
         try:
             returnValue = self.runner()
         except RuntimeError as rt_er:
@@ -159,7 +161,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         except Exception as g_ex:
             exception = g_ex
 
-        self._teardown(sys.stdout, exception, returnValue, self.runner.getMocks())
+        self._teardown(sys.stdout, exception, returnValue, self.runner.getParameters(), self.runner.getMocks())
 
     def join(self, **kwargs):
         multiprocessing.Process.join(self, timeout=self.timeout)
@@ -266,7 +268,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
             self._deallocate()
             return
 
-        deserializedData: dict[PossibleResults, object] = dill.loads(outputBytes)
+        deserializedData: Dict[PossibleResults, Any] = dill.loads(outputBytes)
 
         self.exception = deserializedData[PossibleResults.EXCEPTION]
         self.outputData = deserializedData
@@ -283,6 +285,9 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         environment.resultData[PossibleResults.STDOUT] =\
                 filterStdOut(self.outputData[PossibleResults.STDOUT])
+
+        environment.resultData[PossibleResults.PARAMETERS] =\
+                self.outputData[PossibleResults.PARAMETERS]
 
         environment.resultData[PossibleResults.FILE_OUT] =\
                 detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)

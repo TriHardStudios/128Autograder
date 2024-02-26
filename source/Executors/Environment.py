@@ -1,5 +1,5 @@
 import os
-from typing import Generic, List, Dict, Optional, TypeVar, Union, Any
+from typing import Generic, List, Dict, Optional, Tuple, TypeVar, Union, Any
 from enum import Enum
 
 import dataclasses
@@ -11,6 +11,7 @@ class PossibleResults(Enum):
     FILE_OUT = "file_out"
     MOCK_SIDE_EFFECTS = "mock"
     EXCEPTION = "exception"
+    PARAMETERS = "parameters"
 
 T = TypeVar("T", str, Exception, object)
 
@@ -32,12 +33,14 @@ class ExecutionEnvironment:
     files: Dict[str, str] = dataclasses.field(default_factory=dict)
     """What files need to be added to the students submission. 
     The key is the file name, and the value is the file name with its relative path"""
+    parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
+    """What arguments to pass to the submission"""
     mocks: Dict[str, object] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
 
-    resultData: Dict[PossibleResults, Union[Dict[str, object], object]] = dataclasses.field(default_factory=dict)
+    resultData: Dict[PossibleResults, Any] = dataclasses.field(default_factory=dict)
     """
     This dict contains the data that was generated from the student's submission. This should not be accessed
     directly, rather, use getOrAssert method
@@ -121,6 +124,7 @@ class ExecutionEnvironmentBuilder():
     def __init__(self, submission: AbstractStudentSubmission):
         self.environment = ExecutionEnvironment(submission)
         self.dataRoot = "."
+        self.parameters: List[Any] = []
 
     def setDataRoot(self: Builder, dataRoot: str) -> Builder:
         """
@@ -163,6 +167,19 @@ class ExecutionEnvironmentBuilder():
         This needs to be updated once we decide how to do mocks
         """
         self.environment.mocks[mockName] = mockObject
+
+        return self
+
+    def addParameter(self: Builder, parameter: Any) -> Builder:
+        """
+        Description
+        ---
+        This function adds a parameter to be passed to the submission. 
+        During build, this is converted to an immutable tuple!
+        Order is preverved.
+        :param parameter: The parameter to pass to the submission
+        """
+        self.parameters.append(parameter)
 
         return self
 
@@ -229,5 +246,6 @@ class ExecutionEnvironmentBuilder():
         :returns: The build environment
         """
         self._validate(self.environment)
+        self.environment.parameters = tuple(self.parameters)
 
         return self.environment

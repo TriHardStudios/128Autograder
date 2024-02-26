@@ -1,7 +1,8 @@
 import sys
 from abc import abstractmethod
 import importlib
-from types import ModuleType, FunctionType
+from types import CodeType, ModuleType, FunctionType
+from typing import Dict, Optional, Tuple, Any
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
@@ -12,7 +13,7 @@ from StudentSubmission.Runners import IRunner
 # https://docs.python.org/3/reference/import.html#the-meta-path
 # https://stackoverflow.com/questions/43571737/how-to-implement-an-import-hook-that-can-modify-the-source-code-on-the-fly-using
 
-class GenericPythonRunner(IRunner):
+class GenericPythonRunner(IRunner[CodeType]):
     """
     :Description:
     This class contains common code needed for each runner.
@@ -29,21 +30,28 @@ class GenericPythonRunner(IRunner):
     AUTOGRADER_SETUP_NAME: str = "autograder_setup"
 
     def __init__(self):
-        self.studentSubmissionCode = None
-        self.mocks: dict[str, SingleFunctionMock] | None = None
+        self.studentSubmission: Optional[CodeType] = None
+        self.mocks: Optional[Dict[str, SingleFunctionMock]] = None
+        self.parameters: Tuple[Any] = tuple()
         self.setupCode = None
 
-    def setSubmission(self, _code):
-        self.studentSubmissionCode = _code
+    def setSubmission(self, submission: CodeType):
+        self.studentSubmission = submission
 
-    def setMocks(self, _mocks: dict[str, SingleFunctionMock]):
-        self.mocks = _mocks
+    def setParameters(self, parameters: Tuple[Any]):
+        self.parameters = parameters
+
+    def getParameters(self) -> Tuple[Any]:
+        return self.parameters
+
+    def setMocks(self, mocks: Dict[str, SingleFunctionMock]):
+        self.mocks = mocks
 
     def getMocks(self) -> dict[str, SingleFunctionMock] | None:
         return self.mocks
 
-    def setSetupCode(self, _setupCode):
-        self.setupCode = compile(_setupCode, "setup_code", "exec")
+    def setSetupCode(self, setupCode):
+        self.setupCode = compile(setupCode, "setup_code", "exec")
 
     def applyMocks(self) -> None:
         """
@@ -72,44 +80,49 @@ class GenericPythonRunner(IRunner):
 
 class MainModuleRunner(GenericPythonRunner):
     def run(self):
-        exec(self.studentSubmissionCode, {'__name__': "__main__"})
+        if self.studentSubmission == None:
+            raise RuntimeError("INVALID STATE: Submission was NONE when should be a non-none type!")
+
+        exec(self.studentSubmission, {'__name__': "__main__"})
 
 
 class FunctionRunner(GenericPythonRunner):
 
-    def __init__(self, _functionToCall: str, *args):
+    def __init__(self, functionToCall: str):
         super().__init__()
-        self.functionToCall: str = _functionToCall
-        self.args = args
+        self.functionToCall: str = functionToCall
 
     @staticmethod
-    def applyImports(_imports):
+    def applyImports(imports):
         currentModule = sys.modules[__name__]
 
-        for moduleName in _imports:
+        for moduleName in imports:
             library = importlib.import_module(moduleName)
             setattr(currentModule, moduleName, library)
 
     @staticmethod
-    def applyMethods(_functions):
+    def applyMethods(functions):
         currentModule = sys.modules[__name__]
 
-        for functionName, function in _functions:
+        for functionName, function in functions:
             setattr(currentModule, functionName, function)
 
     @staticmethod
-    def getMethod(_functionName):
+    def getMethod(functionName):
         currentModule = sys.modules[__name__]
 
-        function = getattr(currentModule, _functionName, None)
+        function = getattr(currentModule, functionName, None)
         if function is None:
-            raise MissingFunctionDefinition(_functionName)
+            raise MissingFunctionDefinition(functionName)
 
         return function
 
 
     def run(self):
-        exec(self.studentSubmissionCode)
+        if self.studentSubmission == None:
+            raise RuntimeError("INVALID STATE: Submission was NONE when should be a non-none type!")
+
+        exec(self.studentSubmission)
         # all of these hacky workarounds make me want to refactor this :(
         # That should be done for v2 :(
         importedModules = [localName for localName, localValue in locals().items() if
@@ -131,4 +144,4 @@ class FunctionRunner(GenericPythonRunner):
 
         functionToCall = self.getMethod(self.functionToCall)
 
-        return functionToCall(*self.args)
+        return functionToCall(*self.parameters)
