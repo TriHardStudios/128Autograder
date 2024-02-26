@@ -34,9 +34,10 @@ class DataFilesTest(unittest.TestCase):
 
     @weight(5)
     def testSubmissionData(self):
+        self.environmentBuilder.addParameter("file.dat")
         environment = self.environmentBuilder.build()
 
-        runner = FunctionRunner("readFile", "file.dat")
+        runner = FunctionRunner("readFile")
 
         Executor.execute(environment, runner)
 
@@ -46,9 +47,10 @@ class DataFilesTest(unittest.TestCase):
 
     @weight(5)
     def testProvidedData(self):
+        self.environmentBuilder.addParameter("public_file.dat")
         environment = self.environmentBuilder.build()
 
-        runner = FunctionRunner("readFile", "public_file.dat")
+        runner = FunctionRunner("readFile")
 
         Executor.execute(environment, runner)
 
