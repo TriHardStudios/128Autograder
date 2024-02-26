@@ -474,6 +474,19 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.assertIsNone(results[PossibleResults.EXCEPTION])
         self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
 
+    def testFunctionMutableParameters(self):
+        program = \
+            "def test1(lst):\n"\
+            "   lst.append(1)\n"
+
+        listToUpdate = [0]
+        runner = FunctionRunner("test1", listToUpdate)
+
+        runner.setSubmission(compile(program, "test_code", "exec"))
+
+        self.assertEqual(len(listToUpdate), 2)
+        self.assertIn(1, listToUpdate)
+
     def testFindNewFiles(self):
         program = "pass"
 
