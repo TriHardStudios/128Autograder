@@ -4,6 +4,7 @@ import unittest
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, PossibleResults, getOrAssert
+from StudentSubmissionImpl.Python.PythonImportFactory import PythonImportFactory
 from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 
@@ -38,7 +39,6 @@ class TestFullExecutions(unittest.TestCase):
 
         if os.path.exists(self.PYTHON_PROGRAM_DIRECTORY):
             shutil.rmtree(self.PYTHON_PROGRAM_DIRECTORY)
-
 
     @classmethod
     def writePythonFile(cls, filename, contents):
@@ -100,76 +100,135 @@ class TestFullExecutions(unittest.TestCase):
                 .addParameter(2)\
                 .addParameter(3)\
                 .build()
+
         runner = FunctionRunner("fun")
 
         Executor.execute(environment, runner)
 
         actualOutput = getOrAssert(environment, PossibleResults.PARAMETERS)
 
-        self.assertEqual(3, len(actualOutput))
-        self.assertEqual(3, actualOutput[2])
+        self.assertEqual(3, len(actualOutput)) # type: ignore
+        self.assertEqual(3, actualOutput[2]) # type: ignore
 
-
-
-
-    @unittest.skip("This will be implmeneted once imports are supported")
     def testImportFullExecution(self):
-        # Because imports rely on the executor to move the files over,
-        #  I am testing as part of the executor tests
-
-        expectedOutput = "Called from a different file!!"
+        expectedOutput = 10
         with open(self.TEST_IMPORT_NAME, 'w') as w:
             w.writelines("def fun1():\n"
-                         f"  print('OUTPUT {expectedOutput}')\n"
+                         f"  return {expectedOutput}\n"
                          "\n")
-
-        program = \
-            (
-                "from mod1 import fun1\n"
-                "fun1()\n"
+        with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(
+                "from mod1 import fun1\n"\
+                "def run():\n"\
+                "    return fun1()\n"
             )
 
-        self.environment.submission.getImports = \
-            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .load()\
+                .build()\
+                .validate()
 
-        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
 
-        StudentSubmissionExecutor.execute(self.environment, self.runner)
+        importHandler = PythonImportFactory.buildImport()
 
-        actualOutput = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.STDOUT)
+        if importHandler is None:
+            self.fail("This shouldn't happen")
 
-        self.assertEqual(expectedOutput, actualOutput[0])
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .addImportHandler(importHandler)\
+                .build()
 
-    @unittest.skip("This will be implmeneted once imports are supported")
+        runner = FunctionRunner("run")
+
+        Executor.execute(environment, runner)
+
+        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+
+        self.assertEqual(expectedOutput, actualOutput) # type: ignore
+
     def testImportFullExecutionWithDataFiles(self):
         # Huge shout out to Nate T from F23 for finding this issue.
         # What a wild corner case
 
         expectedFileContents = "Called from a different file!!"
         testFileName = "test.txt"
+
         with open(self.TEST_IMPORT_NAME, 'w') as w:
             w.writelines("def fun1():\n"
                          f"  with open('{testFileName}', 'w') as w:\n"
                          f"    w.write('{expectedFileContents}')\n"
                          "\n")
-        program = \
-            (
-                "from mod1 import fun1\n"
+        with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(
+                "from mod1 import fun1\n"\
                 "fun1()\n"
             )
 
-        self.environment.submission.getImports = \
-            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .load()\
+                .build()\
+                .validate()
 
-        self.environment.files = {}
+        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
+        importHandler = PythonImportFactory.buildImport()
 
-        self.environment.submission.getStudentSubmissionCode = lambda: compile(program, "test_code", "exec")
+        if importHandler is None:
+            self.fail("This shouldn't happen")
 
-        StudentSubmissionExecutor.execute(self.environment, self.runner)
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .addImportHandler(importHandler)\
+                .build()
 
-        actualOutput = StudentSubmissionExecutor.getOrAssert(self.environment, PossibleResults.FILE_OUT, file=testFileName)
+        Executor.execute(environment, self.runner)
+
+        actualOutput = getOrAssert(environment, PossibleResults.FILE_OUT, file=testFileName)
 
         self.assertEqual(expectedFileContents, actualOutput)
+
+    def testImportWithFunction(self):
+        expectedOutput = 10
+        program = \
+                "from mod1 import fun1\n"\
+                "def run():\n"\
+                "    return fun1()\n"
+
+        with open(self.TEST_IMPORT_NAME, 'w') as w:
+            w.writelines(
+                "def fun1():\n"
+                f"  return {expectedOutput}"
+                "\n"
+            )
+
+        self.writePythonFile("main.py", program)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .load()\
+                .build()\
+                .validate()
+
+        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
+        PythonImportFactory.registerFile(os.path.abspath(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py")), "main")
+        importHandler = PythonImportFactory.buildImport()
+
+        if importHandler is None:
+            self.fail("This shouldn't happen")
+
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .addImportHandler(importHandler)\
+                .build()
+
+        runner = FunctionRunner("run")
+
+        Executor.execute(environment, runner)
+
+        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+
+        self.assertEqual(expectedOutput, actualOutput) # type: ignore
+
 
     def testExceptionRaisedResultPopulated(self):
         expectedOutput = "Huzzah"
@@ -191,7 +250,7 @@ class TestFullExecutions(unittest.TestCase):
         with self.assertRaises(AssertionError):
             Executor.execute(environment, self.runner)
 
-        stdout = getOrAssert(environment, PossibleResults.STDOUT)[0]
+        stdout = getOrAssert(environment, PossibleResults.STDOUT)[0] # type: ignore
         exception = getOrAssert(environment, PossibleResults.EXCEPTION)
 
         self.assertEqual(expectedOutput, stdout)

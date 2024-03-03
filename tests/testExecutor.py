@@ -125,18 +125,6 @@ class TestExecutor(unittest.TestCase):
 
         self.assertIn("this_is_alais.txt", os.listdir(self.environment.SANDBOX_LOCATION))
 
-    @unittest.skip("Imports are TBD and not really likely to be handled here")
-    def testMoveFilesImports(self):
-        with open(self.TEST_IMPORT_NAME, "w") as w:
-            w.writelines("pass")
-
-        self.environment.submission.getImports = \
-            lambda: {self.TEST_IMPORT_NAME: os.path.basename(self.TEST_IMPORT_NAME)}
-
-        StudentSubmissionExecutor.setup(self.environment, self.runner)
-
-        self.assertIn(os.path.basename(self.TEST_IMPORT_NAME), os.listdir(self.environment.SANDBOX_LOCATION))
-
     def testExceptionRaised(self):
         program = \
             (
