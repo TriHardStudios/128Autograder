@@ -2,7 +2,7 @@ import sys
 from abc import abstractmethod
 import importlib
 from types import CodeType, ModuleType, FunctionType
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
@@ -53,22 +53,22 @@ class GenericPythonRunner(IRunner[CodeType]):
     def setSetupCode(self, setupCode):
         self.setupCode = compile(setupCode, "setup_code", "exec")
 
-    def applyMocks(self) -> None:
+    def applyMocks(self, module: ModuleType) -> None:
         """
         This function applies the mocks to the student's submission at the module level.
+
+        :param module: the module to apply mocks to 
 
         :raises AttributeError: If a mock name cannot be resolved
         """
         if not self.mocks:
             return
 
-        currentModule = sys.modules[__name__]
-
         for mockName, mock in self.mocks.items():
             if mock.spy:
-                mock.setSpyFunction(getattr(currentModule, mockName))
+                mock.setSpyFunction(getattr(module, mockName))
 
-            setattr(currentModule, mockName, mock)
+            setattr(module, mockName, mock)
 
     @abstractmethod
     def run(self):
@@ -88,60 +88,58 @@ class MainModuleRunner(GenericPythonRunner):
 
 class FunctionRunner(GenericPythonRunner):
 
-    def __init__(self, functionToCall: str):
+    def __init__(self, functionToCall: str, submissionModules: Optional[List[str]] = None):
+
         super().__init__()
+        if submissionModules is None:
+            submissionModules = ["submission", "main"]
+
         self.functionToCall: str = functionToCall
+        self.modulesToImport: List[str] = submissionModules
+
+    def attemptToImport(self) -> ModuleType:
+        importedModule: Optional[ModuleType] = None
+
+        for moduleName in self.modulesToImport:
+            try:
+                importedModule = importlib.import_module(moduleName)
+                importedModule = importlib.reload(importedModule)
+            except ImportError:
+                pass
+
+        if importedModule is None:
+            raise MissingFunctionDefinition(f"{self.modulesToImport}.{self.functionToCall}")
+
+        return importedModule
 
     @staticmethod
-    def applyImports(imports):
-        currentModule = sys.modules[__name__]
+    def getMethod(module: ModuleType, functionName: str):
+        function = getattr(module, functionName, None)
 
-        for moduleName in imports:
-            library = importlib.import_module(moduleName)
-            setattr(currentModule, moduleName, library)
-
-    @staticmethod
-    def applyMethods(functions):
-        currentModule = sys.modules[__name__]
-
-        for functionName, function in functions:
-            setattr(currentModule, functionName, function)
-
-    @staticmethod
-    def getMethod(functionName):
-        currentModule = sys.modules[__name__]
-
-        function = getattr(currentModule, functionName, None)
         if function is None:
             raise MissingFunctionDefinition(functionName)
 
         return function
 
-
     def run(self):
         if self.studentSubmission == None:
             raise RuntimeError("INVALID STATE: Submission was NONE when should be a non-none type!")
-
-        exec(self.studentSubmission)
-        # all of these hacky workarounds make me want to refactor this :(
-        # That should be done for v2 :(
-        importedModules = [localName for localName, localValue in locals().items() if
-                           isinstance(localValue, ModuleType)]
-        definedFunctions = [(localName, localValue) for localName, localValue in locals().items() if
-                            isinstance(localValue, FunctionType)]
-
-        self.applyImports(importedModules)
-        self.applyMethods(definedFunctions)
-        self.applyMocks()
+        
+        module = self.attemptToImport()
+        
+        self.applyMocks(module)
 
         if self.setupCode is not None:
-            exec(self.setupCode)
+            # apply to actual imported module
+            exec(self.setupCode, vars(module))
 
-            if self.AUTOGRADER_SETUP_NAME not in locals().keys():
+            if self.AUTOGRADER_SETUP_NAME not in vars(module):
                 raise InvalidTestCaseSetupCode()
 
-            locals()[self.AUTOGRADER_SETUP_NAME]()
+            setUpCode = self.getMethod(module, self.AUTOGRADER_SETUP_NAME)
 
-        functionToCall = self.getMethod(self.functionToCall)
+            setUpCode()
+
+        functionToCall = self.getMethod(module, self.functionToCall)
 
         return functionToCall(*self.parameters)

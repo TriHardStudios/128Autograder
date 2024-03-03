@@ -9,7 +9,8 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
-from typing import Any, Dict, Optional, Tuple
+from importlib.abc import MetaPathFinder
+from typing import Any, Dict, Optional, Tuple, List
 from Executors.Environment import ExecutionEnvironment, PossibleResults
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
@@ -57,7 +58,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, timeout: int = 10):
+    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, importHandlers: List[MetaPathFinder], timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -79,6 +80,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         self.inputDataMemName: str = ""
         self.outputDataMemName: str = ""
         self.executionDirectory: str = executionDirectory
+        self.importHandlers: List[MetaPathFinder] = importHandlers
         self.timeout: int = timeout
 
     def setInputDataMemName(self, inputSharedMemName):
@@ -111,9 +113,14 @@ class StudentSubmissionProcess(multiprocessing.Process):
         This method also moves the process to the execution directory
 
         stdout is also redirected here, but because we don't care about its contents, we just overwrite it completely.
+
+        This method also injects whatever import MetaPathFinders
         """
         os.chdir(self.executionDirectory)
         sys.path.append(os.getcwd())
+
+        for importHandler in self.importHandlers:
+            sys.meta_path.insert(0, importHandler)
 
         sharedInput = shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())
@@ -142,6 +149,9 @@ class StudentSubmissionProcess(multiprocessing.Process):
             PossibleResults.PARAMETERS: parameters,
             PossibleResults.MOCK_SIDE_EFFECTS: mocks
         }
+
+        for importHandler in self.importHandlers:
+            sys.meta_path.remove(importHandler)
 
         serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
         sharedOutput = shared_memory.SharedMemory(self.outputDataMemName)
@@ -203,7 +213,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         """
         self.studentSubmissionProcess = \
-                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, environment.timeout)
+                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, environment.import_loader, environment.timeout)
 
         self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
         self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)

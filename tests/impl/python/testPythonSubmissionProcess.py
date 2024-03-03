@@ -1,9 +1,11 @@
 import os
 import shutil
+from typing import List
 import unittest
 from unittest import skip
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
+from StudentSubmissionImpl.Python.PythonImportFactory import PythonImportFactory
 from Executors.Environment import PossibleResults
 from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
 from Executors.Environment import ExecutionEnvironment
@@ -17,6 +19,16 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.environment = ExecutionEnvironment(None) # type: ignore
         self.environment.SANDBOX_LOCATION = "."
         self.runnableSubmission = RunnableStudentSubmission()
+        self.filesToRemove: List[str] = []
+
+    def tearDown(self):
+        for file in self.filesToRemove:
+            os.remove(file)
+
+    def writeFile(self, fileName: str, fileContents: str):
+        self.filesToRemove.append(fileName)
+        with open(fileName, 'w') as w:
+            w.write(fileContents)
 
     def testStdIO(self):
         program = \
@@ -84,9 +96,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
              "def runMe(value: str):\n"\
              "  print('OUTPUT', value)\n"
 
+        self.writeFile("main.py", program)
+
         strInput = "this was passed as a parameter"
 
         runner = FunctionRunner("runMe")
+
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setParameters((strInput,))
 
@@ -104,6 +119,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         program = \
              "def runMe(value: int):\n"\
              "  return value\n"
+
+        self.writeFile("main.py", program)
 
         intInput = 128
         runner = FunctionRunner("runMe")
@@ -130,6 +147,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "   mockMe(1, 2, 3)\n"\
                 "   mockMe(1, 2, 3)\n"\
 
+        self.writeFile("main.py", program)
+
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setMocks({"mockMe": SingleFunctionMock("mockMe", None)})
@@ -151,6 +170,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         program = \
             "def mockMe(a, b, c):\n"\
             "    return a + b + c\n"
+
+        self.writeFile("main.py", program)
 
         runner = FunctionRunner("mockMe")
         mocks = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
@@ -176,6 +197,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         program = \
                 "def ignoreMe():\n"\
                 "   return True\n"
+
+        self.writeFile("main.py", program)
 
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
@@ -371,6 +394,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "    random.seed('autograder')\n" \
             "    return random.randint(0, 5)\n"
 
+        self.writeFile("main.py", program)
+
         runner = FunctionRunner("test")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
@@ -396,6 +421,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def autograder_setup():\n" \
             "   random.seed('autograder')\n"
 
+        self.writeFile("main.py", program)
+
         runner = FunctionRunner("test")
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setSetupCode(setup)
@@ -419,6 +446,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def this_is_a_bad_name():\n" \
             "   pass\n"
 
+        self.writeFile("main.py", program)
         runner = FunctionRunner("test")
         runner.setSubmission(compile(program, "test_code", "exec"))
         runner.setSetupCode(setup)
@@ -464,6 +492,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def test2(var):\n" \
             "   return var\n"
 
+        self.writeFile("main.py", program)
         runner = FunctionRunner("test1")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
@@ -477,12 +506,15 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.assertIsNone(results[PossibleResults.EXCEPTION])
         self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
+    
+
 
     def testFunctionMutableParameters(self):
         program = \
             "def test1(lst):\n"\
             "   lst.append(1)\n"
 
+        self.writeFile("main.py", program)
         listToUpdate = [0]
         runner = FunctionRunner("test1")
         runner.setParameters((listToUpdate,))

@@ -1,3 +1,4 @@
+import importlib
 import os
 import shutil
 import sys
@@ -30,8 +31,18 @@ class TestPythonImportFactory(unittest.TestCase):
         self.writeTestFile(filename)
         PythonImportFactory.registerFile(os.path.join(self.TEST_FILE_DIRECTORY, filename), "calc")
         sys.meta_path.insert(0, PythonImportFactory.buildImport())
-        import calc
-        self.assertEqual(calc.sqrt(4), 2)
+        
+        importedModule = importlib.import_module("calc")
+        self.assertEqual(importedModule.sqrt(4), 2)
+
+    def testImportErrorRaised(self):
+        filename = "bad.py"
+
+        PythonImportFactory.registerFile(os.path.join(self.TEST_FILE_DIRECTORY, filename), "bad")
+        sys.meta_path.insert(0, PythonImportFactory.buildImport())
+
+        with self.assertRaises(ImportError):
+            importlib.import_module("bad")
 
     @unittest.skip("Not implemented")
     def testImportSubmodule(self):

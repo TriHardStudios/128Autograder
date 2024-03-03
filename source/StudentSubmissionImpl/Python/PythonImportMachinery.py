@@ -1,8 +1,11 @@
+import os
+
 from importlib.machinery import ModuleSpec
 from types import ModuleType, CodeType
 from typing import Dict, Optional
 from importlib.abc import Loader, MetaPathFinder
 from importlib.util import spec_from_file_location
+
 
 
 class ModuleFinder(MetaPathFinder):
@@ -27,6 +30,8 @@ class ModuleLoader(Loader):
         return None
     
     def exec_module(self, module: ModuleType) -> None:
+        if not os.path.exists(self.filename):
+            raise ImportError(f"Should be able to open {self.filename}, but was unable to locate file!")
         with open(self.filename) as r:
             data = r.read()
         
