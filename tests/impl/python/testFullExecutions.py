@@ -88,13 +88,6 @@ class TestFullExecutions(unittest.TestCase):
 
         self.writePythonFile("test_code.py", program)
 
-        PythonImportFactory.registerFile(os.path.abspath(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "test_code.py")), "test_code")
-
-        importHandler = PythonImportFactory.buildImport()
-
-        if importHandler is None:
-            self.fail("This shouldn't happen")
-
         submission = PythonSubmission()\
                 .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
                 .enableLooseMainMatching()\
@@ -103,13 +96,12 @@ class TestFullExecutions(unittest.TestCase):
                 .validate()
 
         environment = ExecutionEnvironmentBuilder(submission)\
-                .addImportHandler(importHandler)\
                 .addParameter(1)\
                 .addParameter(2)\
                 .addParameter(3)\
                 .build()
 
-        runner = FunctionRunner("fun", submissionModules=["test_code"])
+        runner = FunctionRunner("fun")
 
         Executor.execute(environment, runner)
 
@@ -138,7 +130,6 @@ class TestFullExecutions(unittest.TestCase):
                 .validate()
 
         PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
-        PythonImportFactory.registerFile(os.path.abspath(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py")), "main")
 
         importHandler = PythonImportFactory.buildImport()
 

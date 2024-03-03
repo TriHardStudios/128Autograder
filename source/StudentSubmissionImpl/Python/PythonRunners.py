@@ -88,27 +88,17 @@ class MainModuleRunner(GenericPythonRunner):
 
 class FunctionRunner(GenericPythonRunner):
 
-    def __init__(self, functionToCall: str, submissionModules: Optional[List[str]] = None):
-
+    def __init__(self, functionToCall: str):
         super().__init__()
-        if submissionModules is None:
-            submissionModules = ["submission", "main"]
-
         self.functionToCall: str = functionToCall
-        self.modulesToImport: List[str] = submissionModules
 
     def attemptToImport(self) -> ModuleType:
-        importedModule: Optional[ModuleType] = None
+        if self.studentSubmission == None:
+            raise RuntimeError("INVALID STATE: Submission was NONE when should be a non-none type!")
 
-        for moduleName in self.modulesToImport:
-            try:
-                importedModule = importlib.import_module(moduleName)
-                importedModule = importlib.reload(importedModule)
-            except ImportError:
-                pass
+        importedModule: ModuleType = ModuleType("submission")
 
-        if importedModule is None:
-            raise MissingFunctionDefinition(f"{self.modulesToImport}.{self.functionToCall}")
+        exec(self.studentSubmission, vars(importedModule))
 
         return importedModule
 
@@ -122,9 +112,6 @@ class FunctionRunner(GenericPythonRunner):
         return function
 
     def run(self):
-        if self.studentSubmission == None:
-            raise RuntimeError("INVALID STATE: Submission was NONE when should be a non-none type!")
-        
         module = self.attemptToImport()
         
         self.applyMocks(module)
