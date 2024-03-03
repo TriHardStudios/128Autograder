@@ -1,3 +1,4 @@
+from importlib.abc import MetaPathFinder
 import os
 from typing import Generic, List, Dict, Optional, Tuple, TypeVar, Union, Any
 from enum import Enum
@@ -35,6 +36,8 @@ class ExecutionEnvironment:
     The key is the file name, and the value is the file name with its relative path"""
     parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
     """What arguments to pass to the submission"""
+    import_loader: List[MetaPathFinder] = dataclasses.field(default_factory=list)
+    """"""
     mocks: Dict[str, object] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
     timeout: int = 10
