@@ -37,7 +37,7 @@ class ExecutionEnvironment:
     parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
     """What arguments to pass to the submission"""
     import_loader: List[MetaPathFinder] = dataclasses.field(default_factory=list)
-    """"""
+    """The import loader. This shouldn't be set directly"""
     mocks: Dict[str, object] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
     timeout: int = 10
@@ -223,6 +223,17 @@ class ExecutionEnvironmentBuilder():
 
         return self
 
+    def addImportHandler(self: Builder, importHandler: MetaPathFinder) -> Builder:
+        """
+        Description
+        ---
+        This adds an import handler to the environment
+
+        :param importHandler: the meta path finder
+        """
+        self.environment.import_loader.append(importHandler)
+
+        return self
 
     @staticmethod
     def _validate(environment: ExecutionEnvironment):

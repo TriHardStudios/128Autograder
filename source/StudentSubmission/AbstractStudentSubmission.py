@@ -175,9 +175,4 @@ class AbstractStudentSubmission(abc.ABC, Generic[T]):
 
     def getSubmissionRoot(self) -> str:
         return self.submissionRoot
-    
-
-
-
-
 
