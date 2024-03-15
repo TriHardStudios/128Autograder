@@ -437,7 +437,6 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with self.assertRaises(InvalidTestCaseSetupCode):
             raise results[PossibleResults.EXCEPTION]
 
-    @skip("Future feature with mocks")
     def testMockImportedFunction(self):
         program = \
             "import random\n" \

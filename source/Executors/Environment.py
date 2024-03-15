@@ -1,6 +1,7 @@
 from importlib.abc import MetaPathFinder
 import os
-from typing import Generic, List, Dict, Optional, Tuple, TypeVar, Union, Any
+from types import ModuleType
+from typing import Callable, Generic, List, Dict, Optional, Tuple, TypeVar, Union, Any
 from enum import Enum
 
 import dataclasses
@@ -40,6 +41,8 @@ class ExecutionEnvironment:
     """The import loader. This shouldn't be set directly"""
     mocks: Dict[str, object] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
+    module_mocks: Dict[ModuleType, List[str]] = dataclasses.field(default_factory=dict)
+    """The module mocks that have been defined for this run of the student's submission"""
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
 
@@ -164,6 +167,23 @@ class ExecutionEnvironmentBuilder():
 
         return self
 
+    def addModuleMock(self: Builder, moduleName: str, module: ModuleType, mockedMethods: List[str]) -> Builder:
+        """
+        Description
+        ---
+        This function sets up a mock for a complete module. 
+
+        :param moduleName: The name of the module that will be mocked.
+        :param module: The module that will be imported
+        :param mockedMethods: The list of method names that have been mocked
+        """
+
+        for method in mockedMethods:
+            self.environment.mocks[method] = None
+        
+
+
+        return self
 
     def addMock(self: Builder, mockName: str, mockObject: object) -> Builder:
         """

@@ -84,7 +84,7 @@ class TestFullExecutions(unittest.TestCase):
     def testExecutorSetsParameters(self):
         program = \
                 "def fun(param, *args):\n"\
-                f"    return (param, *args)"
+                "    return (param, *args)"
 
         self.writePythonFile("test_code.py", program)
 
