@@ -4,7 +4,7 @@ import unittest
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, PossibleResults, getOrAssert
-from StudentSubmissionImpl.Python.PythonImportFactory import PythonImportFactory
+from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 
@@ -129,9 +129,9 @@ class TestFullExecutions(unittest.TestCase):
                 .build()\
                 .validate()
 
-        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
+        PythonFileImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
 
-        importHandler = PythonImportFactory.buildImport()
+        importHandler = PythonFileImportFactory.buildImport()
 
         if importHandler is None:
             self.fail("This shouldn't happen")

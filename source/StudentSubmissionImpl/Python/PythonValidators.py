@@ -2,7 +2,7 @@ from typing import Callable, Dict, List
 import os
 from StudentSubmission.AbstractValidator import AbstractValidator
 from StudentSubmission.common import ValidationHook
-from .common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
+from StudentSubmissionImpl.Python.common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
 
 class PythonFileValidator(AbstractValidator):
 

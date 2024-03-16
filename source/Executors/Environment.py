@@ -1,11 +1,12 @@
 from importlib.abc import MetaPathFinder
 import os
 from types import ModuleType
-from typing import Callable, Generic, List, Dict, Optional, Tuple, TypeVar, Union, Any
+from typing import List, Dict, Optional, Tuple, TypeVar, Union, Any
 from enum import Enum
 
 import dataclasses
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from StudentSubmissionImpl.Python.PythonModuleImportFactory import ModuleFinder
 
 class PossibleResults(Enum):
     STDOUT = "stdout"
@@ -180,9 +181,11 @@ class ExecutionEnvironmentBuilder():
 
         for method in mockedMethods:
             self.environment.mocks[method] = None
+
+        self.environment.module_mocks[module] = mockedMethods
+
+        self.environment.import_loader.append(ModuleFinder(moduleName, module))
         
-
-
         return self
 
     def addMock(self: Builder, mockName: str, mockObject: object) -> Builder:
