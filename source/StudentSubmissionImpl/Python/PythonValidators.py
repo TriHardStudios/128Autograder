@@ -1,4 +1,6 @@
+import importlib.util
 from typing import Callable, Dict, List
+import requests
 import os
 from StudentSubmission.AbstractValidator import AbstractValidator
 from StudentSubmission.common import ValidationHook
@@ -106,11 +108,11 @@ class PackageValidator(AbstractValidator):
         self.packages = studentSubmission.getExtraPackages()
 
     def run(self):
-        # this is pretty slow, but basically, it issues a request to PyPi to see if a package is avaiable for install
-        # might want to have a custom exception for packages that aren't installed
-        import requests
 
         for package, version in self.packages.items():
+            if importlib.util.find_spec(package) != None:
+                continue
+
             url = self.PYPI_BASE + package + "/"
 
             if version:

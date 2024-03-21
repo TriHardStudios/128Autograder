@@ -1,11 +1,9 @@
+from importlib import import_module
 import os
 import shutil
-from typing import List
 import unittest
-from unittest import skip
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from StudentSubmissionImpl.Python.PythonImportFactory import PythonImportFactory
 from Executors.Environment import PossibleResults
 from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
 from Executors.Environment import ExecutionEnvironment
@@ -445,8 +443,13 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         runner = FunctionRunner("test")
         runner.setSubmission(compile(program, "test_code", "exec"))
+        randIntMock = SingleFunctionMock("randint", [1])
+        randMod = import_module("random")
 
-        runner.setMocks({"random.randint": SingleFunctionMock("randint", [1])})
+        trueRandInt = getattr(randMod, "randint")
+        setattr(randMod, "randint", randIntMock)
+
+        runner.setMocks({"random.randint": None})
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
@@ -455,6 +458,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.runnableSubmission.populateResults(self.environment)
 
         results = self.environment.resultData
+
+        setattr(randMod, "randint", trueRandInt)
 
         self.assertEqual(1, results[PossibleResults.RETURN_VAL])
 
@@ -480,8 +485,6 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.assertIsNone(results[PossibleResults.EXCEPTION])
         self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
     
-
-
     def testFunctionMutableParameters(self):
         program = \
             "def test1(lst):\n"\

@@ -1,3 +1,4 @@
+from importlib import import_module
 from importlib.abc import MetaPathFinder
 import os
 from types import ModuleType
@@ -6,7 +7,8 @@ from enum import Enum
 
 import dataclasses
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from StudentSubmissionImpl.Python.PythonModuleImportFactory import ModuleFinder
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
+
 
 class PossibleResults(Enum):
     STDOUT = "stdout"
@@ -40,10 +42,8 @@ class ExecutionEnvironment:
     """What arguments to pass to the submission"""
     import_loader: List[MetaPathFinder] = dataclasses.field(default_factory=list)
     """The import loader. This shouldn't be set directly"""
-    mocks: Dict[str, object] = dataclasses.field(default_factory=dict)
+    mocks: Dict[str, Optional[SingleFunctionMock]] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
-    module_mocks: Dict[ModuleType, List[str]] = dataclasses.field(default_factory=dict)
-    """The module mocks that have been defined for this run of the student's submission"""
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
 
@@ -132,6 +132,7 @@ class ExecutionEnvironmentBuilder():
         self.environment = ExecutionEnvironment(submission)
         self.dataRoot = "."
         self.parameters: List[Any] = []
+        self.moduleMocks: Dict[str, Dict[str, object]] = {}
 
     def setDataRoot(self: Builder, dataRoot: str) -> Builder:
         """
@@ -168,27 +169,23 @@ class ExecutionEnvironmentBuilder():
 
         return self
 
-    def addModuleMock(self: Builder, moduleName: str, module: ModuleType, mockedMethods: List[str]) -> Builder:
+    def addModuleMock(self: Builder, moduleName: str, mockedMethods: Dict[str, object]) -> Builder:
         """
         Description
         ---
         This function sets up a mock for a complete module. 
+        All mocks must be the same 'level' meaning we cant mock a.b.fun and a.fun. We have to choose. 
+
+        We also  cant mock both a.b and a in the same submission currently without mocking the entirety of a.
 
         :param moduleName: The name of the module that will be mocked.
-        :param module: The module that will be imported
-        :param mockedMethods: The list of method names that have been mocked
+        :param mockedMethods: the map of the methods to mock in the module
         """
+        self.moduleMocks[moduleName] = mockedMethods
 
-        for method in mockedMethods:
-            self.environment.mocks[method] = None
-
-        self.environment.module_mocks[module] = mockedMethods
-
-        self.environment.import_loader.append(ModuleFinder(moduleName, module))
-        
         return self
 
-    def addMock(self: Builder, mockName: str, mockObject: object) -> Builder:
+    def addMock(self: Builder, mockName: str, mockObject: SingleFunctionMock) -> Builder:
         """
         This needs to be updated once we decide how to do mocks
         """
@@ -274,6 +271,27 @@ class ExecutionEnvironmentBuilder():
 
         # TODO - Validate requested features
 
+    def _processAndValidateModuleMocks(self):
+        try:
+            from StudentSubmissionImpl.Python.PythonModuleImportFactory import ModuleFinder
+        except ImportError:
+            return
+
+        for moduleName in self.moduleMocks.keys():
+            try:
+                module = import_module(moduleName)
+            except ImportError:
+                raise AttributeError(f"Failed to import {moduleName}!")
+
+            for methodName, mock in self.moduleMocks[moduleName].items():
+                if not isinstance(mock, SingleFunctionMock):
+                    raise AttributeError(f"Invalid mock for {methodName}")
+
+                self.environment.mocks[methodName] = None
+                setattr(module, methodName, mock)
+
+            self.environment.import_loader.append(ModuleFinder(moduleName, module))
+
     def build(self) -> ExecutionEnvironment:
         """
         Description
@@ -282,7 +300,10 @@ class ExecutionEnvironmentBuilder():
 
         :returns: The build environment
         """
-        self._validate(self.environment)
         self.environment.parameters = tuple(self.parameters)
+        
+        self._processAndValidateModuleMocks()
 
+        self._validate(self.environment)
+        
         return self.environment

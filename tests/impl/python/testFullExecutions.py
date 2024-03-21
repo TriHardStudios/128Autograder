@@ -7,6 +7,7 @@ from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironm
 from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
 # These serve as integration tests for the entire submission pipeline sans the gradescope stuff
@@ -148,6 +149,40 @@ class TestFullExecutions(unittest.TestCase):
 
         self.assertEqual(expectedOutput, actualOutput) # type: ignore
 
+    def testMockedImportFullExecution(self):
+        with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(
+                "import matplotlib.pyplot as plt\n"\
+                "plt.plot([1, 2, 3, 4])\n"
+            )
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .enableRequirements()\
+                .addPackage("matplotlib")\
+                .load()\
+                .build()\
+                .validate()
+
+        plotMock = SingleFunctionMock("plot")
+
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .setTimeout(10000)\
+                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
+                .build()
+
+        runner = MainModuleRunner()
+        runner.setMocks(environment.mocks)
+
+        Executor.execute(environment, runner)
+
+        actualOutput: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.plot") # type: ignore
+
+        actualOutput.assertCalledWith([1, 2, 3, 4])
+
+        submission.TEST_ONLY_removeRequirements()
+
+
     def testImportFullExecutionWithDataFiles(self):
         # Huge shout out to Nate T from F23 for finding this issue.
         # What a wild corner case
@@ -172,8 +207,8 @@ class TestFullExecutions(unittest.TestCase):
                 .build()\
                 .validate()
 
-        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
-        importHandler = PythonImportFactory.buildImport()
+        PythonFileImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
+        importHandler = PythonFileImportFactory.buildImport()
 
         if importHandler is None:
             self.fail("This shouldn't happen")
@@ -210,9 +245,9 @@ class TestFullExecutions(unittest.TestCase):
                 .build()\
                 .validate()
 
-        PythonImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
-        PythonImportFactory.registerFile(os.path.abspath(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py")), "main")
-        importHandler = PythonImportFactory.buildImport()
+        PythonFileImportFactory.registerFile(os.path.abspath(self.TEST_IMPORT_NAME), "mod1")
+        PythonFileImportFactory.registerFile(os.path.abspath(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py")), "main")
+        importHandler = PythonFileImportFactory.buildImport()
 
         if importHandler is None:
             self.fail("This shouldn't happen")
