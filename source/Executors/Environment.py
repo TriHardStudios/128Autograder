@@ -105,9 +105,14 @@ def getOrAssert(environment: ExecutionEnvironment,
 
     if field is PossibleResults.FILE_OUT and file is not None:
         # load the file from disk and return it
-        readFile = ""
-        with open(resultData[field][file], 'r') as r:
-            readFile  = r.read()
+        readFile: Union[str, bytes] = ""
+
+        try:
+            with open(resultData[field][file], 'r') as r:
+                readFile  = r.read()
+        except UnicodeDecodeError:
+            with open(resultData[field][file], 'rb') as rb:
+                readFile = rb.read()
 
         return readFile
 
@@ -181,6 +186,12 @@ class ExecutionEnvironmentBuilder():
         :param moduleName: The name of the module that will be mocked.
         :param mockedMethods: the map of the methods to mock in the module
         """
+        if moduleName in self.moduleMocks:
+            for mockName, mockObject in mockedMethods.items():
+                self.moduleMocks[moduleName][mockName] = mockObject
+
+            return self
+
         self.moduleMocks[moduleName] = mockedMethods
 
         return self
@@ -288,6 +299,9 @@ class ExecutionEnvironmentBuilder():
 
                 if not isinstance(mock, SingleFunctionMock):
                     raise AttributeError(f"Invalid mock for {methodName}")
+
+                if mock.spy:
+                    mock.setSpyFunction(getattr(module, splitName[-1]))
 
                 self.environment.mocks[methodName] = None
                 setattr(module, splitName[-1], mock)

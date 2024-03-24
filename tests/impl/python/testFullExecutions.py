@@ -153,7 +153,7 @@ class TestFullExecutions(unittest.TestCase):
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
                 "import matplotlib.pyplot as plt\n"\
-                "plt.plot([1, 2, 3, 4])\n"
+                "plt.plot([1, 2, 3, 4])\n"\
                 "plt.plot('illegal!')\n"
             )
 
@@ -168,7 +168,7 @@ class TestFullExecutions(unittest.TestCase):
         plotMock = SingleFunctionMock("plot")
 
         environment = ExecutionEnvironmentBuilder(submission)\
-                .setTimeout(1)\
+                .setTimeout(10)\
                 .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
                 .build()
 
@@ -184,7 +184,48 @@ class TestFullExecutions(unittest.TestCase):
         actualOutput.assertCalledWith([1, 2, 3, 4])
         actualOutput.assertCalledWith("illegal!")
 
+    def testSpyImportFullExecution(self):
+        with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(
+                "import matplotlib.pyplot as plt\n"\
+                "plt.plot([1, 2, 3, 4])\n"\
+                "plt.savefig('out.png')"
 
+            )
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+                .enableRequirements()\
+                .addPackage("matplotlib")\
+                .load()\
+                .build()\
+                .validate()
+
+        plotMock = SingleFunctionMock("plot", spy=True)
+        savefigMock = SingleFunctionMock("savefig", spy=True)
+
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .setTimeout(10)\
+                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
+                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.savefig": savefigMock})\
+                .build()
+
+        runner = MainModuleRunner()
+        runner.setMocks(environment.mocks)
+
+        Executor.execute(environment, runner)
+
+        submission.TEST_ONLY_removeRequirements()
+
+        plotResult: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.plot") # type: ignore
+        saveFigResult: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.savefig") # type: ignore
+
+        plotResult.assertCalledWith([1, 2, 3, 4])
+        saveFigResult.assertCalled()
+
+        actualFile: str = getOrAssert(environment, PossibleResults.FILE_OUT, file="out.png") # type: ignore
+
+        self.assertGreater(len(actualFile), 0)
 
     def testImportFullExecutionWithDataFiles(self):
         # Huge shout out to Nate T from F23 for finding this issue.

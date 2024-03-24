@@ -43,12 +43,3 @@ class TestPythonImportFactory(unittest.TestCase):
 
         with self.assertRaises(ImportError):
             importlib.import_module("bad")
-
-    @unittest.skip("Not implemented")
-    def testImportSubmodule(self):
-        filename = "calc.py"
-        self.writeTestFile(filename)
-        PythonFileImportFactory.registerFile(os.path.join(self.TEST_FILE_DIRECTORY, filename), "a.calc")
-        sys.meta_path.insert(0, PythonFileImportFactory.buildImport())
-        import a.calc as calc
-        self.assertEqual(calc.sqrt(4), 2)
