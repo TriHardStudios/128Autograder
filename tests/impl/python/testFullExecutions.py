@@ -154,6 +154,7 @@ class TestFullExecutions(unittest.TestCase):
             w.writelines(
                 "import matplotlib.pyplot as plt\n"\
                 "plt.plot([1, 2, 3, 4])\n"
+                "plt.plot('illegal!')\n"
             )
 
         submission = PythonSubmission()\
@@ -167,7 +168,7 @@ class TestFullExecutions(unittest.TestCase):
         plotMock = SingleFunctionMock("plot")
 
         environment = ExecutionEnvironmentBuilder(submission)\
-                .setTimeout(10000)\
+                .setTimeout(1)\
                 .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
                 .build()
 
@@ -176,11 +177,13 @@ class TestFullExecutions(unittest.TestCase):
 
         Executor.execute(environment, runner)
 
+        submission.TEST_ONLY_removeRequirements()
+
         actualOutput: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.plot") # type: ignore
 
         actualOutput.assertCalledWith([1, 2, 3, 4])
+        actualOutput.assertCalledWith("illegal!")
 
-        submission.TEST_ONLY_removeRequirements()
 
 
     def testImportFullExecutionWithDataFiles(self):

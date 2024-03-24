@@ -284,11 +284,13 @@ class ExecutionEnvironmentBuilder():
                 raise AttributeError(f"Failed to import {moduleName}!")
 
             for methodName, mock in self.moduleMocks[moduleName].items():
+                splitName = methodName.split('.')
+
                 if not isinstance(mock, SingleFunctionMock):
                     raise AttributeError(f"Invalid mock for {methodName}")
 
                 self.environment.mocks[methodName] = None
-                setattr(module, methodName, mock)
+                setattr(module, splitName[-1], mock)
 
             self.environment.import_loader.append(ModuleFinder(moduleName, module))
 
