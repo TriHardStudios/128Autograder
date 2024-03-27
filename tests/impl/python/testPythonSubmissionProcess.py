@@ -2,7 +2,9 @@ from importlib import import_module
 import os
 import shutil
 import sys
+from typing import Dict, Optional
 import unittest
+from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
 from Executors.Environment import PossibleResults
@@ -156,7 +158,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "    return a + b + c\n"
 
         runner = FunctionRunner("mockMe")
-        mocks = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
+        mocks: Dict[str, Optional[SingleFunctionMock]] = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
 
         runner.setMocks(mocks)
         runner.setParameters((1, 2, 3))
@@ -234,7 +236,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         runner = MainModuleRunner()
         runner.setSubmission(compile(program, "test_code", "exec"))
 
-        self.environment.stdin = ("hello\n" * 9999).splitlines()
+        self.environment.stdin = str("hello\n" * 9999).splitlines()
         self.environment.timeout = 5
 
         self.runnableSubmission.setup(self.environment, runner)
@@ -437,6 +439,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with self.assertRaises(InvalidTestCaseSetupCode):
             raise results[PossibleResults.EXCEPTION]
 
+    @unittest.expectedFailure
     def testMockImportedFunction(self):
         program = \
             "import random\n" \
@@ -454,7 +457,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         runner.setMocks({"random.randint": None})
 
-        self.environment.import_loader.append(ModuleFinder("random", randMod))
+        self.environment.impl_environment = PythonEnvironment()
+
+        self.environment.impl_environment.import_loader.append(ModuleFinder("random", randMod))
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()

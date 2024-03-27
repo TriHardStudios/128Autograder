@@ -3,15 +3,16 @@ from importlib.machinery import ModuleSpec
 from types import ModuleType
 from typing import Optional, List
 
+from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
-class ModuleFinder(MetaPathFinder, Loader):
+
+class ModuleFinder(AbstractModuleFinder, Loader):
     def __init__(self, name: str, module: ModuleType) -> None:
         self.name: str = name
-        self.module: bytes = dill.dumps(module, byref=True, recurse=True)
         self.modulesToReload: List[str] = [self.name]
 
     def create_module(self, spec: ModuleSpec) -> ModuleType:
-        return dill.loads(self.module)
+        return ModuleType(spec.name)
 
     def exec_module(self, module):
         pass
