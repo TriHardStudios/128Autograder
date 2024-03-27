@@ -10,6 +10,7 @@ before attempting to even connect to the object.
 """
 
 from importlib.abc import MetaPathFinder
+from types import FunctionType
 from typing import Any, Dict, Optional, Tuple, List
 from Executors.Environment import ExecutionEnvironment, PossibleResults
 
@@ -121,6 +122,17 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         for importHandler in self.importHandlers:
             sys.meta_path.insert(0, importHandler)
+
+            getModulesToReload: Optional[FunctionType] = getattr(importHandler, "getModulesToReload", None)
+            if getModulesToReload is None:
+                continue
+
+            mods = getModulesToReload()
+            for mod in mods:
+                if mod not in sys.modules:
+                    continue
+
+                del sys.modules[mod]
 
         sharedInput = shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())

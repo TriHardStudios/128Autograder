@@ -1,7 +1,7 @@
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 import os
-from types import ModuleType
+import sys
 from typing import List, Dict, Optional, Tuple, TypeVar, Union, Any
 from enum import Enum
 
@@ -284,7 +284,7 @@ class ExecutionEnvironmentBuilder():
 
     def _processAndValidateModuleMocks(self):
         try:
-            from StudentSubmissionImpl.Python.PythonModuleImportFactory import ModuleFinder
+            from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import ModuleFinder
         except ImportError:
             return
 
