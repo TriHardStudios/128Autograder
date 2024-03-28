@@ -452,6 +452,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.environment.timeout = 10000
 
         randMod = import_module("random")
+        trueRandInt = getattr(randMod, "randint")
 
         setattr(randMod, "randint", randIntMock)
 
@@ -468,6 +469,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.runnableSubmission.populateResults(self.environment)
 
         results = self.environment.resultData
+
+        setattr(randMod, "randint", trueRandInt)
 
         self.assertEqual(1, results[PossibleResults.RETURN_VAL])
 
