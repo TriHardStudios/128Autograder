@@ -6,6 +6,30 @@ from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractMod
 from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import ModuleFinder
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
+class PythonResults():
+    class Mocks():
+        def __init__(self, mocks: Optional[Dict[str, SingleFunctionMock]]):
+            self.mocks = mocks
+
+        def __getitem__(self, mockName: str) -> SingleFunctionMock:
+            if self.mocks is None:
+                raise AssertionError("No mocks were returned by student submission!")
+            if mockName not in self.mocks:
+                raise AssertionError(f"Mock '{mockName}' was not returned by the students submission")
+
+            return self.mocks[mockName]
+
+    def __init__(self, mocks = None):
+        self.mocks = mocks
+
+    @property
+    def mocks(self) -> Mocks:
+        return self._mocks
+
+    @mocks.setter
+    def mocks(self, value: Optional[Dict[str, SingleFunctionMock]]):
+        self._mocks = PythonResults.Mocks(value)
+
 @dataclasses.dataclass
 class PythonEnvironment():
     import_loader: List[AbstractModuleFinder] = dataclasses.field(default_factory=list)

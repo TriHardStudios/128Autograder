@@ -1,28 +1,103 @@
 import os
-from types import NoneType
 from typing import Callable, Generic, List, Dict, Optional, Tuple, Type, TypeVar, Union, Any
-from enum import Enum
 
 import dataclasses
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
+ImplResults = TypeVar("ImplResults")
 
-class PossibleResults(Enum):
-    STDOUT = "stdout"
-    RETURN_VAL = "return_val"
-    FILE_OUT = "file_out"
-    MOCK_SIDE_EFFECTS = "mock"
-    EXCEPTION = "exception"
-    PARAMETERS = "parameters"
+class Results(Generic[ImplResults]):
+    class Files():
+        def __init__(self, files: Optional[Dict[str, str]]):
+            self.files = files
 
-class Results():
-    pass
+        def __getitem__(self, file: str) -> Union[str, bytes]:
+            if self.files is None:
+                raise AssertionError(f"Missing result data. Expected: 'files'.")
+            if file not in self.files:
+                raise AssertionError(f"File '{file}' was not created by the student's submission!")
+
+            readFile: Union[str, bytes] = ""
+
+            try:
+                with open(self.files[file], 'r') as r:
+                    readFile  = r.read()
+            except UnicodeDecodeError:
+                with open(self.files[file], 'rb') as rb:
+                    readFile = rb.read()
+
+            return readFile
+
+    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameter=None, impl_results = None) -> None:
+        self.stdout = stdout
+        self.return_val = return_val
+        self.file_out = file_out
+        self.exception = exception
+        self.parameter = parameter
+        self.impl_results = impl_results
+
+    @property
+    def stdout(self) -> List[str]:
+        if self._stdout is None:
+            raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
+                                 f"Are you missing an 'OUTPUT' statement?")
+        return self._stdout
+
+    @stdout.setter
+    def stdout(self, value: Optional[List[str]]):
+        self._stdout = value
+
+    @property
+    def return_val(self) -> Optional[object]:
+        return self._return_val
+
+    @return_val.setter
+    def return_val(self, value: Optional[object]):
+        self._return_val = value
+
+    @property
+    def file_out(self) -> Files:
+        return self._files
+
+    @file_out.setter
+    def file_out(self, value: Optional[Dict[str, str]]):
+        self._files = Results.Files(value)
+
+    @property
+    def exception(self) -> Optional[Exception]:
+        return self._exception
+
+    @exception.setter
+    def exception(self, value: Optional[Exception]):
+        self._exception = value
+
+    @property
+    def parameter(self) -> Tuple[Any, ...]:
+        if self._parameter is None:
+            raise AssertionError("No parameters were set!")
+
+        return self._parameter
+
+    @parameter.setter
+    def parameter(self, value: Optional[Tuple[Any, ...]]):
+        self._parameter = value
+
+    @property
+    def impl_results(self) -> ImplResults:
+        if self._impl_results is None:
+            raise AssertionError("No implementation results were set!")
+
+        return self._impl_results
+
+    @impl_results.setter
+    def impl_results(self, value: Optional[ImplResults]):
+        self._impl_results = value
+
 
 ImplEnvironment = TypeVar("ImplEnvironment")
 
 @dataclasses.dataclass
-class ExecutionEnvironment(Generic[ImplEnvironment]):
+class ExecutionEnvironment(Generic[ImplEnvironment, ImplResults]):
     """
     Description
     ===========
@@ -45,7 +120,7 @@ class ExecutionEnvironment(Generic[ImplEnvironment]):
     """The implementation environment options. Can be None"""
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
-    resultData: Dict[PossibleResults, Any] = dataclasses.field(default_factory=dict)
+    resultData: Optional[Results[ImplResults]] = None
     """
     This dict contains the data that was generated from the student's submission. This should not be accessed
     directly, rather, use getOrAssert method
@@ -54,75 +129,23 @@ class ExecutionEnvironment(Generic[ImplEnvironment]):
     SANDBOX_LOCATION: str = "./sandbox"
 
 
-# TODO - Update this to be strongly typed
-def getOrAssert(environment: ExecutionEnvironment,
-                field: PossibleResults,
-                file: Optional[str] = None,
-                mock: Optional[str] = None) -> Union[Dict[str, object], object]:
+def getResults(environment: ExecutionEnvironment[ImplEnvironment, ImplResults]) -> Results[ImplResults]:
     """
-    This function gets the requested field from the results or will raise an assertion error.
-
-    If a file is requested, the file name must be specified with the ``file`` parameter. The contents of the file
-    will be returned.
-    If a mock is requested, the mocked method's name must `also` be requested. The mocked method will be returned.
-    :param environment: the execution environment that contains the results from execution
-    :param field: the field to get data from in the results file. Must be a ``PossibleResult``
-    :param file: if ``PossibleResults.FILE_OUT`` is specified, ``file`` must also be specified. This is the file
-    name to load from.
-    :param mock: if ``PossibleResults.MOCK_SIDE_EFFECT`` is specified, ``mock`` must also be specified. This is the
-    mocked method name (usually from ``method.__name__``)
-
-    :return: The requested data if it exists
-    :raises AssertionError: if the data cannot be retrieved for whatever reason
+    This method gets the results from the environment. 
+    If they aren't populated then an assertion error is raised. 
+    Results should be accessed directly from the Results object by their key name.
+    :param environment: the execution environment.
+    :raises AssertionError: if the results aren't populated.
     """
-    resultData = environment.resultData
+    if environment.resultData is None:
+        raise AssertionError("Results are were no populated! Student submission likely crashed before writing to results object")
 
-    if field not in resultData.keys():
-        raise AssertionError(f"Missing result data. Expected: {field.value}.")
+    return environment.resultData
 
-    if field is PossibleResults.STDOUT and not resultData[field]:
-        raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
-                             f"Are you missing an 'OUTPUT' statement?")
-
-    if field is PossibleResults.FILE_OUT and not file:
-        raise AttributeError("File must be defined.")
-
-    if field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
-        raise AssertionError(f"File '{file}' was not created by the student's submission")
-
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
-        raise AttributeError("Mock most be defined.")
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS \
-            and mock not in resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
-        raise AttributeError(
-            f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
-
-    # now that all that validation is done, we can actually give the data requested lol
-
-    if field is PossibleResults.FILE_OUT and file is not None:
-        # load the file from disk and return it
-        readFile: Union[str, bytes] = ""
-
-        try:
-            with open(resultData[field][file], 'r') as r:
-                readFile  = r.read()
-        except UnicodeDecodeError:
-            with open(resultData[field][file], 'rb') as rb:
-                readFile = rb.read()
-
-        return readFile
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS:
-        return resultData[field][mock]
-
-    return resultData[field]
-
-Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder[Any]")
+Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder[Any, Any]")
 ImplEnvironmentBuilder = TypeVar("ImplEnvironmentBuilder")
 
-class ExecutionEnvironmentBuilder(Generic[ImplEnvironment]):
+class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     """
     Description
     ===========
@@ -133,7 +156,7 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment]):
     """
 
     def __init__(self, submission: AbstractStudentSubmission):
-        self.environment = ExecutionEnvironment[ImplEnvironment](submission)
+        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults](submission)
         self.dataRoot = "."
         self.parameters: List[Any] = []
 
@@ -249,7 +272,7 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment]):
         # TODO - Validate requested features
 
 
-    def build(self) -> ExecutionEnvironment[ImplEnvironment]:
+    def build(self) -> ExecutionEnvironment[ImplEnvironment, ImplResults]:
         """
         Description
         ---
