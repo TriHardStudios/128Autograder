@@ -2,7 +2,7 @@ import unittest
 from gradescope_utils.autograder_utils.decorators import weight
 
 from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
+from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
 from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner
@@ -30,6 +30,6 @@ class HelloWorld(unittest.TestCase):
 
         Executor.execute(environment, self.runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.STDOUT)
+        actualOutput = getResults(environment).stdout
 
         self.assertEqual("Hello World", actualOutput[0])

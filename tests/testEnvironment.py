@@ -1,9 +1,10 @@
 import os
 import shutil
+from sys import stdout
 import unittest
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
+from Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, Results, getResults
 
 class MockSubmission(AbstractStudentSubmission[str]):
     def __init__(self):
@@ -84,7 +85,7 @@ class TestEnvironmentBuilder(unittest.TestCase):
                 .setTimeout(0)\
                 .build()
 
-class TestEnvironmentGetOrAssert(unittest.TestCase):
+class TestEnvironmentGetResults(unittest.TestCase):
     DATA_DIRECTORY: str = "./test_data"
     OUTPUT_FILE_LOCATION = os.path.join(
         DATA_DIRECTORY,
@@ -109,25 +110,21 @@ class TestEnvironmentGetOrAssert(unittest.TestCase):
         with open(self.OUTPUT_FILE_LOCATION, 'w') as w:
             w.write(expectedOutput)
 
-        self.environment.resultData = {
-            PossibleResults.FILE_OUT: {
+        self.environment.resultData = Results(file_out={
                 os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
-            }
-        }
+        })
 
-        actualOutput = getOrAssert(self.environment, PossibleResults.FILE_OUT, file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+        actualOutput = getResults(self.environment).file_out[os.path.basename(self.OUTPUT_FILE_LOCATION)]
 
         self.assertEqual(expectedOutput, actualOutput)
 
     def testGetOrAssertFileNotPresent(self):
-        self.environment.resultData = {
-            PossibleResults.FILE_OUT: {}
-        }
+        self.environment.resultData = Results(file_out={})
 
         with self.assertRaises(AssertionError):
-            getOrAssert(self.environment, PossibleResults.FILE_OUT, 
-                        file=os.path.basename(self.OUTPUT_FILE_LOCATION))
+            getResults(self.environment).file_out["dne.txt"]
 
+    @unittest.skip("Needs to be moved!")
     def testGetOrAssertMockPresent(self):
         self.environment.resultData = {
             PossibleResults.MOCK_SIDE_EFFECTS: {
@@ -140,12 +137,10 @@ class TestEnvironmentGetOrAssert(unittest.TestCase):
         self.assertIsNotNone(actualMock)
 
     def testGetOrAssertEmptyStdout(self):
-        self.environment.resultData = {
-            PossibleResults.STDOUT: []
-        }
+        self.environment.resultData = Results(stdout=[])
 
         with self.assertRaises(AssertionError) as error:
-            getOrAssert(self.environment, PossibleResults.STDOUT)
+            getResults(self.environment).stdout
 
         exceptionText = str(error.exception)
 

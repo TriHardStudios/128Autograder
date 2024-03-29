@@ -3,7 +3,7 @@ import os
 from gradescope_utils.autograder_utils.decorators import weight
 
 from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
+from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
 from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner
@@ -41,7 +41,7 @@ class DataFilesTest(unittest.TestCase):
 
         Executor.execute(environment, runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+        actualOutput = getResults(environment).return_val
 
         self.assertEqual("file.dat", actualOutput)
 
@@ -54,6 +54,6 @@ class DataFilesTest(unittest.TestCase):
 
         Executor.execute(environment, runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+        actualOutput = getResults(environment).return_val
 
         self.assertEqual("public_file.dat", actualOutput)

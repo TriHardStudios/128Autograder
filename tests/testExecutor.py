@@ -1,5 +1,5 @@
 import shutil
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, List
 import unittest
 import os
 
@@ -8,34 +8,34 @@ from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 from StudentSubmission.Runners import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironment,PossibleResults
+from Executors.Environment import ExecutionEnvironment, Results
 
 
-class MockSubmission(AbstractStudentSubmission[str]):
+class MockSubmission(AbstractStudentSubmission[List[str]]):
     def __init__(self):
         super().__init__()
-        self.studentCode: str = "No code"
+        self.studentCode: List[str] = ["No code"]
 
     def doLoad(self):
-        self.studentCode = "Loaded code!"
+        self.studentCode += ["Loaded code!"]
 
     def doBuild(self):
-        self.studentCode = "Built code!"
+        self.studentCode += ["Built code!"]
 
-    def getExecutableSubmission(self) -> str:
+    def getExecutableSubmission(self) -> List[str]:
         return self.studentCode
 
-class MockRunner(IRunner[str]):
+class MockRunner(IRunner[List[str]]):
     def __init__(self) -> None:
-        self.code: str = ""
+        self.code: List[str] = []
 
-    def setSubmission(self, submission: str):
+    def setSubmission(self, submission: List[str]):
         self.code = submission
 
     def setParameters(self, parameters: Tuple[Any]):
         pass
 
-    def run(self) -> Optional[str]:
+    def run(self) -> List[str]:
         return self.code
 
     def __call__(self):
@@ -44,11 +44,11 @@ class MockRunner(IRunner[str]):
 
 class MockSubmissionProcess(ISubmissionProcess):
     def __init__(self):
-        self.output = ""
+        self.output: List[str] = []
         self.exceptions: Optional[Exception] = None
         self.runner: Optional[MockRunner] = None
 
-    def setup(self, _, runner: MockRunner):
+    def setup(self, _, runner: MockRunner): # pyright: ignore[reportIncompatibleMethodOverride]
         self.runner = runner
 
     def run(self):
@@ -61,15 +61,16 @@ class MockSubmissionProcess(ISubmissionProcess):
             self.exceptions = ex
 
     def populateResults(self, environment: ExecutionEnvironment):
-        environment.resultData[PossibleResults.STDOUT] = self.output
-        environment.resultData[PossibleResults.EXCEPTION] = self.exceptions
+        environment.resultData = Results()
+        environment.resultData.stdout = self.output
+        environment.resultData.exception = self.exceptions
 
     def cleanup(self):
         pass
 
     @classmethod
     def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
-        if environment.resultData[PossibleResults.EXCEPTION] is not None:
+        if environment.resultData is None or environment.resultData.exception is not None:
             raise AssertionError()
 
 

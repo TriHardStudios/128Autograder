@@ -1,15 +1,13 @@
 from importlib import import_module
 import os
 import shutil
-import sys
 from typing import Dict, Optional
 import unittest
-from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment
+from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from Executors.Environment import PossibleResults
 from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
-from Executors.Environment import ExecutionEnvironment
+from Executors.Environment import ExecutionEnvironment, Results, getResults
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
@@ -39,9 +37,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
+        self.assertEqual(self.environment.stdin, results.stdout)
 
     def testStdIOWithMain(self):
         program = \
@@ -60,9 +58,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
+        self.assertEqual(self.environment.stdin, results.stdout)
 
     def testFunctionStdIO(self):
         program = \
@@ -73,15 +71,17 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         runner = FunctionRunner("runMe")
         runner.setSubmission(compile(program, "test_code", "exec"))
 
+        self.environment.stdin = ["this is input"]
+
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
         self.runnableSubmission.cleanup()
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(self.environment.stdin, results[PossibleResults.STDOUT])
+        self.assertEqual(self.environment.stdin, results.stdout)
 
     def testFunctionParameterStdIO(self):
         program = \
@@ -101,9 +101,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual([strInput], results[PossibleResults.STDOUT])
+        self.assertEqual([strInput], results.stdout)
 
     def testFunctionParameterReturn(self):
         program = \
@@ -121,10 +121,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(intInput, results[PossibleResults.RETURN_VAL])
-        self.assertEqual(intInput, results[PossibleResults.PARAMETERS][0])
+        self.assertEqual(intInput, results.return_val)
+        self.assertEqual(intInput, results.parameter[0])
 
     def testFunctionMock(self):
         program = \
@@ -145,9 +145,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results: Results[PythonResults] = getResults(self.environment)
 
-        mockMeMock: SingleFunctionMock = results[PossibleResults.MOCK_SIDE_EFFECTS]["mockMe"]
+        mockMeMock = results.impl_results.mocks["mockMe"]
 
         mockMeMock.assertCalledWith(1, 2, 3)
         mockMeMock.assertCalledTimes(2)
@@ -170,9 +170,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
-        mockMeMock: SingleFunctionMock = results[PossibleResults.MOCK_SIDE_EFFECTS]["mockMe"]
-        returnVal = results[PossibleResults.RETURN_VAL]
+        results: Results[PythonResults] = getResults(self.environment)
+
+        mockMeMock = results.impl_results.mocks["mockMe"]
+        returnVal = results.return_val
 
         self.assertEqual(6, returnVal)
         mockMeMock.assertCalledTimes(1)
@@ -192,10 +193,13 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(MissingFunctionDefinition) as ex:
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
 
         exceptionText = str(ex.exception)
 
@@ -218,12 +222,16 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(TimeoutError):
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
 
-        self.assertNotIn(PossibleResults.STDOUT, results)
+        with self.assertRaises(AssertionError):
+            results.stdout
 
     def testTerminateInfiniteLoopWithInput(self):
         program = \
@@ -245,12 +253,16 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(TimeoutError):
-            raise results[PossibleResults.EXCEPTION] # type: ignore
+            raise results.exception
 
-        self.assertNotIn(PossibleResults.STDOUT, results)
+        with self.assertRaises(AssertionError):
+            results.stdout
 
     def testCorrectTimeoutError(self):
         program = \
@@ -268,15 +280,16 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(TimeoutError) as ex:
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
         
         exceptionText = str(ex.exception)
         self.assertIn("timed out after 5 seconds", exceptionText)
-
-        self.assertNotIn(PossibleResults.STDOUT, results)
 
     def testHandledExceptionInfiniteRecursion(self):
         program = \
@@ -296,14 +309,16 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(RecursionError):
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
 
         # Make sure that data is still populated even when we have an error
-        self.assertIn(PossibleResults.STDOUT, results)
-        self.assertTrue(len(results[PossibleResults.STDOUT]) > 10)
+        self.assertTrue(len(results.stdout) > 10)
 
     def testHandledExceptionBlockedInput(self):
         program = \
@@ -326,7 +341,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         exceptionText = str(ex.exception)
 
-        self.assertIn("missing if __name__ == '__main__'", exceptionText)
+        self.assertIn("Do you have the correct number of input statements?", exceptionText)
 
     def testHandleExit(self):
         program = \
@@ -341,10 +356,13 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(MissingOutputDataException):
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
 
     def testHandleManyFailedRuns(self):
         # This test enforces that we prefer a resource leak to crashing tests
@@ -385,11 +403,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertIsNone(results[PossibleResults.EXCEPTION])
-
-        self.assertEqual(4, results[PossibleResults.RETURN_VAL])
+        self.assertIsNone(results.exception)
+        self.assertEqual(4, results.return_val)
 
     def testRunFunctionSetupCode(self):
         program = \
@@ -411,9 +428,9 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(4, results[PossibleResults.RETURN_VAL])
+        self.assertEqual(4, results.return_val)
 
     def testBadFunctionSetupCode(self):
         program = \
@@ -434,10 +451,13 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception was None when should derive from BaseException")
 
         with self.assertRaises(InvalidTestCaseSetupCode):
-            raise results[PossibleResults.EXCEPTION]
+            raise results.exception
 
     @unittest.expectedFailure
     def testMockImportedFunction(self):
@@ -468,11 +488,11 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
         setattr(randMod, "randint", trueRandInt)
 
-        self.assertEqual(1, results[PossibleResults.RETURN_VAL])
+        self.assertEqual(1, results.return_val)
 
     def testFunctionCallsOtherFunction(self):
         program = \
@@ -491,10 +511,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertIsNone(results[PossibleResults.EXCEPTION])
-        self.assertEqual("hello from test2", results[PossibleResults.RETURN_VAL])
+        self.assertIsNone(results.exception)
+        self.assertEqual("hello from test2", results.return_val)
     
     def testFunctionMutableParameters(self):
         program = \
@@ -513,10 +533,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        self.assertEqual(len(results[PossibleResults.PARAMETERS][0]), 2)
-        self.assertIn(1, results[PossibleResults.PARAMETERS][0])
+        self.assertEqual(len(results.parameter[0]), 2)
+        self.assertIn(1, results.parameter[0])
 
     def testFindNewFiles(self):
         program = "pass"
@@ -538,10 +558,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.runnableSubmission.populateResults(self.environment)
 
-        results = self.environment.resultData
+        results = getResults(self.environment)
 
-        shutil.rmtree(self.environment.SANDBOX_LOCATION)
-
-        self.assertIn(PossibleResults.FILE_OUT, results)
-        self.assertDictEqual({os.path.basename(fileLocation): fileLocation}, results[PossibleResults.FILE_OUT])
+        self.assertIsNotNone(results.file_out[os.path.basename(fileLocation)])
 

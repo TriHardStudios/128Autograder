@@ -28,17 +28,20 @@ class Results(Generic[ImplResults]):
 
             return readFile
 
-    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameter=None, impl_results = None) -> None:
+    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameters=None, impl_results = None) -> None:
         self.stdout = stdout
         self.return_val = return_val
         self.file_out = file_out
         self.exception = exception
-        self.parameter = parameter
+        self.parameter = parameters
         self.impl_results = impl_results
 
     @property
     def stdout(self) -> List[str]:
         if self._stdout is None:
+            raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
+                                 f"Are you missing an 'OUTPUT' statement?")
+        if self._stdout == []:
             raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
                                  f"Are you missing an 'OUTPUT' statement?")
         return self._stdout

@@ -9,7 +9,7 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, TextIO, Tuple, List, Union
 from Executors.Environment import ExecutionEnvironment, Results
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
@@ -137,7 +137,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, stdout: StringIO, exception: Optional[Exception],
+    def _teardown(self, stdout: Union[StringIO, TextIO], exception: Optional[Exception],
                   returnValue: Any, parameters: Tuple[Any], mocks: Optional[Dict[str, Optional[SingleFunctionMock]]]) -> None:
         """
         This function takes the results from the child process and serializes them.
@@ -148,6 +148,10 @@ class StudentSubmissionProcess(multiprocessing.Process):
         :param returnValue: The return value from the function
         :param mocks: The mocks from the submission after they have been hydrated
         """
+
+        if isinstance(stdout, TextIO):
+            stdout.seek(0)
+            stdout = StringIO(stdout.read())
 
         # Pickle both the exceptions and the return value
         dataToSerialize: Dict[str, Any] = {
@@ -180,9 +184,6 @@ class StudentSubmissionProcess(multiprocessing.Process):
             exception = rt_er
         except Exception as g_ex:
             exception = g_ex
-
-        if sys.stdout is not StringIO:
-            sys.stdout = StringIO(sys.stdout.read())
 
         self._teardown(sys.stdout, exception, returnValue, self.runner.getParameters(), self.runner.getMocks())
 
@@ -311,13 +312,12 @@ class RunnableStudentSubmission(ISubmissionProcess):
             }
 
         self.outputData["file_out"] = detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
+        self.outputData["stdout"] = filterStdOut(self.outputData["stdout"])
 
         if "impl_results" in self.outputData:
             self.outputData["impl_results"] = PythonResults(**self.outputData["impl_results"])
         
         environment.resultData = Results(**self.outputData)
-
-        environment.resultData.stdout = filterStdOut(environment.resultData.stdout)
 
     @classmethod
     def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
@@ -335,6 +335,6 @@ class RunnableStudentSubmission(ISubmissionProcess):
             errorMessage += "\n" \
                             "Do you have the correct number of input statements?\n"\
                             "Are your loops terminating correctly?\n"\
-                            "Is all your code in "
+                            "Is all your code in the if __name__ == __main__ block if you are using functions?"
 
         raise AssertionError(errorMessage)

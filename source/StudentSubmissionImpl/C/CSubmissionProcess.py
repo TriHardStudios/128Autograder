@@ -5,7 +5,7 @@ from typing import List, Optional
 import subprocess
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 from StudentSubmissionImpl.C.CRunners import MainRunner
-from Executors.Environment import ExecutionEnvironment, PossibleResults
+from Executors.Environment import ExecutionEnvironment, Results
 from Executors.common import detectFileSystemChanges
 
 class CSubmissionProcess(ISubmissionProcess):
@@ -50,22 +50,26 @@ class CSubmissionProcess(ISubmissionProcess):
 
 
     def populateResults(self, environment: ExecutionEnvironment):
-        environment.resultData[PossibleResults.EXCEPTION] = self.exception
+        environment.resultData = Results()
 
-        environment.resultData[PossibleResults.STDOUT] = self.stdout.decode().splitlines()
+        environment.resultData.exception = self.exception
 
-        environment.resultData[PossibleResults.FILE_OUT] =\
+        environment.resultData.stdout = self.stdout.decode().splitlines()
+
+        environment.resultData.file_out =\
                 detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
 
-        environment.resultData[PossibleResults.RETURN_VAL] = None
-
-        environment.resultData[PossibleResults.MOCK_SIDE_EFFECTS] = {}
+        environment.resultData.return_val = None
 
 
 
     @classmethod
     def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
-        exception = environment.resultData[PossibleResults.EXCEPTION]
+        if environment.resultData is None:
+            return
+
+        exception = environment.resultData.exception
+
         if exception is None:
             return
 
