@@ -1,27 +1,106 @@
-from importlib import import_module
-from importlib.abc import MetaPathFinder
 import os
-from types import ModuleType
-from typing import List, Dict, Optional, Tuple, TypeVar, Union, Any
-from enum import Enum
+from typing import Callable, Generic, List, Dict, Optional, Tuple, Type, TypeVar, Union, Any
 
 import dataclasses
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
+
+ImplResults = TypeVar("ImplResults")
+
+class Results(Generic[ImplResults]):
+    class Files():
+        def __init__(self, files: Optional[Dict[str, str]]):
+            self.files = files
+
+        def __getitem__(self, file: str) -> Union[str, bytes]:
+            if self.files is None:
+                raise AssertionError(f"Missing result data. Expected: 'files'.")
+            if file not in self.files:
+                raise AssertionError(f"File '{file}' was not created by the student's submission!")
+
+            readFile: Union[str, bytes] = ""
+
+            try:
+                with open(self.files[file], 'r') as r:
+                    readFile  = r.read()
+            except UnicodeDecodeError:
+                with open(self.files[file], 'rb') as rb:
+                    readFile = rb.read()
+
+            return readFile
+
+    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameters=None, impl_results = None) -> None:
+        self.stdout = stdout
+        self.return_val = return_val
+        self.file_out = file_out
+        self.exception = exception
+        self.parameter = parameters
+        self.impl_results = impl_results
+
+    @property
+    def stdout(self) -> List[str]:
+        if self._stdout is None:
+            raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
+                                 f"Are you missing an 'OUTPUT' statement?")
+        if self._stdout == []:
+            raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
+                                 f"Are you missing an 'OUTPUT' statement?")
+        return self._stdout
+
+    @stdout.setter
+    def stdout(self, value: Optional[List[str]]):
+        self._stdout = value
+
+    @property
+    def return_val(self) -> Optional[object]:
+        return self._return_val
+
+    @return_val.setter
+    def return_val(self, value: Optional[object]):
+        self._return_val = value
+
+    @property
+    def file_out(self) -> Files:
+        return self._files
+
+    @file_out.setter
+    def file_out(self, value: Optional[Dict[str, str]]):
+        self._files = Results.Files(value)
+
+    @property
+    def exception(self) -> Optional[Exception]:
+        return self._exception
+
+    @exception.setter
+    def exception(self, value: Optional[Exception]):
+        self._exception = value
+
+    @property
+    def parameter(self) -> Tuple[Any, ...]:
+        if self._parameter is None:
+            raise AssertionError("No parameters were set!")
+
+        return self._parameter
+
+    @parameter.setter
+    def parameter(self, value: Optional[Tuple[Any, ...]]):
+        self._parameter = value
+
+    @property
+    def impl_results(self) -> ImplResults:
+        if self._impl_results is None:
+            raise AssertionError("No implementation results were set!")
+
+        return self._impl_results
+
+    @impl_results.setter
+    def impl_results(self, value: Optional[ImplResults]):
+        self._impl_results = value
 
 
-class PossibleResults(Enum):
-    STDOUT = "stdout"
-    RETURN_VAL = "return_val"
-    FILE_OUT = "file_out"
-    MOCK_SIDE_EFFECTS = "mock"
-    EXCEPTION = "exception"
-    PARAMETERS = "parameters"
-
-T = TypeVar("T", str, Exception, object)
+ImplEnvironment = TypeVar("ImplEnvironment")
 
 @dataclasses.dataclass
-class ExecutionEnvironment:
+class ExecutionEnvironment(Generic[ImplEnvironment, ImplResults]):
     """
     Description
     ===========
@@ -40,14 +119,11 @@ class ExecutionEnvironment:
     The key is the file name, and the value is the file name with its relative path"""
     parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
     """What arguments to pass to the submission"""
-    import_loader: List[MetaPathFinder] = dataclasses.field(default_factory=list)
-    """The import loader. This shouldn't be set directly"""
-    mocks: Dict[str, Optional[SingleFunctionMock]] = dataclasses.field(default_factory=dict)
-    """What mocks have been defined for this run of the student's submission"""
+    impl_environment: Optional[ImplEnvironment] = None
+    """The implementation environment options. Can be None"""
     timeout: int = 10
     """What timeout has been defined for this run of the student's submission"""
-
-    resultData: Dict[PossibleResults, Any] = dataclasses.field(default_factory=dict)
+    resultData: Optional[Results[ImplResults]] = None
     """
     This dict contains the data that was generated from the student's submission. This should not be accessed
     directly, rather, use getOrAssert method
@@ -56,74 +132,23 @@ class ExecutionEnvironment:
     SANDBOX_LOCATION: str = "./sandbox"
 
 
-# TODO - Update this to be strongly typed
-def getOrAssert(environment: ExecutionEnvironment,
-                field: PossibleResults,
-                file: Optional[str] = None,
-                mock: Optional[str] = None) -> Union[Dict[str, object], object]:
+def getResults(environment: ExecutionEnvironment[ImplEnvironment, ImplResults]) -> Results[ImplResults]:
     """
-    This function gets the requested field from the results or will raise an assertion error.
-
-    If a file is requested, the file name must be specified with the ``file`` parameter. The contents of the file
-    will be returned.
-    If a mock is requested, the mocked method's name must `also` be requested. The mocked method will be returned.
-    :param environment: the execution environment that contains the results from execution
-    :param field: the field to get data from in the results file. Must be a ``PossibleResult``
-    :param file: if ``PossibleResults.FILE_OUT`` is specified, ``file`` must also be specified. This is the file
-    name to load from.
-    :param mock: if ``PossibleResults.MOCK_SIDE_EFFECT`` is specified, ``mock`` must also be specified. This is the
-    mocked method name (usually from ``method.__name__``)
-
-    :return: The requested data if it exists
-    :raises AssertionError: if the data cannot be retrieved for whatever reason
+    This method gets the results from the environment. 
+    If they aren't populated then an assertion error is raised. 
+    Results should be accessed directly from the Results object by their key name.
+    :param environment: the execution environment.
+    :raises AssertionError: if the results aren't populated.
     """
-    resultData = environment.resultData
+    if environment.resultData is None:
+        raise AssertionError("Results are were no populated! Student submission likely crashed before writing to results object")
 
-    if field not in resultData.keys():
-        raise AssertionError(f"Missing result data. Expected: {field.value}.")
+    return environment.resultData
 
-    if field is PossibleResults.STDOUT and not resultData[field]:
-        raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
-                             f"Are you missing an 'OUTPUT' statement?")
+Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder[Any, Any]")
+ImplEnvironmentBuilder = TypeVar("ImplEnvironmentBuilder")
 
-    if field is PossibleResults.FILE_OUT and not file:
-        raise AttributeError("File must be defined.")
-
-    if field is PossibleResults.FILE_OUT and file not in resultData[PossibleResults.FILE_OUT].keys():
-        raise AssertionError(f"File '{file}' was not created by the student's submission")
-
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS and not mock:
-        raise AttributeError("Mock most be defined.")
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS \
-            and mock not in resultData[PossibleResults.MOCK_SIDE_EFFECTS].keys():
-        raise AttributeError(
-            f"Mock '{mock}' was not returned by the student submission. This is an autograder error.")
-
-    # now that all that validation is done, we can actually give the data requested lol
-
-    if field is PossibleResults.FILE_OUT and file is not None:
-        # load the file from disk and return it
-        readFile: Union[str, bytes] = ""
-
-        try:
-            with open(resultData[field][file], 'r') as r:
-                readFile  = r.read()
-        except UnicodeDecodeError:
-            with open(resultData[field][file], 'rb') as rb:
-                readFile = rb.read()
-
-        return readFile
-
-    if field is PossibleResults.MOCK_SIDE_EFFECTS:
-        return resultData[field][mock]
-
-    return resultData[field]
-
-Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder")
-
-class ExecutionEnvironmentBuilder():
+class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     """
     Description
     ===========
@@ -134,10 +159,9 @@ class ExecutionEnvironmentBuilder():
     """
 
     def __init__(self, submission: AbstractStudentSubmission):
-        self.environment = ExecutionEnvironment(submission)
+        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults](submission)
         self.dataRoot = "."
         self.parameters: List[Any] = []
-        self.moduleMocks: Dict[str, Dict[str, object]] = {}
 
     def setDataRoot(self: Builder, dataRoot: str) -> Builder:
         """
@@ -171,36 +195,6 @@ class ExecutionEnvironmentBuilder():
             stdin = stdin.splitlines()
 
         self.environment.stdin = stdin
-
-        return self
-
-    def addModuleMock(self: Builder, moduleName: str, mockedMethods: Dict[str, object]) -> Builder:
-        """
-        Description
-        ---
-        This function sets up a mock for a complete module. 
-        All mocks must be the same 'level' meaning we cant mock a.b.fun and a.fun. We have to choose. 
-
-        We also  cant mock both a.b and a in the same submission currently without mocking the entirety of a.
-
-        :param moduleName: The name of the module that will be mocked.
-        :param mockedMethods: the map of the methods to mock in the module
-        """
-        if moduleName in self.moduleMocks:
-            for mockName, mockObject in mockedMethods.items():
-                self.moduleMocks[moduleName][mockName] = mockObject
-
-            return self
-
-        self.moduleMocks[moduleName] = mockedMethods
-
-        return self
-
-    def addMock(self: Builder, mockName: str, mockObject: SingleFunctionMock) -> Builder:
-        """
-        This needs to be updated once we decide how to do mocks
-        """
-        self.environment.mocks[mockName] = mockObject
 
         return self
 
@@ -254,17 +248,15 @@ class ExecutionEnvironmentBuilder():
 
         return self
 
-    def addImportHandler(self: Builder, importHandler: MetaPathFinder) -> Builder:
-        """
-        Description
-        ---
-        This adds an import handler to the environment
+    def setImplEnviroment(self: Builder, implEnvironmentBuilder: Type[ImplEnvironmentBuilder], builder: Callable[[ImplEnvironmentBuilder], ImplEnvironment]) -> Builder:
 
-        :param importHandler: the meta path finder
-        """
-        self.environment.import_loader.append(importHandler)
+        if self.environment.impl_environment is not None:
+            raise EnvironmentError("ImplEnvironment has already been defined! Should be None!")
 
+        self.environment.impl_environment = builder(implEnvironmentBuilder())
+        
         return self
+
 
     @staticmethod
     def _validate(environment: ExecutionEnvironment):
@@ -282,33 +274,8 @@ class ExecutionEnvironmentBuilder():
 
         # TODO - Validate requested features
 
-    def _processAndValidateModuleMocks(self):
-        try:
-            from StudentSubmissionImpl.Python.PythonModuleImportFactory import ModuleFinder
-        except ImportError:
-            return
 
-        for moduleName in self.moduleMocks.keys():
-            try:
-                module = import_module(moduleName)
-            except ImportError:
-                raise AttributeError(f"Failed to import {moduleName}!")
-
-            for methodName, mock in self.moduleMocks[moduleName].items():
-                splitName = methodName.split('.')
-
-                if not isinstance(mock, SingleFunctionMock):
-                    raise AttributeError(f"Invalid mock for {methodName}")
-
-                if mock.spy:
-                    mock.setSpyFunction(getattr(module, splitName[-1]))
-
-                self.environment.mocks[methodName] = None
-                setattr(module, splitName[-1], mock)
-
-            self.environment.import_loader.append(ModuleFinder(moduleName, module))
-
-    def build(self) -> ExecutionEnvironment:
+    def build(self) -> ExecutionEnvironment[ImplEnvironment, ImplResults]:
         """
         Description
         ---
@@ -318,8 +285,6 @@ class ExecutionEnvironmentBuilder():
         """
         self.environment.parameters = tuple(self.parameters)
         
-        self._processAndValidateModuleMocks()
-
         self._validate(self.environment)
         
         return self.environment

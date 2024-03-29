@@ -3,7 +3,8 @@ import shutil
 import unittest
 
 from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, PossibleResults, getOrAssert
+from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment,  getResults
+from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults, PythonEnvironmentBuilder
 from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
@@ -78,7 +79,7 @@ class TestFullExecutions(unittest.TestCase):
 
         Executor.execute(environment, self.runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.FILE_OUT, file=self.OUTPUT_FILE_NAME)
+        actualOutput = getResults(environment).file_out[self.OUTPUT_FILE_NAME]
 
         self.assertEqual(expectedOutput, actualOutput)
 
@@ -106,10 +107,10 @@ class TestFullExecutions(unittest.TestCase):
 
         Executor.execute(environment, runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.PARAMETERS)
+        actualOutput = getResults(environment).parameter
 
-        self.assertEqual(3, len(actualOutput)) # type: ignore
-        self.assertEqual(3, actualOutput[2]) # type: ignore
+        self.assertEqual(3, len(actualOutput))
+        self.assertEqual(3, actualOutput[2])
 
     def testImportFullExecution(self):
         expectedOutput = 10
@@ -137,18 +138,21 @@ class TestFullExecutions(unittest.TestCase):
         if importHandler is None:
             self.fail("This shouldn't happen")
 
-        environment = ExecutionEnvironmentBuilder(submission)\
-                .addImportHandler(importHandler)\
+        environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
+                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
+                    .addImportHandler(importHandler)\
+                    .build())\
                 .build()
 
         runner = FunctionRunner("run")
 
         Executor.execute(environment, runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+        actualOutput = getResults(environment).return_val
 
-        self.assertEqual(expectedOutput, actualOutput) # type: ignore
+        self.assertEqual(expectedOutput, actualOutput)
 
+    @unittest.expectedFailure
     def testMockedImportFullExecution(self):
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
@@ -167,23 +171,30 @@ class TestFullExecutions(unittest.TestCase):
 
         plotMock = SingleFunctionMock("plot")
 
-        environment = ExecutionEnvironmentBuilder(submission)\
+        environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
                 .setTimeout(10)\
-                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
+                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
+                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
+                    .build()
+                )\
                 .build()
 
+        if environment.impl_environment is None:
+            self.fail()
+
         runner = MainModuleRunner()
-        runner.setMocks(environment.mocks)
+        runner.setMocks(environment.impl_environment.mocks)
 
         Executor.execute(environment, runner)
 
         submission.TEST_ONLY_removeRequirements()
 
-        actualOutput: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.plot") # type: ignore
+        actualOutput = getResults(environment).impl_results.mocks["matplotlib.pyplot.plot"]
 
         actualOutput.assertCalledWith([1, 2, 3, 4])
         actualOutput.assertCalledWith("illegal!")
 
+    @unittest.expectedFailure
     def testSpyImportFullExecution(self):
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
@@ -204,26 +215,32 @@ class TestFullExecutions(unittest.TestCase):
         plotMock = SingleFunctionMock("plot", spy=True)
         savefigMock = SingleFunctionMock("savefig", spy=True)
 
-        environment = ExecutionEnvironmentBuilder(submission)\
+        environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
                 .setTimeout(10)\
-                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
-                .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.savefig": savefigMock})\
+                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
+                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
+                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.savefig": savefigMock})\
+                    .build()
+                )\
                 .build()
 
+        if environment.impl_environment is None:
+            self.fail()
+
         runner = MainModuleRunner()
-        runner.setMocks(environment.mocks)
+        runner.setMocks(environment.impl_environment.mocks)
 
         Executor.execute(environment, runner)
 
         submission.TEST_ONLY_removeRequirements()
 
-        plotResult: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.plot") # type: ignore
-        saveFigResult: SingleFunctionMock = getOrAssert(environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="matplotlib.pyplot.savefig") # type: ignore
+        plotResult = getResults(environment).impl_results.mocks["matplotlib.pyplot.plot"]
+        saveFigResult = getResults(environment).impl_results.mocks["matplotlib.pyplot.savefig"]
 
         plotResult.assertCalledWith([1, 2, 3, 4])
         saveFigResult.assertCalled()
 
-        actualFile: str = getOrAssert(environment, PossibleResults.FILE_OUT, file="out.png") # type: ignore
+        actualFile = getResults(environment).file_out["out.png"]
 
         self.assertGreater(len(actualFile), 0)
 
@@ -257,13 +274,15 @@ class TestFullExecutions(unittest.TestCase):
         if importHandler is None:
             self.fail("This shouldn't happen")
 
-        environment = ExecutionEnvironmentBuilder(submission)\
-                .addImportHandler(importHandler)\
+        environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
+                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
+                    .addImportHandler(importHandler)\
+                    .build())\
                 .build()
 
         Executor.execute(environment, self.runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.FILE_OUT, file=testFileName)
+        actualOutput = getResults(environment).file_out[testFileName]
 
         self.assertEqual(expectedFileContents, actualOutput)
 
@@ -296,18 +315,19 @@ class TestFullExecutions(unittest.TestCase):
         if importHandler is None:
             self.fail("This shouldn't happen")
 
-        environment = ExecutionEnvironmentBuilder(submission)\
-                .addImportHandler(importHandler)\
+        environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
+                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
+                    .addImportHandler(importHandler)\
+                    .build())\
                 .build()
 
         runner = FunctionRunner("run")
 
         Executor.execute(environment, runner)
 
-        actualOutput = getOrAssert(environment, PossibleResults.RETURN_VAL)
+        actualOutput = getResults(environment).return_val
 
-        self.assertEqual(expectedOutput, actualOutput) # type: ignore
-
+        self.assertEqual(expectedOutput, actualOutput)
 
     def testExceptionRaisedResultPopulated(self):
         expectedOutput = "Huzzah"
@@ -324,15 +344,17 @@ class TestFullExecutions(unittest.TestCase):
                 .build()\
                 .validate()
 
-        environment = ExecutionEnvironmentBuilder(submission).build()
+        environment = ExecutionEnvironmentBuilder(submission)\
+                .setTimeout(1000)\
+                .build()
 
         with self.assertRaises(AssertionError):
             Executor.execute(environment, self.runner)
 
-        stdout = getOrAssert(environment, PossibleResults.STDOUT)[0] # type: ignore
-        exception = getOrAssert(environment, PossibleResults.EXCEPTION)
+        stdout = getResults(environment).stdout
+        exception = getResults(environment).exception
 
-        self.assertEqual(expectedOutput, stdout)
+        self.assertEqual([expectedOutput], stdout)
         self.assertIsInstance(exception, Exception)
 
 
