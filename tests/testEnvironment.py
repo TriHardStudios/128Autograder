@@ -124,18 +124,6 @@ class TestEnvironmentGetResults(unittest.TestCase):
         with self.assertRaises(AssertionError):
             getResults(self.environment).file_out["dne.txt"]
 
-    @unittest.skip("Needs to be moved!")
-    def testGetOrAssertMockPresent(self):
-        self.environment.resultData = {
-            PossibleResults.MOCK_SIDE_EFFECTS: {
-                "mock": "This is a mock"
-            }
-        }
-
-        actualMock = getOrAssert(self.environment, PossibleResults.MOCK_SIDE_EFFECTS, mock="mock")
-
-        self.assertIsNotNone(actualMock)
-
     def testGetOrAssertEmptyStdout(self):
         self.environment.resultData = Results(stdout=[])
 

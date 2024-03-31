@@ -3,7 +3,7 @@ from typing import List, Dict, Optional, TypeVar
 from importlib import import_module
 
 from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
-from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import ModuleFinder
+from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 class PythonResults():
@@ -42,9 +42,9 @@ Builder = TypeVar("Builder", bound="PythonEnvironmentBuilder")
 class PythonEnvironmentBuilder():
     def __init__(self) -> None:
         self.environment: PythonEnvironment = PythonEnvironment()
-        self.moduleMocks: Dict[str, Dict[str, object]] = {}
+        self.moduleMocks: Dict[str, Dict[str, SingleFunctionMock]] = {}
         
-    def addModuleMock(self: Builder, moduleName: str, mockedMethods: Dict[str, object]) -> Builder:
+    def addModuleMock(self: Builder, moduleName: str, mockedMethods: Dict[str, SingleFunctionMock]) -> Builder:
         """
         Description
         ---
@@ -94,18 +94,13 @@ class PythonEnvironmentBuilder():
                 raise AttributeError(f"Failed to import {moduleName}!")
 
             for methodName, mock in self.moduleMocks[moduleName].items():
-                splitName = methodName.split('.')
 
                 if not isinstance(mock, SingleFunctionMock):
                     raise AttributeError(f"Invalid mock for {methodName}")
 
-                if mock.spy:
-                    mock.setSpyFunction(getattr(module, splitName[-1]))
-
                 self.environment.mocks[methodName] = None
-                setattr(module, splitName[-1], mock)
 
-            self.environment.import_loader.append(ModuleFinder(moduleName, module))
+            self.environment.import_loader.append(MockedModuleFinder(moduleName, module, self.moduleMocks[moduleName]))
 
     def build(self) -> PythonEnvironment:
         self._processAndValidateModuleMocks()

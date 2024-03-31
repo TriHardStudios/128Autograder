@@ -1,6 +1,5 @@
 from importlib import import_module
 import os
-import shutil
 from typing import Dict, Optional
 import unittest
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
@@ -11,7 +10,7 @@ from Executors.Environment import ExecutionEnvironment, Results, getResults
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
-from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import ModuleFinder
+from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 
 
 class TestPythonSubmissionProcess(unittest.TestCase):
@@ -459,7 +458,6 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with self.assertRaises(InvalidTestCaseSetupCode):
             raise results.exception
 
-    @unittest.expectedFailure
     def testMockImportedFunction(self):
         program = \
             "import random\n" \
@@ -472,15 +470,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.environment.timeout = 10000
 
         randMod = import_module("random")
-        trueRandInt = getattr(randMod, "randint")
-
-        setattr(randMod, "randint", randIntMock)
 
         runner.setMocks({"random.randint": None})
 
         self.environment.impl_environment = PythonEnvironment()
 
-        self.environment.impl_environment.import_loader.append(ModuleFinder("random", randMod))
+        self.environment.impl_environment.import_loader.append(MockedModuleFinder("random", randMod, {"randint": randIntMock}))
 
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
@@ -489,8 +484,6 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.runnableSubmission.populateResults(self.environment)
 
         results = getResults(self.environment)
-
-        setattr(randMod, "randint", trueRandInt)
 
         self.assertEqual(1, results.return_val)
 

@@ -8,7 +8,6 @@ import copy
 import dill
 
 from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
-from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import ModuleFinder
 
 class TestPythonImportFactory(unittest.TestCase):
     TEST_FILE_DIRECTORY: str = "./sandbox"
@@ -52,21 +51,3 @@ class TestPythonImportFactory(unittest.TestCase):
 
         del sys.meta_path[0]
 
-    @unittest.skip("Skip this as its breaking")
-    def testImportedModuleIsSame(self):
-        mod = ModuleType("random")
-        expected = "autograder!"
-        # for some reason macos and windows cache all of the system modules by default. WTF. This is dumb
-        del sys.modules['random']
-
-        setattr(mod, "name", expected)
-
-        sys.meta_path.insert(0, ModuleFinder("random", mod))
-
-        import random
-
-        result = getattr(random, "name", None)
-
-        self.assertEqual(result, expected)
-
-        del sys.meta_path[0]

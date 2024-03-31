@@ -152,7 +152,6 @@ class TestFullExecutions(unittest.TestCase):
 
         self.assertEqual(expectedOutput, actualOutput)
 
-    @unittest.expectedFailure
     def testMockedImportFullExecution(self):
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
@@ -194,7 +193,6 @@ class TestFullExecutions(unittest.TestCase):
         actualOutput.assertCalledWith([1, 2, 3, 4])
         actualOutput.assertCalledWith("illegal!")
 
-    @unittest.expectedFailure
     def testSpyImportFullExecution(self):
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
