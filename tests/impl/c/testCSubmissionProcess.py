@@ -4,7 +4,7 @@ import subprocess
 import os
 import shutil
 
-from Executors.Environment import ExecutionEnvironment, PossibleResults
+from Executors.Environment import ExecutionEnvironment, getResults
 from StudentSubmissionImpl.C.CSubmissionProcess import CSubmissionProcess
 from StudentSubmissionImpl.C.CRunners import MainRunner
 
@@ -77,8 +77,13 @@ class CSubmissionProcessTests(unittest.TestCase):
 
         self.submissionProcess.populateResults(self.environment)
 
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception is None when should be derived from BaseException")
+
         with self.assertRaises(TimeoutError) as ex:
-            raise self.environment.resultData[PossibleResults.EXCEPTION] # type: ignore
+            raise results.exception
 
         exceptionText = str(ex.exception)
 
@@ -98,7 +103,9 @@ class CSubmissionProcessTests(unittest.TestCase):
         
         self.submissionProcess.processAndRaiseExceptions(self.environment)
 
-        self.assertEqual(self.environment.stdin, self.environment.resultData[PossibleResults.STDOUT])
+        results = getResults(self.environment)
+
+        self.assertEqual(self.environment.stdin, results.stdout)
 
     def testExceptionRaised(self):
         self.mock.communicate.side_effect = AttributeError("This is an exception raised by the child!")
@@ -109,8 +116,13 @@ class CSubmissionProcessTests(unittest.TestCase):
 
         self.submissionProcess.populateResults(self.environment)
 
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception is None when should be derived from BaseException")
+
         with self.assertRaises(AttributeError):
-            raise self.environment.resultData[PossibleResults.EXCEPTION] # type: ignore
+            raise results.exception
 
     def testExceptionRaisedDuringProcessCreation(self):
         subprocess.Popen.__new__.side_effect = OSError("The process totally failed to spawn") # type: ignore
@@ -121,8 +133,13 @@ class CSubmissionProcessTests(unittest.TestCase):
 
         self.submissionProcess.populateResults(self.environment)
 
+        results = getResults(self.environment)
+
+        if results.exception is None:
+            self.fail("Exception is None when should be derived from BaseException")
+
         with self.assertRaises(EnvironmentError) as ex:
-            raise self.environment.resultData[PossibleResults.EXCEPTION] # type: ignore
+            raise results.exception
 
         exceptionText = str(ex.exception)
 
@@ -136,7 +153,9 @@ class CSubmissionProcessTests(unittest.TestCase):
         self.submissionProcess.setup(self.environment, self.runner)
         self.submissionProcess.populateResults(self.environment)
 
-        self.assertIn(os.path.basename(fileToCreate), self.environment.resultData[PossibleResults.FILE_OUT]) # type: ignore
+        results = getResults(self.environment)
+
+        self.assertIsNotNone(results.file_out[os.path.basename(fileToCreate)])
 
 
     def testEOFError(self):

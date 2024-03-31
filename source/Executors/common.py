@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 
 class MissingOutputDataException(Exception):
@@ -8,7 +8,7 @@ class MissingOutputDataException(Exception):
                          f"Failed to parse results in {_outputFileName}.\n"
                          f"Submission possibly crashed or terminated before harness could write to {_outputFileName}.")
 
-def filterStdOut(stdOut: List[str]) -> List[str]:
+def filterStdOut(stdOut: Optional[List[str]]) -> Optional[List[str]]:
     """
     This function takes in a list representing the output from the program. It includes ALL output,
     so lines may appear as 'NUMBER> OUTPUT 3' where we only care about what is right after the OUTPUT statement
@@ -17,6 +17,9 @@ def filterStdOut(stdOut: List[str]) -> List[str]:
     :param _stdOut: The raw stdout from the program
     :returns: the same output with the garbage removed
     """
+
+    if stdOut is None:
+        return None
 
     filteredOutput: List[str] = []
     for line in stdOut:

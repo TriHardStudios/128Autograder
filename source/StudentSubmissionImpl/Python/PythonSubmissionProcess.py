@@ -9,9 +9,8 @@ before attempting to even connect to the object.
 :date: 3/7/23
 """
 
-from importlib.abc import MetaPathFinder
-from typing import Any, Dict, Optional, Tuple, List
-from Executors.Environment import ExecutionEnvironment, PossibleResults
+from typing import Any, Dict, Optional, TextIO, Tuple, List, Union
+from Executors.Environment import ExecutionEnvironment, Results
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
@@ -25,9 +24,11 @@ from io import StringIO
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
 from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
-dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads
-multiprocessing.reduction.dump = dill.dump
+dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads # type: ignore
+multiprocessing.reduction.dump = dill.dump # type: ignore
 
 SHARED_MEMORY_SIZE = 2 ** 20
 
@@ -58,7 +59,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, importHandlers: List[MetaPathFinder], timeout: int = 10):
+    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, importHandlers: List[AbstractModuleFinder], timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
@@ -80,7 +81,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         self.inputDataMemName: str = ""
         self.outputDataMemName: str = ""
         self.executionDirectory: str = executionDirectory
-        self.importHandlers: List[MetaPathFinder] = importHandlers
+        self.importHandlers: List[AbstractModuleFinder] = importHandlers
         self.timeout: int = timeout
 
     def setInputDataMemName(self, inputSharedMemName):
@@ -122,6 +123,13 @@ class StudentSubmissionProcess(multiprocessing.Process):
         for importHandler in self.importHandlers:
             sys.meta_path.insert(0, importHandler)
 
+            mods = importHandler.getModulesToReload()
+            for mod in mods:
+                if mod not in sys.modules:
+                    continue
+
+                del sys.modules[mod]
+
         sharedInput = shared_memory.SharedMemory(self.inputDataMemName)
         deserializedData = dill.loads(sharedInput.buf.tobytes())
         # Reformat the stdin so that we
@@ -129,25 +137,31 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         sys.stdout = StringIO()
 
-    def _teardown(self, stdout: StringIO, exception: Optional[Exception],
-                  returnValue: Any, parameters: Tuple[Any], mocks: Optional[Dict[str, SingleFunctionMock]]) -> None:
+    def _teardown(self, stdout: Union[StringIO, TextIO], exception: Optional[Exception],
+                  returnValue: Any, parameters: Tuple[Any], mocks: Optional[Dict[str, Optional[SingleFunctionMock]]]) -> None:
         """
-.       This function takes the results from the child process and serializes them.
+        This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
 
-        :param _stdout: The raw io from the stdout.
-        :param _exception: Any exceptions that were thrown
-        :param _returnValue: The return value from the function
-        :param _mocks: The mocks from the submission after they have been hydrated
+        :param stdout: The raw io from the stdout.
+        :param exception: Any exceptions that were thrown
+        :param returnValue: The return value from the function
+        :param mocks: The mocks from the submission after they have been hydrated
         """
 
+        if isinstance(stdout, TextIO):
+            stdout.seek(0)
+            stdout = StringIO(stdout.read())
+
         # Pickle both the exceptions and the return value
-        dataToSerialize: Dict[PossibleResults, object] = {
-            PossibleResults.STDOUT: stdout.getvalue().splitlines(),
-            PossibleResults.EXCEPTION: exception,
-            PossibleResults.RETURN_VAL: returnValue,
-            PossibleResults.PARAMETERS: parameters,
-            PossibleResults.MOCK_SIDE_EFFECTS: mocks
+        dataToSerialize: Dict[str, Any] = {
+            "stdout": stdout.getvalue().splitlines(),
+            "parameters": parameters,
+            "return_val": returnValue,
+            "exception": exception,
+            "impl_results": {
+                "mocks": mocks,
+            },
         }
 
         for importHandler in self.importHandlers:
@@ -173,7 +187,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         self._teardown(sys.stdout, exception, returnValue, self.runner.getParameters(), self.runner.getMocks())
 
-    def join(self, **kwargs):
+    def join(self, *args, **kwargs):
         multiprocessing.Process.join(self, timeout=self.timeout)
 
     def terminate(self):
@@ -195,11 +209,11 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.executionDirectory: str = "."
         self.studentSubmissionProcess: Optional[StudentSubmissionProcess] = None
         self.exception: Optional[Exception] = None
-        self.outputData: Dict[PossibleResults, object] = {}
+        self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
         self.timeoutTime: int =  0
         
-    def setup(self, environment: ExecutionEnvironment, runner: GenericPythonRunner): # pyright: ignore[reportIncompatibleMethodOverride]
+    def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: GenericPythonRunner): # pyright: ignore[reportIncompatibleMethodOverride]
         """
         Description
         ---
@@ -213,7 +227,9 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         """
         self.studentSubmissionProcess = \
-                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, environment.import_loader, environment.timeout)
+                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, 
+                                         environment.impl_environment.import_loader if environment.impl_environment is not None else [], 
+                                         environment.timeout)
 
         self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
         self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
@@ -264,7 +280,6 @@ class RunnableStudentSubmission(ISubmissionProcess):
         if self.inputSharedMem is None or self.outputSharedMem is None:
             return
 
-
         if self.timeoutOccurred:
             self.exception = TimeoutError(f"Submission timed out after {self.timeoutTime} seconds")
             self._deallocate()
@@ -278,39 +293,38 @@ class RunnableStudentSubmission(ISubmissionProcess):
             self._deallocate()
             return
 
-        deserializedData: Dict[PossibleResults, Any] = dill.loads(outputBytes)
+        deserializedData: Dict[str, Any] = dill.loads(outputBytes)
 
-        self.exception = deserializedData[PossibleResults.EXCEPTION]
         self.outputData = deserializedData
 
         self._deallocate()
 
     def populateResults(self, environment: ExecutionEnvironment):
-        # TODOs
-        # Handle FS changes, Process STDOUT, process exceptions (Might need to be a seperate class), and i think thats it. Basically all the post processing that the Submission Executor used to do should be moved here, as the executor shouldnt really be concerned with the results of the execution, just that they exist
-        environment.resultData[PossibleResults.EXCEPTION] = self.exception
-
         if not self.outputData:
-            return
+            self.outputData = {
+                "stdout": None,
+                "parameters": None,
+                "return_val": None,
+                "exception": self.exception,
+                "impl_results": {
+                    "mocks": None,
+                },
+            }
 
-        environment.resultData[PossibleResults.STDOUT] =\
-                filterStdOut(self.outputData[PossibleResults.STDOUT])
+        self.outputData["file_out"] = detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
+        self.outputData["stdout"] = filterStdOut(self.outputData["stdout"])
 
-        environment.resultData[PossibleResults.PARAMETERS] =\
-                self.outputData[PossibleResults.PARAMETERS]
-
-        environment.resultData[PossibleResults.FILE_OUT] =\
-                detectFileSystemChanges(environment.files.values(), environment.SANDBOX_LOCATION)
-
-        environment.resultData[PossibleResults.RETURN_VAL] =\
-                self.outputData[PossibleResults.RETURN_VAL]
-
-        environment.resultData[PossibleResults.MOCK_SIDE_EFFECTS] =\
-                self.outputData[PossibleResults.MOCK_SIDE_EFFECTS]
+        if "impl_results" in self.outputData:
+            self.outputData["impl_results"] = PythonResults(**self.outputData["impl_results"])
+        
+        environment.resultData = Results(**self.outputData)
 
     @classmethod
     def processAndRaiseExceptions(cls, environment: ExecutionEnvironment):
-        exception = environment.resultData[PossibleResults.EXCEPTION]
+        if environment.resultData is None:
+            return
+
+        exception = environment.resultData.exception
         
         if exception is None:
             return
@@ -320,7 +334,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
                             "Do you have the correct number of input statements?\n"\
-                            "Are you missing if __name__ == '__main__'?\n" \
-                            "Is your code inside of the branch?"
+                            "Are your loops terminating correctly?\n"\
+                            "Is all your code in the if __name__ == __main__ block if you are using functions?"
 
         raise AssertionError(errorMessage)

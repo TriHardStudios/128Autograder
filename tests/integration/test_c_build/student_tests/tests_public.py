@@ -1,10 +1,8 @@
 import unittest
-import os
-
 from gradescope_utils.autograder_utils.decorators import weight
 
 from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironmentBuilder, getOrAssert, PossibleResults
+from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.C.CSubmission import CSubmission
 from utils.config.Config import AutograderConfigurationProvider
 from StudentSubmissionImpl.C.CRunners import MainRunner
@@ -33,6 +31,6 @@ class CHelloWorldTest(unittest.TestCase):
 
         Executor.execute(environment, MainRunner())
 
-        actualOutput = getOrAssert(environment, PossibleResults.STDOUT)
+        actualOutput = getResults(environment).stdout
 
         self.assertEqual(stdin, actualOutput)
