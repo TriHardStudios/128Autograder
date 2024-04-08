@@ -107,7 +107,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         if actual.config.python is None:
             self.fail("config.python was None when it shouldn't be!")
 
-        self.assertIsNotNone(actual.config.python.extra_package)
+        self.assertIsNotNone(actual.config.python.extra_packages)
 
     def testBuildWithCImpl(self):
         schema = self.createAutograderConfigurationSchema()
