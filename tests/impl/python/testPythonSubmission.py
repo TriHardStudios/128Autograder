@@ -248,6 +248,25 @@ class TestStudentSubmission(unittest.TestCase):
 
         self.assertEqual("TEST_FILE_NON_MAIN\n", capturedStdout.getvalue())
 
+    def testAddPackages(self):
+        with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
+            w.writelines(self.TEST_FILE_MAIN)
+
+        submission = PythonSubmission()\
+                .setSubmissionRoot(self.TEST_FILE_DIRECTORY)\
+                .addPackages([{'name': "pip-install-test", 'version': "0.5"}, {'name': "minimal", 'version': ""}])\
+                .load()\
+                .build()\
+                .validate()
+
+        packages = submission.getExtraPackages()
+
+        self.assertIn("pip-install-test", packages)
+        self.assertIn("minimal", packages)
+        self.assertEqual(packages['minimal'], '')
+
+        submission.TEST_ONLY_removeRequirements()
+
     def testAddPackage(self):
         with open(os.path.join(self.TEST_FILE_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(self.TEST_FILE_MAIN)

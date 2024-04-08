@@ -70,8 +70,10 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
         self.extraPackages[packageName] = packageVersion if packageVersion is not None else ""
         return self
 
-    def addPackages(self: Builder, packageMap: Dict[str, str]) -> Builder:
-        self.extraPackages.update(packageMap)
+    def addPackages(self: Builder, packages: List[Dict[str, str]]) -> Builder:
+        for package in packages:
+            self.extraPackages.update({package['name']: package['version']})
+
         return self
 
     def _addFileToMap(self, path: str, fileType: FileTypeMap) -> None:
