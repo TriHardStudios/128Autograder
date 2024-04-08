@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import os
 import shutil
+from typing import Dict, List
 import unittest
 
 from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
@@ -11,7 +12,8 @@ from utils.config.common import BaseSchema
 class MockConfiguration:
     string_property: str
     int_property: int
-    config: dict = field(default_factory=dict)
+    list_of_tables: List[Dict[str, str]] = field(default_factory=list)
+    config: Dict = field(default_factory=dict)
 
 class MockSchema(BaseSchema[MockConfiguration]):
     def __init__(self) -> None:
@@ -103,13 +105,32 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
                 AutograderConfigurationBuilder(configSchema=MockSchema())\
                 .fromTOML(file=self.DATA_FILE)\
                 .setStudentSubmissionDirectory(None)\
-                .setTestDirectory(None)\
-                .build()
+                .setTestDirectory(None).build() # type: ignore 
 
         self.assertNotIn("test_directory", actual.config)
         self.assertNotIn("student_submission_directory", actual.config)
 
+    def testNestedTableInList(self):
+        expectedNested = [{'type': "int", 'value': 6}, {'type': "str", 'value': "huzzah!"}]
 
+        with open(self.DATA_FILE, 'w') as w:
+            w.write(
+                f"string_property = 'hello'\n"\
+                f"int_property = 0\n"\
+                f"[[list_of_tables]]\n"\
+                f"type='int'\n"\
+                f"value=6\n"\
+                f"[[list_of_tables]]\n"\
+                f"type='str'\n"\
+                f"value='huzzah!'\n"
+            )
+
+        actual = \
+            AutograderConfigurationBuilder(configSchema=MockSchema())\
+            .fromTOML(file=self.DATA_FILE)\
+            .build()
+
+        self.assertEqual(actual.list_of_tables, expectedNested)
 
 class TestAutograderConfigurationProvider(unittest.TestCase):
     # Ig i need tests for this??

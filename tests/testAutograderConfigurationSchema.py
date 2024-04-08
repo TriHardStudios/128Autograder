@@ -104,8 +104,10 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         actual = schema.build(data)
 
-        self.assertIsNotNone(actual.config.python)
-        self.assertIsNotNone(actual.config.python.extra_packages) # type: ignore
+        if actual.config.python is None:
+            self.fail("config.python was None when it shouldn't be!")
+
+        self.assertIsNotNone(actual.config.python.extra_package)
 
     def testBuildWithCImpl(self):
         schema = self.createAutograderConfigurationSchema()
@@ -119,9 +121,12 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         actual = schema.build(data)
 
-        self.assertIsNotNone(actual.config.c)
-        self.assertIsNotNone(actual.config.c.use_makefile) # type: ignore
-        self.assertIsNotNone(actual.config.c.submission_name) # type: ignore
+        if actual.config.c is None:
+            self.fail("config.python was None when it shouldn't be!")
+
+
+        self.assertIsNotNone(actual.config.c.use_makefile)
+        self.assertIsNotNone(actual.config.c.submission_name)
 
     def testBuildWithCImplInvalidName(self):
         schema = self.createAutograderConfigurationSchema()
