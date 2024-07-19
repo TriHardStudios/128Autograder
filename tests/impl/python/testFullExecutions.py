@@ -139,9 +139,9 @@ class TestFullExecutions(unittest.TestCase):
             self.fail("This shouldn't happen")
 
         environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
-                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
-                    .addImportHandler(importHandler)\
-                    .build())\
+                .setImplEnvironment(PythonEnvironmentBuilder, lambda x: x \
+                                    .addImportHandler(importHandler) \
+                                    .build())\
                 .build()
 
         runner = FunctionRunner("run")
@@ -172,10 +172,10 @@ class TestFullExecutions(unittest.TestCase):
 
         environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
                 .setTimeout(10)\
-                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
-                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
-                    .build()
-                )\
+                .setImplEnvironment(PythonEnvironmentBuilder, lambda x: x \
+                                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock}) \
+                                    .build()
+                                    )\
                 .build()
 
         if environment.impl_environment is None:
@@ -215,11 +215,11 @@ class TestFullExecutions(unittest.TestCase):
 
         environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
                 .setTimeout(10)\
-                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
-                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock})\
-                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.savefig": savefigMock})\
-                    .build()
-                )\
+                .setImplEnvironment(PythonEnvironmentBuilder, lambda x: x \
+                                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.plot": plotMock}) \
+                                    .addModuleMock("matplotlib.pyplot", {"matplotlib.pyplot.savefig": savefigMock}) \
+                                    .build()
+                                    )\
                 .build()
 
         if environment.impl_environment is None:
@@ -273,9 +273,9 @@ class TestFullExecutions(unittest.TestCase):
             self.fail("This shouldn't happen")
 
         environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
-                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
-                    .addImportHandler(importHandler)\
-                    .build())\
+                .setImplEnvironment(PythonEnvironmentBuilder, lambda x: x \
+                                    .addImportHandler(importHandler) \
+                                    .build())\
                 .build()
 
         Executor.execute(environment, self.runner)
@@ -314,9 +314,9 @@ class TestFullExecutions(unittest.TestCase):
             self.fail("This shouldn't happen")
 
         environment = ExecutionEnvironmentBuilder[PythonEnvironment, PythonResults](submission)\
-                .setImplEnviroment(PythonEnvironmentBuilder, lambda x: x\
-                    .addImportHandler(importHandler)\
-                    .build())\
+                .setImplEnvironment(PythonEnvironmentBuilder, lambda x: x \
+                                    .addImportHandler(importHandler) \
+                                    .build())\
                 .build()
 
         runner = FunctionRunner("run")

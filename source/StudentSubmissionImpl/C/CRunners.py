@@ -1,6 +1,6 @@
 import os
 from typing import Tuple, Optional, Any
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 
 class MainRunner(IRunner[str]):
     def __init__(self):

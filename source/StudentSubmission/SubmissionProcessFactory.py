@@ -3,7 +3,7 @@ from typing import Dict, Type
 from Executors.Environment import ExecutionEnvironment
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 

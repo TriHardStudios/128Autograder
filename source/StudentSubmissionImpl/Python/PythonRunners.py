@@ -6,7 +6,7 @@ from typing import Dict, Optional, Tuple, Any
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 
 class GenericPythonRunner(IRunner[CodeType]):
     """

@@ -5,7 +5,7 @@ import os
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironment, Results

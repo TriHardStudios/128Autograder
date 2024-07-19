@@ -1,7 +1,7 @@
 import abc
 from Executors.Environment import ExecutionEnvironment
 
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 
 
 class ISubmissionProcess(abc.ABC):

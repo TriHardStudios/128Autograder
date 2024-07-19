@@ -6,7 +6,7 @@ from Executors.Environment import ExecutionEnvironment
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 
 # For typing only
-from StudentSubmission.Runners import IRunner
+from StudentSubmission.IRunner import IRunner
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 
