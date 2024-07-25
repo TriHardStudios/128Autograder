@@ -9,3 +9,4 @@ class IRunner(ABC):
     @abstractmethod
     def run(self) -> T:
         raise NotImplementedError()
+

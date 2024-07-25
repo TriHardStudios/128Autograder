@@ -5,7 +5,7 @@ import unittest
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
+from StudentSubmissionImpl.Python.PythonRunnersOld import MainModuleRunner, FunctionRunner
 from Executors.Environment import ExecutionEnvironment, Results, getResults
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode

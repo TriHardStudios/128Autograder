@@ -6,7 +6,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
-from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner
+from StudentSubmissionImpl.Python.PythonRunnersOld import FunctionRunner
 
 
 class DataFilesTest(unittest.TestCase):

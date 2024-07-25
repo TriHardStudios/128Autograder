@@ -6,7 +6,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment,  getResults
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults, PythonEnvironmentBuilder
 from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
-from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner, MainModuleRunner
+from StudentSubmissionImpl.Python.PythonRunnersOld import FunctionRunner, MainModuleRunner
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 

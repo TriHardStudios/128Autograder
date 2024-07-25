@@ -5,7 +5,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
-from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner
+from StudentSubmissionImpl.Python.PythonRunnersOld import MainModuleRunner
 
 
 class RequirementsTest(unittest.TestCase):
