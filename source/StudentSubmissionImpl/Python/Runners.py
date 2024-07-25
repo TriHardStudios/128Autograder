@@ -1,13 +1,13 @@
 import enum
-from types import CodeType
-from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union
+from types import CodeType, ModuleType
+from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable
 
-from StudentSubmission.IRunner import IRunner, T
+from StudentSubmission.IRunner import IRunner, T, Task
 from StudentSubmission.common import InvalidRunner
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 Builder = TypeVar('Builder', bound="PythonRunnerBuilder")
-
+Runner = TypeVar('Runner', bound='PythonRunner')
 
 class Parameter:
     def __init__(self, value: Optional[object] = None, autowiredName: Optional[str] = None):
@@ -40,7 +40,34 @@ class Parameter:
         return self._value
 
 
+    def get(self, module: ModuleType) -> object:
+        if not self.useAutowire:
+            return self.value
+
+        autowiredParam: Optional[object] = getattr(module, self.autowire, None)
+
+        if autowiredParam is None:
+            raise RuntimeError(f"INVALID STATE: Failed to map '{self.autowire}' to type when resolving autowired parameters!")
+
+        return autowiredParam
+
+
 class PythonRunner(IRunner):
+
+    def __init__(self, tasks: List[Task]):
+        pass
+
+    @staticmethod
+    def applyInjectedCode(module: ModuleType, codeToInject: List[CodeType]):
+        for code in codeToInject:
+            exec(code, vars(module))
+
+# how do we keep track of the resources?? The builder will not be transferred to the context of the student's submission
+    @staticmethod
+    def runSetUpCode():
+        pass
+
+
 
     def run(self) -> T:
         pass
@@ -104,9 +131,18 @@ class PythonRunnerBuilder:
 
         return self
 
+
+
+
+
     def build(self) -> PythonRunner:
         if self.functionEntrypoint and (PythonRunnerBuilder.INJECTED_PREFIX in self.functionEntrypoint and self.functionEntrypoint not in self.injectedMethods):
             raise InvalidRunner(f"Injected method '{self.functionEntrypoint}' has not been injected!")
+
+
+
+
+
 
         return PythonRunner()
 
