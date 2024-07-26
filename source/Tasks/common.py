@@ -15,3 +15,12 @@ class FailedToLoadSuppliers(Exception):
 class AttemptToGetInvalidResults(Exception):
     def __init__(self):
         super().__init__("Attempt to get result from task with: Status != COMPLETE")
+
+class TaskAlreadyExists(Exception):
+    def __init__(self, taskName: str):
+        super().__init__(f"Task '{taskName}' has already been defined in this task runner!")
+
+
+class TaskDoesNotExist(Exception):
+    def __init__(self, taskName: str):
+        super().__init__(f"Task '{taskName}' does not exist!")

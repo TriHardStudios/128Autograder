@@ -40,3 +40,9 @@ class Task:
             raise AttemptToGetInvalidResults()
 
         return self.result
+
+    def getStatus(self) -> TaskStatus:
+        return self.status
+
+    def getName(self) -> str:
+        return self.taskName
