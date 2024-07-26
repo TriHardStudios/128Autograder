@@ -49,7 +49,7 @@ class GenericPythonRunner(IRunner[CodeType]):
         if self.mocks is None:
             return
 
-        mocksToResolve = [ mockName for mockName, mock in self.mocks.items() if mock is None]
+        mocksToResolve = [mockName for mockName, mock in self.mocks.items() if mock is None]
         # prolly add logging here
 
         for mock in mocksToResolve:

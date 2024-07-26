@@ -1,6 +1,7 @@
 import enum
+from importlib import import_module
 from types import CodeType, ModuleType
-from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable
+from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable, TypedDict
 
 from StudentSubmission.IRunner import IRunner, T, Task
 from StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
@@ -51,11 +52,12 @@ class Parameter:
 
         return autowiredParam
 
+class PythonTaskLibrary:
 
-class PythonRunner(IRunner):
+    class RunMethodResult(TypedDict):
+        return_val: object
+        parameters: Tuple[object, ...]
 
-    def __init__(self, tasks: List[Task]):
-        self.module: Optional[ModuleType] = None
 
     @staticmethod
     def attemptToImport(submission: CodeType) -> ModuleType:
@@ -66,11 +68,28 @@ class PythonRunner(IRunner):
         return module
 
     @staticmethod
-    def applyInjectedCode(module: ModuleType, codeToInject: List[CodeType]):
+    def applyInjectedCode(module: ModuleType, codeToInject: List[CodeType]) -> None:
         for code in codeToInject:
             exec(code, vars(module))
 
-# how do we keep track of the resources?? The builder will not be transferred to the context of the student's submission
+    @staticmethod
+    def applyMocks(module: ModuleType, mocks: Dict[str, Optional[SingleFunctionMock]]) -> None:
+        """
+        This function applies the mocks to the student's submission at the module level.
+
+        :param module: the module to apply mocks to
+        :param mocks: the dictionary of mocks to apply
+
+        :raises AttributeError: If a mock name cannot be resolved
+        """
+        for mockName, mock in mocks.items():
+            if mock is None:
+                continue
+
+            if mock.spy:
+                mock.setSpyFunction(getattr(module, mockName))
+
+            setattr(module, mockName, mock)
 
     @staticmethod
     def getMethod(module: ModuleType, methodToRun: str) -> Callable:
@@ -82,14 +101,37 @@ class PythonRunner(IRunner):
         return method
 
     @staticmethod
-    def runMethod(module: ModuleType, methodToRun: str, parameters: Optional[Tuple[Parameter, ...]]):
-        pass
+    def runMethod(module: ModuleType, methodToRun: Callable[..., object], parameters: List[Parameter]) -> Runner.RunMethodResult:
+        processedParameters = tuple([parameter.get(module) for parameter in parameters])
+
+        returnVal = methodToRun(*processedParameters)
+
+        return {"return_val": returnVal, "parameters": processedParameters}
 
 
+    @staticmethod
+    def resolveMocks(mocks: Dict[str, Optional[SingleFunctionMock]]) -> Dict[str, SingleFunctionMock]:
+        mocksToResolve = [mockName for mockName, mock in mocks.items() if mock is None]
+        # TODO logging
 
+        for mock in mocksToResolve:
+            splitName = mock.split('.')
+            functionName = splitName[-1]
 
-    def run(self) -> T:
-        pass
+            try:
+                mod = import_module(".".join(splitName[:-1]))
+            except Exception as ex:
+                raise ImportError(f"Failed to import '{splitName}' during mock resolution. This is likely an autograder error.\n{str(ex)}")
+
+            mockedFunction: Optional[SingleFunctionMock] = getattr(mod, functionName, None)
+
+            if mockedFunction is None:
+                raise ImportError(f"Failed to locate '{functionName}' in '{splitName[:-1]}' during mock resolution. This is likely an autograder error.")
+
+            mocks[mock] = mockedFunction
+
+        return mocks
+
 
 class PythonRunnerBuilder:
     INJECTED_PREFIX: Final[str] = "INJECTED_"
@@ -150,10 +192,10 @@ class PythonRunnerBuilder:
 
         return self
 
-    def build(self) -> PythonRunner:
+    def build(self) -> PythonTaskLibrary:
         if self.functionEntrypoint and (PythonRunnerBuilder.INJECTED_PREFIX in self.functionEntrypoint and self.functionEntrypoint not in self.injectedMethods):
             raise InvalidRunner(f"Injected method '{self.functionEntrypoint}' has not been injected!")
 
 
-        return PythonRunner()
+        return PythonTaskLibrary()
 
