@@ -3,7 +3,7 @@ from types import CodeType, ModuleType
 from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable
 
 from StudentSubmission.IRunner import IRunner, T, Task
-from StudentSubmission.common import InvalidRunner
+from StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 Builder = TypeVar('Builder', bound="PythonRunnerBuilder")
@@ -55,7 +55,15 @@ class Parameter:
 class PythonRunner(IRunner):
 
     def __init__(self, tasks: List[Task]):
-        pass
+        self.module: Optional[ModuleType] = None
+
+    @staticmethod
+    def attemptToImport(submission: CodeType) -> ModuleType:
+        module = ModuleType("submission")
+
+        exec(submission, vars(module))
+
+        return module
 
     @staticmethod
     def applyInjectedCode(module: ModuleType, codeToInject: List[CodeType]):
@@ -63,9 +71,20 @@ class PythonRunner(IRunner):
             exec(code, vars(module))
 
 # how do we keep track of the resources?? The builder will not be transferred to the context of the student's submission
+
     @staticmethod
-    def runSetUpCode():
+    def getMethod(module: ModuleType, methodToRun: str) -> Callable:
+        method: Optional[Callable] = getattr(module, methodToRun, None)
+
+        if method is None:
+            raise MissingFunctionDefinition(methodToRun)
+
+        return method
+
+    @staticmethod
+    def runMethod(module: ModuleType, methodToRun: str, parameters: Optional[Tuple[Parameter, ...]]):
         pass
+
 
 
 
@@ -131,17 +150,9 @@ class PythonRunnerBuilder:
 
         return self
 
-
-
-
-
     def build(self) -> PythonRunner:
         if self.functionEntrypoint and (PythonRunnerBuilder.INJECTED_PREFIX in self.functionEntrypoint and self.functionEntrypoint not in self.injectedMethods):
             raise InvalidRunner(f"Injected method '{self.functionEntrypoint}' has not been injected!")
-
-
-
-
 
 
         return PythonRunner()
