@@ -3,9 +3,9 @@ from Tasks.common import TaskStatus, FailedToLoadSuppliers, AttemptToGetInvalidR
 
 
 class Task:
-    def __init__(self, taskName: str, step: Callable[[object, ...], object], inputs: List[Callable[[], object]]):
+    def __init__(self, taskName: str, step: Callable[..., object], inputs: List[Callable[[], object]]):
         self.taskName: Final[str] = taskName
-        self.step: Final[Callable[[object, ...], object]] = step
+        self.step: Final[Callable[..., object]] = step
         self.inputs: Final[List[Callable[[], object]]] = inputs
         self.result: object = None
         self.status: TaskStatus = TaskStatus.NOT_STARTED
@@ -46,3 +46,6 @@ class Task:
 
     def getName(self) -> str:
         return self.taskName
+
+    def getError(self) -> Optional[Exception]:
+        return self.error
