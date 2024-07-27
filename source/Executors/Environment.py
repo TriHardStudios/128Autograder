@@ -118,8 +118,6 @@ class ExecutionEnvironment(Generic[ImplEnvironment, ImplResults]):
     files: Dict[str, str] = dataclasses.field(default_factory=dict)
     """What files need to be added to the students submission. 
     The key is the file name, and the value is the file name with its relative path"""
-    parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
-    """What arguments to pass to the submission"""
     impl_environment: Optional[ImplEnvironment] = None
     """The implementation environment options. Can be None"""
     timeout: int = 10
@@ -165,7 +163,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     def __init__(self):
         self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults]()
         self.dataRoot = "."
-        self.parameters: List[Any] = []
 
     def setDataRoot(self: Builder, dataRoot: str) -> Builder:
         """
@@ -199,19 +196,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
             stdin = stdin.splitlines()
 
         self.environment.stdin = stdin
-
-        return self
-
-    def addParameter(self: Builder, parameter: Any) -> Builder:
-        """
-        Description
-        ---
-        This function adds a parameter to be passed to the submission. 
-        During build, this is converted to an immutable tuple!
-        Order is preverved.
-        :param parameter: The parameter to pass to the submission
-        """
-        self.parameters.append(parameter)
 
         return self
 
@@ -285,8 +269,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         :returns: The build environment
         """
-        self.environment.parameters = tuple(self.parameters)
-
         self._validate(self.environment)
 
         return self.environment

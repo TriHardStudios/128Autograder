@@ -1,5 +1,5 @@
-from queue import Queue, SimpleQueue
-from typing import Dict, List, Optional, Type
+from collections import deque
+from typing import Dict, List, Optional, Type, Deque
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from Tasks.Task import Task
@@ -9,7 +9,7 @@ from Tasks.common import TaskAlreadyExists, TaskDoesNotExist, TaskStatus
 class TaskRunner:
     def __init__(self, submissionType: Type[AbstractStudentSubmission]):
         self.tasks: Dict[str, Task] = {}
-        self.order: SimpleQueue[str] = SimpleQueue()
+        self.order: Deque[str] = deque()
         self.overallResultTask: Optional[str] = None
         self.errorOccurred = False
         self.submissionType: Type[AbstractStudentSubmission] = submissionType
@@ -19,7 +19,7 @@ class TaskRunner:
             raise TaskAlreadyExists(task.getName())
 
         self.tasks[task.getName()] = task
-        self.order.put(task.getName())
+        self.order.append(task.getName())
 
         if isOverallResultTask:
             self.overallResultTask = task.getName()
@@ -33,8 +33,8 @@ class TaskRunner:
 
     def run(self) -> object:
         result: object = None
-        while not self.order.empty():
-            task: Task = self.tasks[self.order.get()]
+        while self.order:
+            task: Task = self.tasks[self.order.popleft()]
 
             task.doTask()
 
@@ -48,7 +48,7 @@ class TaskRunner:
         return result
 
     def wasSuccessful(self):
-        return not self.order.empty() and not self.errorOccurred
+        return not self.order and not self.errorOccurred
 
     def getAllErrors(self) -> List[Exception]:
         errors: List[Exception] = []
@@ -58,6 +58,7 @@ class TaskRunner:
                 continue
 
             errors.append(error)
+
 
         return errors
 

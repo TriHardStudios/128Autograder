@@ -1,16 +1,19 @@
-import enum
 from importlib import import_module
 from types import CodeType, ModuleType
-from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable, TypedDict
+from typing import TypeVar, Tuple, List, Final, Optional, Dict, Callable, TypedDict
 
 from StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
 from StudentSubmissionImpl.Python import PythonSubmission
+from StudentSubmissionImpl.Python.common import PythonTaskResult
 from Tasks.TaskRunner import TaskRunner
 from Tasks.Task import Task
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 Builder = TypeVar('Builder', bound="PythonRunnerBuilder")
-Runner = TypeVar('Runner', bound='PythonRunner')
+
+class RunMethodResult(TypedDict):
+    return_val: object
+    parameters: Tuple[object, ...]
 
 
 class Parameter:
@@ -57,14 +60,6 @@ class Parameter:
 
 
 class PythonTaskLibrary:
-    class RunMethodResult(TypedDict):
-        return_val: object
-        parameters: Tuple[object, ...]
-
-    class PythonTaskResult(TypedDict):
-        return_val: object
-        parameters: Tuple[object, ...]
-        mocks: Dict[str, SingleFunctionMock]
 
     @staticmethod
     def attemptToImport(submission: CodeType) -> ModuleType:
@@ -109,7 +104,7 @@ class PythonTaskLibrary:
 
     @staticmethod
     def runMethod(module: ModuleType, methodToRun: Callable[..., object],
-                  parameters: List[Parameter]) -> Runner.RunMethodResult:
+                  parameters: List[Parameter]) -> RunMethodResult:
         processedParameters = tuple([parameter.get(module) for parameter in parameters])
 
         returnVal = methodToRun(*processedParameters)
@@ -148,8 +143,8 @@ class PythonTaskLibrary:
         return mocks
 
     @staticmethod
-    def aggregateResults(runMethodResults: Optional[Runner.RunMethodResult],
-                         mocks: Dict[str, SingleFunctionMock]) -> Runner.PythonTaskResult:
+    def aggregateResults(runMethodResults: Optional[RunMethodResult],
+                         mocks: Dict[str, SingleFunctionMock]) -> PythonTaskResult:
         return {
             "return_val": runMethodResults["return_val"] if runMethodResults is not None else None,
             "parameters": runMethodResults["parameters"] if runMethodResults is not None else None,
@@ -160,8 +155,8 @@ class PythonTaskLibrary:
 class PythonRunnerBuilder:
     INJECTED_PREFIX: Final[str] = "INJECTED_"
 
-    def __init__(self: Builder, submission: CodeType):
-        self.submission: Final[CodeType] = submission
+    def __init__(self: Builder, submission: PythonSubmission):
+        self.submission: Final[PythonSubmission] = submission
         self.parameters: List[Parameter] = []
         self.mocks: Dict[str, Optional[SingleFunctionMock]] = {}
         self.injectedMethods: Dict[str, CodeType] = {}
@@ -169,16 +164,30 @@ class PythonRunnerBuilder:
         self.useModuleEntrypoint: bool = False
         self.functionEntrypoint: Optional[str] = None
 
-    def addParameter(self: Builder, parameter: Parameter) -> Builder:
+    def addParameter(self: Builder, value: object = None, parameter: Optional[Parameter] = None) -> Builder:
+        if parameter is None:
+            parameter = Parameter(value)
+
         self.parameters.append(parameter)
 
         return self
 
-    def addMock(self: Builder, name: str, mock: Optional[SingleFunctionMock]) -> Builder:
+    def addMock(self: Builder, name: str, mock: SingleFunctionMock) -> Builder:
         if name in self.mocks:
             raise InvalidRunner(f"Mock '{name}' has already been added to the runner.")
 
+        if mock is None:
+            raise InvalidRunner(f"Injected mock '{name}' must be defined! \nIf you are trying to subscribe to the output of a module mock, use 'subscribeToMock'")
+
         self.mocks[name] = mock
+
+        return self
+
+    def subscribeToMock(self: Builder, name: str) -> Builder:
+        if name in self.mocks:
+            raise InvalidRunner(f"Mock '{name}' has already been added to the runner.")
+
+        self.mocks[name] = None
 
         return self
 
@@ -233,16 +242,16 @@ class PythonRunnerBuilder:
             raise InvalidRunner(
                 f"Incompatible options! No parameters can be defined when using module entrypoint. Use a environment mock of the 'sys' module instead.")
 
-        taskRunner = TaskRunner(type(PythonSubmission))
+        taskRunner = TaskRunner(PythonSubmission)
 
         if self.useModuleEntrypoint:
-            taskRunner.add(Task("main", PythonTaskLibrary.runMain, [lambda: self.submission]))
+            taskRunner.add(Task("main", PythonTaskLibrary.runMain, [lambda: self.submission.getExecutableSubmission()]))
             taskRunner.add(Task("resolve_mocks", PythonTaskLibrary.resolveMocks, [lambda: self.mocks]))
             taskRunner.add(Task("results", PythonTaskLibrary.aggregateResults,
-                                [lambda: None, lambda: taskRunner.getResult("resolve_mocks")]))
+                                [lambda: None, lambda: taskRunner.getResult("resolve_mocks")]), isOverallResultTask=True)
             return taskRunner
 
-        taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission]))
+        taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission.getExecutableSubmission()]))
         taskRunner.add(Task("injection", PythonTaskLibrary.applyInjectedCode,
                             [lambda: taskRunner.getResult("import"), lambda: self.injectedMethods]))
         methodOrder = self.setupMethods
@@ -250,19 +259,19 @@ class PythonRunnerBuilder:
         for method in methodOrder:
             taskRunner.add(Task(f"get_{method}", PythonTaskLibrary.getMethod,
                                 [lambda: taskRunner.getResult("import"), lambda: method]))
-            taskRunner.add(Task(f"run_{method}", PythonTaskLibrary.getMethod,
+            taskRunner.add(Task(f"run_{method}", PythonTaskLibrary.runMethod,
                                 [lambda: taskRunner.getResult("import"), lambda: taskRunner.getResult(f"get_{method}"),
                                  lambda: []]))
 
         taskRunner.add(Task(f"get_{self.functionEntrypoint}", PythonTaskLibrary.getMethod,
                             [lambda: taskRunner.getResult("import"), lambda: self.functionEntrypoint]))
-        taskRunner.add(Task(f"run_{self.functionEntrypoint}", PythonTaskLibrary.getMethod,
+        taskRunner.add(Task(f"run_{self.functionEntrypoint}", PythonTaskLibrary.runMethod,
                             [lambda: taskRunner.getResult("import"),
                              lambda: taskRunner.getResult(f"get_{self.functionEntrypoint}"), lambda: self.parameters]))
 
         taskRunner.add(Task("resolve_mocks", PythonTaskLibrary.resolveMocks, [lambda: self.mocks]))
         taskRunner.add(Task("results", PythonTaskLibrary.aggregateResults,
                             [lambda: taskRunner.getResult(f"run_{self.functionEntrypoint}"),
-                             lambda: taskRunner.getResult("resolve_mocks")]))
+                             lambda: taskRunner.getResult("resolve_mocks")]), isOverallResultTask=True)
 
         return taskRunner
