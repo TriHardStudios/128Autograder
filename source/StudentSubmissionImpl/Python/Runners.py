@@ -4,6 +4,7 @@ from types import CodeType, ModuleType
 from typing import TypeVar, Tuple, Any, List, Final, Optional, Dict, overload, Union, Callable, TypedDict
 
 from StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
+from StudentSubmissionImpl.Python import PythonSubmission
 from Tasks.TaskRunner import TaskRunner
 from Tasks.Task import Task
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
@@ -232,7 +233,7 @@ class PythonRunnerBuilder:
             raise InvalidRunner(
                 f"Incompatible options! No parameters can be defined when using module entrypoint. Use a environment mock of the 'sys' module instead.")
 
-        taskRunner = TaskRunner()
+        taskRunner = TaskRunner(type(PythonSubmission))
 
         if self.useModuleEntrypoint:
             taskRunner.add(Task("main", PythonTaskLibrary.runMain, [lambda: self.submission]))

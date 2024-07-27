@@ -1,16 +1,18 @@
 from queue import Queue, SimpleQueue
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 
+from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from Tasks.Task import Task
 from Tasks.common import TaskAlreadyExists, TaskDoesNotExist, TaskStatus
 
 
 class TaskRunner:
-    def __init__(self):
+    def __init__(self, submissionType: Type[AbstractStudentSubmission]):
         self.tasks: Dict[str, Task] = {}
         self.order: SimpleQueue[str] = SimpleQueue()
         self.overallResultTask: Optional[str] = None
         self.errorOccurred = False
+        self.submissionType: Type[AbstractStudentSubmission] = submissionType
 
     def add(self, task: Task, isOverallResultTask: bool = False):
         if task.getName() in self.tasks:
@@ -58,6 +60,9 @@ class TaskRunner:
             errors.append(error)
 
         return errors
+
+    def getSubmissionType(self) -> Type[AbstractStudentSubmission]:
+        return self.submissionType
 
 
 

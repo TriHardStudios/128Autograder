@@ -25,7 +25,7 @@ class SubmissionProcessFactory:
 
     @classmethod
     def createProcess(cls, environment: ExecutionEnvironment, runner: TaskRunner) -> ISubmissionProcess:
-        submissionType = type(environment.submission)
+        submissionType = runner.getSubmissionType()
 
         if submissionType not in cls.registry.keys():
             raise TypeError(f"{submissionType} has not been registered. Lookup failed.")

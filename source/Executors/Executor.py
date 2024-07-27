@@ -35,10 +35,7 @@ class Executor:
         return process
         
     @classmethod
-    def execute(cls, environment: ExecutionEnvironment, runner: IRunner, raiseExceptions: bool = True) -> None:
-        runner.setSubmission(environment.submission.getExecutableSubmission())
-        runner.setParameters(environment.parameters)
-
+    def execute(cls, environment: ExecutionEnvironment, runner: TaskRunner, raiseExceptions: bool = True) -> None:
         submissionProcess: ISubmissionProcess = cls.setup(environment, runner)
 
         submissionProcess.run()
@@ -64,7 +61,3 @@ class Executor:
     def cleanup(cls, environment: ExecutionEnvironment):
         if os.path.exists(environment.SANDBOX_LOCATION):
             shutil.rmtree(environment.SANDBOX_LOCATION)
-
-
-        
-
