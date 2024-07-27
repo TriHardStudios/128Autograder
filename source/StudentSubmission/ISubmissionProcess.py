@@ -1,12 +1,12 @@
 import abc
 from Executors.Environment import ExecutionEnvironment
 
-from StudentSubmission.IRunner import IRunner
+from Tasks.TaskRunner import TaskRunner
 
 
 class ISubmissionProcess(abc.ABC):
     @abc.abstractmethod
-    def setup(self, environment: ExecutionEnvironment, runner: IRunner):
+    def setup(self, environment: ExecutionEnvironment, runner: TaskRunner):
         pass
 
     @abc.abstractmethod

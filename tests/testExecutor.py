@@ -5,10 +5,10 @@ import os
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.IRunner import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironment, Results
+from Tasks.TaskRunner import TaskRunner
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):
@@ -25,30 +25,14 @@ class MockSubmission(AbstractStudentSubmission[List[str]]):
     def getExecutableSubmission(self) -> List[str]:
         return self.studentCode
 
-class MockRunner(IRunner[List[str]]):
-    def __init__(self) -> None:
-        self.code: List[str] = []
-
-    def setSubmission(self, submission: List[str]):
-        self.code = submission
-
-    def setParameters(self, parameters: Tuple[Any]):
-        pass
-
-    def run(self) -> List[str]:
-        return self.code
-
-    def __call__(self):
-        return self.run()
-
 
 class MockSubmissionProcess(ISubmissionProcess):
     def __init__(self):
         self.output: List[str] = []
         self.exceptions: Optional[Exception] = None
-        self.runner: Optional[MockRunner] = None
+        self.runner: TaskRunner = TaskRunner()
 
-    def setup(self, _, runner: MockRunner): # pyright: ignore[reportIncompatibleMethodOverride]
+    def setup(self, _, runner: TaskRunner):
         self.runner = runner
 
     def run(self):
@@ -56,7 +40,7 @@ class MockSubmissionProcess(ISubmissionProcess):
             return
 
         try:
-            self.output = self.runner()
+            self.output = self.runner.run()
         except Exception as ex:
             self.exceptions = ex
 

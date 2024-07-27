@@ -1,8 +1,7 @@
 import os
 from typing import Tuple, Optional, Any
-from StudentSubmission.IRunner import IRunner
 
-class MainRunner(IRunner[str]):
+class MainRunner:
     def __init__(self):
         self.submissionPath: str = ""
         self.parameters: Optional[Tuple[Any]] = None

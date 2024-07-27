@@ -4,15 +4,15 @@ import os
 from Executors.Environment import ExecutionEnvironment
 
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
+from Tasks.TaskRunner import TaskRunner
 
 # For typing only
-from StudentSubmission.IRunner import IRunner
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 
 class Executor:
     @classmethod
-    def setup(cls, environment: ExecutionEnvironment, runner: IRunner) -> ISubmissionProcess:
+    def setup(cls, environment: ExecutionEnvironment, runner: TaskRunner) -> ISubmissionProcess:
         if os.path.exists(environment.SANDBOX_LOCATION):
             shutil.rmtree(environment.SANDBOX_LOCATION)
 

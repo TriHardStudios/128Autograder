@@ -3,9 +3,6 @@ from typing import Generic, TypeVar, Tuple, Any, List
 
 T = TypeVar('T')
 
-class Task:
-    pass
-
 class IRunner(ABC):
     """
 

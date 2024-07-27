@@ -6,9 +6,8 @@ from typing import Dict, Optional, Tuple, Any
 
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from StudentSubmission.IRunner import IRunner
 
-class GenericPythonRunner(IRunner[CodeType]):
+class GenericPythonRunner:
     """
     :Description:
     This class contains common code needed for each runner.
@@ -25,6 +24,7 @@ class GenericPythonRunner(IRunner[CodeType]):
     AUTOGRADER_SETUP_NAME: str = "autograder_setup"
 
     def __init__(self):
+        raise NotImplementedError("Do not use Legacy Python Runner")
         self.studentSubmission: Optional[CodeType] = None
         self.mocks: Optional[Dict[str, Optional[SingleFunctionMock]]] = None
         self.parameters: Tuple[Any, ...] = tuple()
