@@ -162,8 +162,8 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     See :ref:`ExecutionEnvironment` for more information
     """
 
-    def __init__(self, submission: AbstractStudentSubmission):
-        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults](submission)
+    def __init__(self):
+        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults]()
         self.dataRoot = "."
         self.parameters: List[Any] = []
 
