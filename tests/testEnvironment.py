@@ -103,6 +103,7 @@ class TestEnvironmentGetResults(unittest.TestCase):
     def testGetOrAssertFileNotPresent(self):
         self.environment.resultData = Results(file_out={})
 
+        res = None
         with self.assertRaises(AssertionError):
             res = getResults(self.environment).file_out["dne.txt"]
 
@@ -111,6 +112,7 @@ class TestEnvironmentGetResults(unittest.TestCase):
     def testGetOrAssertEmptyStdout(self):
         self.environment.resultData = Results(stdout=[])
 
+        res = None
         with self.assertRaises(AssertionError) as error:
             res = getResults(self.environment).stdout
 
