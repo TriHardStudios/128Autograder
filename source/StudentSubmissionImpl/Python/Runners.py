@@ -119,10 +119,10 @@ class PythonTaskLibrary:
 
     @staticmethod
     def resolveMocks(mocks: Dict[str, Optional[SingleFunctionMock]]) -> Dict[str, SingleFunctionMock]:
-        mocksToResolve = [mockName for mockName, mock in mocks.items() if mock is None]
+        subscribedMocks = [mockName for mockName, mock in mocks.items() if mock is None]
         # TODO logging
 
-        for mock in mocksToResolve:
+        for mock in subscribedMocks:
             splitName = mock.split('.')
             functionName = splitName[-1]
 
@@ -254,6 +254,7 @@ class PythonRunnerBuilder:
         taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission.getExecutableSubmission()]))
         taskRunner.add(Task("injection", PythonTaskLibrary.applyInjectedCode,
                             [lambda: taskRunner.getResult("import"), lambda: self.injectedMethods]))
+        taskRunner.add(Task("apply_mock", PythonTaskLibrary.applyMocks, [lambda: taskRunner.getResult("import"), lambda: self.mocks]))
         methodOrder = self.setupMethods
 
         for method in methodOrder:

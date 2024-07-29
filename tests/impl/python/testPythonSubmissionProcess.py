@@ -153,7 +153,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
         runner = PythonRunnerBuilder(self.submission) \
-            .setEntrypoint(function="runMe") \
+            .setEntrypoint(function="mockMe") \
             .addParameter(1) \
             .addParameter(2) \
             .addParameter(3)\
@@ -162,6 +162,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
 
         results: Results[PythonResults] = self.runSubmission(runner)
+
+        self.assertIsNone(results.exception)
 
         mockMeMock = results.impl_results.mocks["mockMe"]
         returnVal = results.return_val
@@ -352,14 +354,14 @@ class TestPythonSubmissionProcess(unittest.TestCase):
     def testImportedFunction(self):
         program = \
             "import random\n" \
-            "def test():\n" \
+            "def runMe():\n" \
             "    random.seed('autograder')\n" \
             "    return random.randint(0, 5)\n"
 
         self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
         runner = PythonRunnerBuilder(self.submission) \
-            .setEntrypoint(module=True) \
+            .setEntrypoint(function="runMe") \
             .build()
 
         results: Results = self.runSubmission(runner)
@@ -403,7 +405,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         runner = PythonRunnerBuilder(self.submission) \
             .setEntrypoint(function="test") \
-            .addInjectedCode("this_is_a_bad_name", src=setup) \
+            .addInjectedCode("INJECTED_autograder_setup", src=setup) \
             .addSetupMethod("INJECTED_autograder_setup") \
             .build()
 
