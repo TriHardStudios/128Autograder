@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import subprocess
+from io import StringIO
 from types import CodeType
 from typing import Dict, Iterable, List, Optional, TypeVar
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
@@ -9,6 +10,7 @@ from StudentSubmissionImpl.Python.PythonValidators import PythonFileValidator, P
 from StudentSubmissionImpl.Python.common import FileTypeMap
 
 Builder = TypeVar("Builder", bound="PythonSubmission")
+
 
 def filterSearchResults(path: str) -> bool:
     # ignore hidden files
@@ -94,7 +96,7 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
             if self.getTestFilesEnabled() and self.TEST_FILE_REGEX.match(path):
                 self._addFileToMap(os.path.join(directoryToSearch, path), FileTypeMap.TEST_FILES)
                 continue
-            
+
             if self.PYTHON_FILE_REGEX.match(path):
                 self._addFileToMap(os.path.join(directoryToSearch, path), FileTypeMap.PYTHON_FILES)
                 continue
@@ -123,10 +125,13 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
             return
 
         for package, version in self.extraPackages.items():
-            subprocess.check_call([sys.executable, "-m", "pip", "install", 
-                                   f"{package}=={version}" if version else package], 
-                                  stdout=subprocess.DEVNULL)
-        
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install",
+                                       f"{package}=={version}" if version else package],
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+            except subprocess.CalledProcessError as error:
+                raise Exception(f"Failed to install '{package}'!")
+
     def _identifyMainFile(self) -> str:
         if self.getLooseMainMatchingEnabled():
             return self.discoveredFileMap[FileTypeMap.PYTHON_FILES][0]
@@ -144,12 +149,10 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
 
     def _compileFile(self, filePath, code: str) -> CodeType:
         return compile(code, filePath, "exec")
-        
 
     def doLoad(self):
         self._discoverSubmittedFiles(self.getSubmissionRoot())
         self._loadRequirements()
-
 
     def doBuild(self):
         self._installRequirements()
@@ -167,22 +170,27 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
         if self.entryPoint is None:
             raise RuntimeError("Submission has not been built! No entrypoint has been defined!")
         return self.entryPoint
-    
 
     def TEST_ONLY_removeRequirements(self):
         if not self.getRequirementsEnabled() or not self.extraPackages:
             return
 
         for package in self.extraPackages.keys():
-            subprocess.check_call([sys.executable, "-m", "pip", "uninstall", 
-                                   "-y", package], 
+            subprocess.check_call([sys.executable, "-m", "pip", "uninstall",
+                                   "-y", package],
                                   stdout=subprocess.DEVNULL)
 
+    def getTestFilesEnabled(self) -> bool:
+        return self.testFilesEnabled
 
+    def getRequirementsEnabled(self) -> bool:
+        return self.requirementsEnabled
 
+    def getLooseMainMatchingEnabled(self) -> bool:
+        return self.looseMainMatchingEnabled
 
-    def getTestFilesEnabled(self) -> bool: return self.testFilesEnabled
-    def getRequirementsEnabled(self) -> bool: return self.requirementsEnabled
-    def getLooseMainMatchingEnabled(self) -> bool: return self.looseMainMatchingEnabled
-    def getDiscoveredFileMap(self) -> Dict[FileTypeMap, List[str]]: return self.discoveredFileMap
-    def getExtraPackages(self) -> Dict[str, str]: return self.extraPackages
+    def getDiscoveredFileMap(self) -> Dict[FileTypeMap, List[str]]:
+        return self.discoveredFileMap
+
+    def getExtraPackages(self) -> Dict[str, str]:
+        return self.extraPackages
