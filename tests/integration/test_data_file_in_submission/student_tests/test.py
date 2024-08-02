@@ -6,7 +6,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
-from StudentSubmissionImpl.Python.PythonRunners import FunctionRunner
+from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
 
 
 class DataFilesTest(unittest.TestCase):
@@ -24,20 +24,20 @@ class DataFilesTest(unittest.TestCase):
         submissionDirectory = self.autograderConfig.config.student_submission_directory
         testFolder = os.path.join("autograder", "source", self.autograderConfig.config.test_directory, "data")
 
-        self.environmentBuilder = ExecutionEnvironmentBuilder(self.studentSubmission)\
-                .setDataRoot("/")
-
-        self.environmentBuilder\
+        self.environmentBuilder = ExecutionEnvironmentBuilder()\
+                .setDataRoot("/")\
                 .addFile(os.path.join(submissionDirectory, "file.dat"), "file.dat")\
                 .addFile(os.path.join(testFolder, "public_file.dat"), "public_file.dat")
 
 
     @weight(5)
     def testSubmissionData(self):
-        self.environmentBuilder.addParameter("file.dat")
-        environment = self.environmentBuilder.build()
+        runner = PythonRunnerBuilder(self.studentSubmission)\
+            .setEntrypoint(function="readFile")\
+            .addParameter("file.dat")\
+            .build()
 
-        runner = FunctionRunner("readFile")
+        environment = self.environmentBuilder.build()
 
         Executor.execute(environment, runner)
 
@@ -47,10 +47,12 @@ class DataFilesTest(unittest.TestCase):
 
     @weight(5)
     def testProvidedData(self):
-        self.environmentBuilder.addParameter("public_file.dat")
-        environment = self.environmentBuilder.build()
+        runner = PythonRunnerBuilder(self.studentSubmission) \
+            .setEntrypoint(function="readFile") \
+            .addParameter("public_file.dat") \
+            .build()
 
-        runner = FunctionRunner("readFile")
+        environment = self.environmentBuilder.build()
 
         Executor.execute(environment, runner)
 

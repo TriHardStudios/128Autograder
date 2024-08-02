@@ -1,11 +1,19 @@
 from enum import Enum
-from typing import Iterable
+from typing import Iterable, TypedDict, Tuple, Dict, Optional
+
+from TestingFramework.SingleFunctionMock import SingleFunctionMock
+
 
 class FileTypeMap(Enum):
     TEST_FILES = 1
     PYTHON_FILES = 2
     REQUIREMENTS = 3
-    
+
+class PythonTaskResult(TypedDict):
+    return_val: object
+    parameters: Optional[Tuple[object, ...]]
+    mocks: Dict[str, SingleFunctionMock]
+
 class NoPyFilesError(Exception):
     def __init__(self) -> None:
         super().__init__(

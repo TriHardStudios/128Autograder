@@ -1,24 +1,8 @@
 import os
 import shutil
-from sys import stdout
 import unittest
 
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, Results, getResults
-
-class MockSubmission(AbstractStudentSubmission[str]):
-    def __init__(self):
-        super().__init__()
-        
-
-    def doLoad(self):
-       pass
-
-    def doBuild(self):
-        pass
-
-    def getExecutableSubmission(self) -> str:
-        return "Code!"
 
 
 class TestEnvironmentBuilder(unittest.TestCase):
@@ -32,17 +16,15 @@ class TestEnvironmentBuilder(unittest.TestCase):
 
         os.makedirs(self.DATA_ROOT, exist_ok=True)
 
-
     def tearDown(self) -> None:
         if os.path.exists(self.DATA_ROOT):
             shutil.rmtree(self.DATA_ROOT)
 
-
     def testStdinAsStr(self):
-        environment = ExecutionEnvironmentBuilder(MockSubmission())\
-                .setStdin("1\n2")\
-                .build()
-        
+        environment = ExecutionEnvironmentBuilder() \
+            .setStdin("1\n2") \
+            .build()
+
         self.assertEqual(["1", "2"], environment.stdin)
 
     def testAddFileExists(self):
@@ -51,20 +33,20 @@ class TestEnvironmentBuilder(unittest.TestCase):
         with open(os.path.join(self.DATA_ROOT, "sub", "file.txt"), 'w') as w:
             w.write("")
 
-        environment = ExecutionEnvironmentBuilder(MockSubmission())\
-                .setDataRoot(self.DATA_ROOT)\
-                .addFile(os.path.join("./sub", "file.txt"), "file.txt")\
-                .addFile(os.path.join("sub", "file.txt"), "file.txt")\
-                .build()
+        environment = ExecutionEnvironmentBuilder() \
+            .setDataRoot(self.DATA_ROOT) \
+            .addFile(os.path.join("./sub", "file.txt"), "file.txt") \
+            .addFile(os.path.join("sub", "file.txt"), "file.txt") \
+            .build()
 
         self.assertIn(os.path.join(self.DATA_ROOT, "sub", "file.txt"), environment.files.keys())
         self.assertEqual(1, len(environment.files))
 
     def testFileDoesntExist(self):
         with self.assertRaises(EnvironmentError) as error:
-            ExecutionEnvironmentBuilder(MockSubmission())\
-                .setDataRoot(self.DATA_ROOT)\
-                .addFile("file.txt", "file.txt")\
+            ExecutionEnvironmentBuilder() \
+                .setDataRoot(self.DATA_ROOT) \
+                .addFile("file.txt", "file.txt") \
                 .build()
 
         exceptionText = str(error.exception)
@@ -72,18 +54,18 @@ class TestEnvironmentBuilder(unittest.TestCase):
         self.assertIn("file.txt does not exist", exceptionText)
 
     def testValidTimeout(self):
-        environment = ExecutionEnvironmentBuilder(MockSubmission())\
-                .setTimeout(10)\
-                .build()
+        environment = ExecutionEnvironmentBuilder() \
+            .setTimeout(10) \
+            .build()
 
         self.assertEqual(10, environment.timeout)
 
-
     def test0Timeout(self):
         with self.assertRaises(AttributeError):
-            ExecutionEnvironmentBuilder(MockSubmission())\
-                .setTimeout(0)\
+            ExecutionEnvironmentBuilder() \
+                .setTimeout(0) \
                 .build()
+
 
 class TestEnvironmentGetResults(unittest.TestCase):
     DATA_DIRECTORY: str = "./test_data"
@@ -98,7 +80,7 @@ class TestEnvironmentGetResults(unittest.TestCase):
 
         os.mkdir(self.DATA_DIRECTORY)
 
-        self.environment = ExecutionEnvironment(MockSubmission())
+        self.environment = ExecutionEnvironment()
 
     def tearDown(self) -> None:
         if os.path.exists(self.DATA_DIRECTORY):
@@ -111,7 +93,7 @@ class TestEnvironmentGetResults(unittest.TestCase):
             w.write(expectedOutput)
 
         self.environment.resultData = Results(file_out={
-                os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
+            os.path.basename(self.OUTPUT_FILE_LOCATION): self.OUTPUT_FILE_LOCATION
         })
 
         actualOutput = getResults(self.environment).file_out[os.path.basename(self.OUTPUT_FILE_LOCATION)]
@@ -121,17 +103,21 @@ class TestEnvironmentGetResults(unittest.TestCase):
     def testGetOrAssertFileNotPresent(self):
         self.environment.resultData = Results(file_out={})
 
+        res = None
         with self.assertRaises(AssertionError):
-            getResults(self.environment).file_out["dne.txt"]
+            res = getResults(self.environment).file_out["dne.txt"]
+
+        self.assertIsNone(res)
 
     def testGetOrAssertEmptyStdout(self):
         self.environment.resultData = Results(stdout=[])
 
+        res = None
         with self.assertRaises(AssertionError) as error:
-            getResults(self.environment).stdout
+            res = getResults(self.environment).stdout
+
+        self.assertIsNone(res)
 
         exceptionText = str(error.exception)
 
         self.assertIn("No OUTPUT was created by the student's submission.", exceptionText)
-
-

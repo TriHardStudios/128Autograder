@@ -14,6 +14,7 @@ requires-python = ">=3.9.0"
 include = ["source"]
 
 exclude = ["**__pycache__**"]
+scrict = ["."]
 
 executionEnvironments = [
     {root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }

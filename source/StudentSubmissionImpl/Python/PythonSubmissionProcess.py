@@ -22,13 +22,14 @@ import sys
 from io import StringIO
 
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from StudentSubmissionImpl.Python.PythonRunners import GenericPythonRunner
+from StudentSubmissionImpl.Python.common import PythonTaskResult
+from Tasks.TaskRunner import TaskRunner
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
-dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads # type: ignore
-multiprocessing.reduction.dump = dill.dump # type: ignore
+dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads  # type: ignore
+multiprocessing.reduction.dump = dill.dump  # type: ignore
 
 SHARED_MEMORY_SIZE = 2 ** 20
 
@@ -59,25 +60,26 @@ class StudentSubmissionProcess(multiprocessing.Process):
     flexibility required by the classes that will utilize it.
     """
 
-    def __init__(self, runner: GenericPythonRunner, executionDirectory: str, importHandlers: List[AbstractModuleFinder], timeout: int = 10):
+    def __init__(self, runner: TaskRunner, executionDirectory: str, importHandlers: List[AbstractModuleFinder],
+                 timeout: int = 10):
         """
         This constructs a new student submission process with the name "Student Submission".
 
         It sets the default names for shared input and output.
         Those should probably be updated.
 
-        :param _runner: The submission runner to be run in a new process. Can be any callable object (lamda, function,
+        :param runner: The submission runner to be run in a new process. Can be any callable object (lamda, function,
         etc). If there is a return value it will be shared with the parent.
 
 
-        :param _executionDirectory: The directory that this process should be running in. This is to make sure that all
+        :param executionDirectory: The directory that this process should be running in. This is to make sure that all
         data is isolated for each run of the autograder.
 
         :param timeout: The _timeout for join. Basically, it will wait *at most* this amount of time for the child to
         terminate. After this period passes, the child must be killed by the parent.
         """
         super().__init__(name="Student Submission")
-        self.runner: GenericPythonRunner = runner
+        self.runner: TaskRunner = runner
         self.inputDataMemName: str = ""
         self.outputDataMemName: str = ""
         self.executionDirectory: str = executionDirectory
@@ -88,7 +90,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         Updates the input data memory name from the default
 
-        :param _inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin.
+        :param inputSharedMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for stdin.
         The data at this location is stored as a list
         and must be processed into a format understood by ``StringIO``.
         The data must exist before the child is started.
@@ -99,7 +101,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
         """
         Updates the output data memory name from the default.
 
-        :param _outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
+        :param outputDataMemName: The shared memory name (see :ref:`multiprocessing.shared_memory`) for exceptions and
         return values.
         This is created by the child and will be connected to by the parent once the child exits.
         """
@@ -138,7 +140,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
         sys.stdout = StringIO()
 
     def _teardown(self, stdout: Union[StringIO, TextIO], exception: Optional[Exception],
-                  returnValue: Any, parameters: Tuple[Any], mocks: Optional[Dict[str, Optional[SingleFunctionMock]]]) -> None:
+                  returnValue: object, parameters: Optional[Tuple[object, ...]],
+                  mocks: Optional[Dict[str, Optional[SingleFunctionMock]]]) -> None:
         """
         This function takes the results from the child process and serializes them.
         Then is stored in the shared memory object that the parent is able to access.
@@ -176,16 +179,23 @@ class StudentSubmissionProcess(multiprocessing.Process):
     def run(self):
         self._setup()
 
-        returnValue: object = None
         exception: Optional[Exception] = None
-        try:
-            returnValue = self.runner()
-        except RuntimeError as rt_er:
-            exception = rt_er
-        except Exception as g_ex:
-            exception = g_ex
 
-        self._teardown(sys.stdout, exception, returnValue, self.runner.getParameters(), self.runner.getMocks())
+        results: PythonTaskResult = self.runner.run()
+
+        if not self.runner.wasSuccessful():
+            exceptions = self.runner.getAllErrors()
+            if exceptions:
+                exception = exceptions[0]
+
+        if results is None:
+            results = {
+                "return_val": None,
+                "parameters": None,
+                "mocks": {},
+            }
+
+        self._teardown(sys.stdout, exception, results["return_val"], results["parameters"], results["mocks"])
 
     def join(self, *args, **kwargs):
         multiprocessing.Process.join(self, timeout=self.timeout)
@@ -211,9 +221,9 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.exception: Optional[Exception] = None
         self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
-        self.timeoutTime: int =  0
-        
-    def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: GenericPythonRunner): # pyright: ignore[reportIncompatibleMethodOverride]
+        self.timeoutTime: int = 0
+
+    def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: TaskRunner):
         """
         Description
         ---
@@ -227,9 +237,9 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         """
         self.studentSubmissionProcess = \
-                StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION, 
-                                         environment.impl_environment.import_loader if environment.impl_environment is not None else [], 
-                                         environment.timeout)
+            StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION,
+                                     environment.impl_environment.import_loader if environment.impl_environment is not None else [],
+                                     environment.timeout)
 
         self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
         self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
@@ -245,7 +255,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
     def run(self):
         if self.studentSubmissionProcess is None:
-            raise AttributeError("Process has not be initalized!")
+            raise AttributeError("Process has not be initialized!")
 
         self.studentSubmissionProcess.start()
 
@@ -267,7 +277,6 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         self.outputSharedMem.close()
         self.outputSharedMem.unlink()
-
 
     def cleanup(self):
         """
@@ -316,7 +325,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
 
         if "impl_results" in self.outputData:
             self.outputData["impl_results"] = PythonResults(**self.outputData["impl_results"])
-        
+
         environment.resultData = Results(**self.outputData)
 
     @classmethod
@@ -325,16 +334,17 @@ class RunnableStudentSubmission(ISubmissionProcess):
             return
 
         exception = environment.resultData.exception
-        
+
         if exception is None:
             return
 
-        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(exception)
+        errorMessage = f"Submission execution failed due to an {type(exception).__qualname__} exception.\n" + str(
+            exception)
 
         if isinstance(exception, EOFError):
             errorMessage += "\n" \
-                            "Do you have the correct number of input statements?\n"\
-                            "Are your loops terminating correctly?\n"\
+                            "Do you have the correct number of input statements?\n" \
+                            "Are your loops terminating correctly?\n" \
                             "Is all your code in the if __name__ == __main__ block if you are using functions?"
 
         raise AssertionError(errorMessage)

@@ -5,10 +5,11 @@ import os
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.Runners import IRunner
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironment, Results
+from Tasks.Task import Task
+from Tasks.TaskRunner import TaskRunner
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):
@@ -25,40 +26,24 @@ class MockSubmission(AbstractStudentSubmission[List[str]]):
     def getExecutableSubmission(self) -> List[str]:
         return self.studentCode
 
-class MockRunner(IRunner[List[str]]):
-    def __init__(self) -> None:
-        self.code: List[str] = []
-
-    def setSubmission(self, submission: List[str]):
-        self.code = submission
-
-    def setParameters(self, parameters: Tuple[Any]):
-        pass
-
-    def run(self) -> List[str]:
-        return self.code
-
-    def __call__(self):
-        return self.run()
-
 
 class MockSubmissionProcess(ISubmissionProcess):
     def __init__(self):
         self.output: List[str] = []
         self.exceptions: Optional[Exception] = None
-        self.runner: Optional[MockRunner] = None
+        self.runner: Optional[TaskRunner] = None
 
-    def setup(self, _, runner: MockRunner): # pyright: ignore[reportIncompatibleMethodOverride]
+    def setup(self, _, runner: TaskRunner):
         self.runner = runner
 
     def run(self):
         if self.runner is None:
             return
 
-        try:
-            self.output = self.runner()
-        except Exception as ex:
-            self.exceptions = ex
+        self.output = self.runner.run()
+
+        if not self.runner.wasSuccessful():
+            self.exceptions = self.runner.getAllErrors()[0]
 
     def populateResults(self, environment: ExecutionEnvironment):
         environment.resultData = Results()
@@ -74,7 +59,22 @@ class MockSubmissionProcess(ISubmissionProcess):
             raise AssertionError()
 
 
+class MockTaskLibrary:
+    @staticmethod
+    def loadSubmission(submission: List[str]) -> List[str]:
+        return submission
+
+    @staticmethod
+    def returnBoi(data: object) -> object:
+        return data
+
+    @staticmethod
+    def raiseException(exception: Exception):
+        raise exception
+
+
 SubmissionProcessFactory.register(MockSubmission, MockSubmissionProcess)
+
 
 class TestExecutor(unittest.TestCase):
     TEST_FILE_ROOT = "./test_data"
@@ -86,8 +86,8 @@ class TestExecutor(unittest.TestCase):
         os.makedirs(os.path.dirname(self.TEST_FILE_LOCATION), exist_ok=True)
 
         self.submission = MockSubmission().build()
-        self.environment = ExecutionEnvironment(self.submission)
-        self.runner = MockRunner()
+        self.environment = ExecutionEnvironment()
+        self.runner = TaskRunner(MockSubmission)
 
     def tearDown(self) -> None:
         if os.path.exists(self.environment.SANDBOX_LOCATION):
@@ -115,7 +115,7 @@ class TestExecutor(unittest.TestCase):
 
     def testMoveFilesWithAlais(self):
         self.environment.files = {
-            self.TEST_FILE_LOCATION :
+            self.TEST_FILE_LOCATION:
                 os.path.join(self.environment.SANDBOX_LOCATION, "this_is_alais.txt")
         }
 
@@ -127,18 +127,11 @@ class TestExecutor(unittest.TestCase):
         self.assertIn("this_is_alais.txt", os.listdir(self.environment.SANDBOX_LOCATION))
 
     def testExceptionRaised(self):
-        program = \
-            (
-                "raise Exception()\n"
-            )
 
-        savedRun = MockRunner.run
-        MockRunner.run = lambda _: exec(program) # type: ignore
+        self.runner.add(Task("raise_exception", MockTaskLibrary.raiseException, [lambda: Exception()]))
 
         with self.assertRaises(AssertionError):
             Executor.execute(self.environment, self.runner)
-
-        MockRunner.run = savedRun
 
     def testSandboxNotCreatedCleanup(self):
         exception = None
@@ -148,4 +141,3 @@ class TestExecutor(unittest.TestCase):
             exception = e
 
         self.assertIsNone(exception)
-

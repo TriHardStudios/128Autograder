@@ -1,12 +1,15 @@
+import shutil
 from importlib import import_module
 import os
-from typing import Dict, Optional
 import unittest
+
+from StudentSubmissionImpl.Python import PythonSubmission
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from StudentSubmissionImpl.Python.PythonRunners import MainModuleRunner, FunctionRunner
 from Executors.Environment import ExecutionEnvironment, Results, getResults
+from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
+from Tasks.TaskRunner import TaskRunner
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
@@ -15,21 +18,12 @@ from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedMod
 
 class TestPythonSubmissionProcess(unittest.TestCase):
     def setUp(self):
-        self.environment = ExecutionEnvironment(None) # type: ignore
+        self.environment = ExecutionEnvironment()
         self.environment.SANDBOX_LOCATION = "."
         self.runnableSubmission = RunnableStudentSubmission()
+        self.submission: PythonSubmission = PythonSubmission()
 
-    def testStdIO(self):
-        program = \
-             "\n"\
-             "userIn = input()\n"\
-             "print('OUTPUT', userIn)\n"
-
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
-
-        self.environment.stdin = ["this is input"]
-
+    def runSubmission(self, runner: TaskRunner) -> Results:
         self.runnableSubmission.setup(self.environment, runner)
         self.runnableSubmission.run()
         self.runnableSubmission.cleanup()
@@ -37,6 +31,25 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         self.runnableSubmission.populateResults(self.environment)
 
         results = getResults(self.environment)
+
+        return results
+
+    def testStdIO(self):
+        program = \
+             "\n"\
+             "userIn = input()\n"\
+             "print('OUTPUT', userIn)\n"
+
+
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(module=True)\
+            .build()
+
+        self.environment.stdin = ["this is input"]
+        self.environment.timeout = 3600
+
+        results = self.runSubmission(runner)
 
         self.assertEqual(self.environment.stdin, results.stdout)
 
@@ -46,18 +59,14 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "   userIn = input()\n" \
             "   print('OUTPUT', userIn)\n"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
         self.environment.stdin = ["this is input"]
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results = self.runSubmission(runner)
 
         self.assertEqual(self.environment.stdin, results.stdout)
 
@@ -67,18 +76,15 @@ class TestPythonSubmissionProcess(unittest.TestCase):
              "  userIn = input()\n"\
              "  print('OUTPUT', userIn)\n"
 
-        runner = FunctionRunner("runMe")
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(function="runMe")\
+            .build()
 
         self.environment.stdin = ["this is input"]
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results = self.runSubmission(runner)
 
         self.assertEqual(self.environment.stdin, results.stdout)
 
@@ -88,19 +94,14 @@ class TestPythonSubmissionProcess(unittest.TestCase):
              "  print('OUTPUT', value)\n"
 
         strInput = "this was passed as a parameter"
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        runner = FunctionRunner("runMe")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .addParameter(strInput)\
+            .build()
 
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        runner.setParameters((strInput,))
-
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results = self.runSubmission(runner)
 
         self.assertEqual([strInput], results.stdout)
 
@@ -109,18 +110,15 @@ class TestPythonSubmissionProcess(unittest.TestCase):
              "def runMe(value: int):\n"\
              "  return value\n"
 
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
         intInput = 128
-        runner = FunctionRunner("runMe")
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        runner.setParameters((intInput,))
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .addParameter(intInput) \
+            .build()
 
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results = self.runSubmission(runner)
 
         self.assertEqual(intInput, results.return_val)
         self.assertEqual(intInput, results.parameter[0])
@@ -134,17 +132,14 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "   mockMe(1, 2, 3)\n"\
                 "   mockMe(1, 2, 3)\n"\
 
-        runner = FunctionRunner("runMe")
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        runner.setMocks({"mockMe": SingleFunctionMock("mockMe", None)})
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .addMock("mockMe", SingleFunctionMock("mockMe", None))\
+            .build()
 
-        self.runnableSubmission.populateResults(self.environment)
-
-        results: Results[PythonResults] = getResults(self.environment)
+        results: Results[PythonResults] = self.runSubmission(runner)
 
         mockMeMock = results.impl_results.mocks["mockMe"]
 
@@ -156,20 +151,20 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def mockMe(a, b, c):\n"\
             "    return a + b + c\n"
 
-        runner = FunctionRunner("mockMe")
-        mocks: Dict[str, Optional[SingleFunctionMock]] = {"mockMe": SingleFunctionMock("mockMe", spy=True)}
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        runner.setMocks(mocks)
-        runner.setParameters((1, 2, 3))
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="mockMe") \
+            .addParameter(1) \
+            .addParameter(2) \
+            .addParameter(3)\
+            .addMock("mockMe", SingleFunctionMock("mockMe", spy=True)) \
+            .build()
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
 
-        self.runnableSubmission.populateResults(self.environment)
+        results: Results[PythonResults] = self.runSubmission(runner)
 
-        results: Results[PythonResults] = getResults(self.environment)
+        self.assertIsNone(results.exception)
 
         mockMeMock = results.impl_results.mocks["mockMe"]
         returnVal = results.return_val
@@ -182,17 +177,15 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "def ignoreMe():\n"\
                 "   return True\n"
 
-        runner = FunctionRunner("runMe")
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(function="runMe")\
+            .build()
+
         self.environment.timeout = 10000
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results[PythonResults] = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
@@ -210,27 +203,31 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "while True:\n"\
                 "   print('OUTPUT LOOP:)')\n"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
         self.environment.timeout = 5
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
 
-        with self.assertRaises(TimeoutError):
+        with self.assertRaises(TimeoutError) as ex:
             raise results.exception
 
+        res = None
         with self.assertRaises(AssertionError):
-            results.stdout
+            res = results.stdout
+
+        exceptionText = str(ex.exception)
+        self.assertIn("timed out after 5 seconds", exceptionText)
+
+
+        self.assertIsNone(res)
 
     def testTerminateInfiniteLoopWithInput(self):
         program = \
@@ -240,19 +237,15 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "   var = input()\n"\
                 "   print(var)\n"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
         self.environment.stdin = str("hello\n" * 9999).splitlines()
         self.environment.timeout = 5
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
@@ -260,35 +253,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with self.assertRaises(TimeoutError):
             raise results.exception
 
+        res = None
         with self.assertRaises(AssertionError):
-            results.stdout
+            res = results.stdout
 
-    def testCorrectTimeoutError(self):
-        program = \
-                "while True:\n"\
-                "   print('OUTPUT LOOP:)')\n"
+        self.assertIsNone(res)
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
-
-        self.environment.timeout = 5
-
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
-
-        if results.exception is None:
-            self.fail("Exception was None when should derive from BaseException")
-
-        with self.assertRaises(TimeoutError) as ex:
-            raise results.exception
-        
-        exceptionText = str(ex.exception)
-        self.assertIn("timed out after 5 seconds", exceptionText)
 
     def testHandledExceptionInfiniteRecursion(self):
         program = \
@@ -297,18 +267,14 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "   loop()\n"\
                 "loop()\n"
 
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
         self.environment.timeout = 5
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
@@ -324,8 +290,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
                 "var1 = input()\n"\
                 "var2 = input()\n"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
         self.environment.stdin = ["1"]
 
@@ -346,16 +314,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         program = \
                 "exit(0)"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
@@ -368,8 +332,10 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         # This might need to be re-evaluated in the future
         program = "print('Hi Mom!')\n"
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
         runnableSubmission = RunnableStudentSubmission()
         runnableSubmission.setup(self.environment, runner)
@@ -389,20 +355,17 @@ class TestPythonSubmissionProcess(unittest.TestCase):
     def testImportedFunction(self):
         program = \
             "import random\n" \
-            "def test():\n" \
+            "def runMe():\n" \
             "    random.seed('autograder')\n" \
             "    return random.randint(0, 5)\n"
 
-        runner = FunctionRunner("test")
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .build()
 
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         self.assertIsNone(results.exception)
         self.assertEqual(4, results.return_val)
@@ -414,20 +377,21 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "   return random.randint(0, 5)\n"
 
         setup = \
-            "def autograder_setup():\n" \
+            "def INJECTED_autograder_setup():\n" \
             "   random.seed('autograder')\n"
 
-        runner = FunctionRunner("test")
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        runner.setSetupCode(setup)
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(function="test")\
+            .addInjectedCode("INJECTED_autograder_setup", src=setup)\
+            .addSetupMethod("INJECTED_autograder_setup")\
+            .build()
 
-        self.runnableSubmission.populateResults(self.environment)
 
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
+
+        self.assertIsNone(results.exception)
 
         self.assertEqual(4, results.return_val)
 
@@ -440,50 +404,43 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def this_is_a_bad_name():\n" \
             "   pass\n"
 
-        runner = FunctionRunner("test")
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        runner.setSetupCode(setup)
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="test") \
+            .addInjectedCode("INJECTED_autograder_setup", src=setup) \
+            .addSetupMethod("INJECTED_autograder_setup") \
+            .build()
 
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
 
-        with self.assertRaises(InvalidTestCaseSetupCode):
+        with self.assertRaises(MissingFunctionDefinition):
             raise results.exception
 
     def testMockImportedFunction(self):
         program = \
             "import random\n" \
-            "def test():\n" \
+            "def runMe():\n" \
             "   return random.randint(10, 15)\n"
 
-        runner = FunctionRunner("test")
-        runner.setSubmission(compile(program, "test_code", "exec"))
-        randIntMock = SingleFunctionMock("randint", [1])
-        self.environment.timeout = 10000
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .build()
+
+        self.environment.timeout = 5
 
         randMod = import_module("random")
-
-        runner.setMocks({"random.randint": None})
+        randIntMock = SingleFunctionMock("randint", [1])
 
         self.environment.impl_environment = PythonEnvironment()
 
         self.environment.impl_environment.import_loader.append(MockedModuleFinder("random", randMod, {"randint": randIntMock}))
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         self.assertEqual(1, results.return_val)
 
@@ -495,38 +452,29 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def test2(var):\n" \
             "   return var\n"
 
-        runner = FunctionRunner("test1")
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(function="test1")\
+            .build()
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         self.assertIsNone(results.exception)
         self.assertEqual("hello from test2", results.return_val)
     
     def testFunctionMutableParameters(self):
         program = \
-            "def test1(lst):\n"\
+            "def runMe(lst):\n"\
             "   lst.append(1)\n"
 
         listToUpdate = [0]
-        runner = FunctionRunner("test1")
-        runner.setParameters((listToUpdate,))
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission)\
+            .setEntrypoint(function="runMe")\
+            .addParameter(listToUpdate)\
+            .build()
 
-        runner.setSubmission(compile(program, "test_code", "exec"))
-
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         self.assertEqual(len(results.parameter[0]), 2)
         self.assertIn(1, results.parameter[0])
@@ -534,7 +482,12 @@ class TestPythonSubmissionProcess(unittest.TestCase):
     def testFindNewFiles(self):
         program = "pass"
 
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
         self.environment.SANDBOX_LOCATION = "./sandbox"
+
+        if os.path.exists(self.environment.SANDBOX_LOCATION):
+            shutil.rmtree(self.environment.SANDBOX_LOCATION)
+
         os.mkdir(self.environment.SANDBOX_LOCATION)
 
         fileLocation = os.path.join(self.environment.SANDBOX_LOCATION, "file.txt")
@@ -542,16 +495,11 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         with open(fileLocation, 'w') as w:
             w.write("this is a line in the file")
 
-        runner = MainModuleRunner()
-        runner.setSubmission(compile(program, "test_code", "exec"))
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(module=True) \
+            .build()
 
-        self.runnableSubmission.setup(self.environment, runner)
-        self.runnableSubmission.run()
-        self.runnableSubmission.cleanup()
-
-        self.runnableSubmission.populateResults(self.environment)
-
-        results = getResults(self.environment)
+        results: Results = self.runSubmission(runner)
 
         self.assertIsNotNone(results.file_out[os.path.basename(fileLocation)])
 

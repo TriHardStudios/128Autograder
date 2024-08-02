@@ -6,8 +6,9 @@ from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmissio
 
 ImplResults = TypeVar("ImplResults")
 
+
 class Results(Generic[ImplResults]):
-    class Files():
+    class Files:
         def __init__(self, files: Optional[Dict[str, str]]):
             self.files = files
 
@@ -21,14 +22,15 @@ class Results(Generic[ImplResults]):
 
             try:
                 with open(self.files[file], 'r') as r:
-                    readFile  = r.read()
+                    readFile = r.read()
             except UnicodeDecodeError:
                 with open(self.files[file], 'rb') as rb:
                     readFile = rb.read()
 
             return readFile
 
-    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameters=None, impl_results = None) -> None:
+    def __init__(self, stdout=None, return_val=None, file_out=None, exception=None, parameters=None,
+                 impl_results=None) -> None:
         self.stdout = stdout
         self.return_val = return_val
         self.file_out = file_out
@@ -41,7 +43,7 @@ class Results(Generic[ImplResults]):
         if self._stdout is None:
             raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
                                  f"Are you missing an 'OUTPUT' statement?")
-        if self._stdout == []:
+        if not self._stdout:
             raise AssertionError(f"No OUTPUT was created by the student's submission.\n"
                                  f"Are you missing an 'OUTPUT' statement?")
         return self._stdout
@@ -99,6 +101,7 @@ class Results(Generic[ImplResults]):
 
 ImplEnvironment = TypeVar("ImplEnvironment")
 
+
 @dataclasses.dataclass
 class ExecutionEnvironment(Generic[ImplEnvironment, ImplResults]):
     """
@@ -110,15 +113,11 @@ class ExecutionEnvironment(Generic[ImplEnvironment, ImplResults]):
     This class does not define the actual executor.
     """
 
-    submission: AbstractStudentSubmission
-    """The student submission that will be executed"""
     stdin: List[str] = dataclasses.field(default_factory=list)
     """If stdin will be passed to the student's submission"""
     files: Dict[str, str] = dataclasses.field(default_factory=dict)
     """What files need to be added to the students submission. 
     The key is the file name, and the value is the file name with its relative path"""
-    parameters: Tuple[Any] = dataclasses.field(default_factory=tuple)
-    """What arguments to pass to the submission"""
     impl_environment: Optional[ImplEnvironment] = None
     """The implementation environment options. Can be None"""
     timeout: int = 10
@@ -141,12 +140,15 @@ def getResults(environment: ExecutionEnvironment[ImplEnvironment, ImplResults]) 
     :raises AssertionError: if the results aren't populated.
     """
     if environment.resultData is None:
-        raise AssertionError("Results are were no populated! Student submission likely crashed before writing to results object")
+        raise AssertionError(
+            "Results are were no populated! Student submission likely crashed before writing to results object")
 
     return environment.resultData
 
+
 Builder = TypeVar("Builder", bound="ExecutionEnvironmentBuilder[Any, Any]")
 ImplEnvironmentBuilder = TypeVar("ImplEnvironmentBuilder")
+
 
 class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     """
@@ -158,10 +160,9 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
     See :ref:`ExecutionEnvironment` for more information
     """
 
-    def __init__(self, submission: AbstractStudentSubmission):
-        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults](submission)
+    def __init__(self):
+        self.environment = ExecutionEnvironment[ImplEnvironment, ImplResults]()
         self.dataRoot = "."
-        self.parameters: List[Any] = []
 
     def setDataRoot(self: Builder, dataRoot: str) -> Builder:
         """
@@ -198,19 +199,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         return self
 
-    def addParameter(self: Builder, parameter: Any) -> Builder:
-        """
-        Description
-        ---
-        This function adds a parameter to be passed to the submission. 
-        During build, this is converted to an immutable tuple!
-        Order is preverved.
-        :param parameter: The parameter to pass to the submission
-        """
-        self.parameters.append(parameter)
-
-        return self
-
     def addFile(self: Builder, fileSrc: str, fileDest: str) -> Builder:
         """
         Description
@@ -232,7 +220,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         return self
 
-
     def setTimeout(self: Builder, timeout: int) -> Builder:
         """
         Description
@@ -248,15 +235,15 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         return self
 
-    def setImplEnviroment(self: Builder, implEnvironmentBuilder: Type[ImplEnvironmentBuilder], builder: Callable[[ImplEnvironmentBuilder], ImplEnvironment]) -> Builder:
+    def setImplEnvironment(self: Builder, implEnvironmentBuilder: Type[ImplEnvironmentBuilder],
+                           builder: Callable[[ImplEnvironmentBuilder], ImplEnvironment]) -> Builder:
 
         if self.environment.impl_environment is not None:
             raise EnvironmentError("ImplEnvironment has already been defined! Should be None!")
 
         self.environment.impl_environment = builder(implEnvironmentBuilder())
-        
-        return self
 
+        return self
 
     @staticmethod
     def _validate(environment: ExecutionEnvironment):
@@ -274,7 +261,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         # TODO - Validate requested features
 
-
     def build(self) -> ExecutionEnvironment[ImplEnvironment, ImplResults]:
         """
         Description
@@ -283,8 +269,6 @@ class ExecutionEnvironmentBuilder(Generic[ImplEnvironment, ImplResults]):
 
         :returns: The build environment
         """
-        self.environment.parameters = tuple(self.parameters)
-        
         self._validate(self.environment)
-        
+
         return self.environment

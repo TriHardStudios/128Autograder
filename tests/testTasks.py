@@ -45,7 +45,7 @@ class TestTasks(unittest.TestCase):
     def testTasksGetResultsFromPrevTask(self):
         expected = 3
 
-        runner = TaskRunner()
+        runner = TaskRunner(None)  # type: ignore
 
         runner.add(Task("1", TestTasks.returnBoi, [lambda: expected]))
         runner.add(Task("2", TestTasks.returnBoi, [lambda: runner.getResult("1")]), isOverallResultTask=True)
@@ -58,15 +58,15 @@ class TestTasks(unittest.TestCase):
     def testOnlyOneTaskPerName(self):
         expected = 3
 
-        runner = TaskRunner()
+        runner = TaskRunner(None)  # type: ignore
+
         with self.assertRaises(TaskAlreadyExists):
             runner.add(Task("1", TestTasks.returnBoi, [lambda: expected]))
             runner.add(Task("1", TestTasks.returnBoi, [lambda: runner.getResult("1")]))
 
     def testTasksMustBeCompleted(self):
-        expected = 3
+        runner = TaskRunner(None)  # type: ignore
 
-        runner = TaskRunner()
         runner.add(Task("1", TestTasks.returnBoi, [lambda: runner.getResult("1")]), isOverallResultTask=True)
 
         actual = runner.run()

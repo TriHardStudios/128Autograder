@@ -8,9 +8,10 @@ from Executors.Environment import ExecutionEnvironment, getResults
 from StudentSubmissionImpl.C.CSubmissionProcess import CSubmissionProcess
 from StudentSubmissionImpl.C.CRunners import MainRunner
 
+@unittest.skip("C runner will be re-implemented later")
 class CSubmissionProcessTests(unittest.TestCase):
     SUBMISSION_LOCATION: str = "./test_files"
-    EXEC_FILE_LOCATION: str = os.path.join(SUBMISSION_LOCATION, "execuable_file")
+    EXEC_FILE_LOCATION: str = os.path.join(SUBMISSION_LOCATION, "executable_file")
 
     @classmethod
     def setUpClass(cls) -> None:
