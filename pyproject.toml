@@ -26,7 +26,7 @@ concurrency = ["multiprocessing"]
 # Omit testing files, omit dynamic files, omit __init__.py
 # Doing it at the run level as it will that means they wont be run in the first place
 # Ignore build.py as its it is primarly covered by integration tests
-omit = ["sandbox/*", "testPrograms/*","test_code", "test_code.py", "setup_code", "tests/*", "*/student_submission", "__init__.py", "Build.py"]
+omit = ["sandbox/*", "testPrograms/*","test_code", "test_code.py", "setup_code", "tests/*", "*/student_submission", "__init__.py", "Build.py", "INJECTED_*"]
 
 [tool.coverage.report]
 fail_under = 90
