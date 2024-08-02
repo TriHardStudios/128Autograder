@@ -253,7 +253,7 @@ class PythonRunnerBuilder:
 
         taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission.getExecutableSubmission()]))
         taskRunner.add(Task("injection", PythonTaskLibrary.applyInjectedCode,
-                            [lambda: taskRunner.getResult("import"), lambda: self.injectedMethods]))
+                            [lambda: taskRunner.getResult("import"), lambda: self.injectedMethods.values()]))
         taskRunner.add(Task("apply_mock", PythonTaskLibrary.applyMocks, [lambda: taskRunner.getResult("import"), lambda: self.mocks]))
         methodOrder = self.setupMethods
 

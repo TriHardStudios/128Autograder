@@ -158,6 +158,8 @@ class TestFullExecutions(unittest.TestCase):
         self.assertEqual(expectedOutput, actualOutput)
 
     def testMockedImportFullExecution(self):
+        # This test is flaky on windows - rerunning it helps.
+        # It seems to be due to how windows implements the package cache when installing
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
                 "import matplotlib.pyplot as plt\n" \
@@ -201,6 +203,8 @@ class TestFullExecutions(unittest.TestCase):
         actualOutput.assertCalledWith("illegal!")
 
     def testSpyImportFullExecution(self):
+        # This test is flaky on windows - rerunning it helps.
+        # It seems to be due to how windows implements the package cache when installing
         with open(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, "main.py"), 'w') as w:
             w.writelines(
                 "import matplotlib.pyplot as plt\n" \

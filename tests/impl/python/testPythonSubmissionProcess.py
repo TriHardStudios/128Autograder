@@ -380,6 +380,8 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             "def INJECTED_autograder_setup():\n" \
             "   random.seed('autograder')\n"
 
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+
         runner = PythonRunnerBuilder(self.submission)\
             .setEntrypoint(function="test")\
             .addInjectedCode("INJECTED_autograder_setup", src=setup)\
@@ -415,7 +417,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         if results.exception is None:
             self.fail("Exception was None when should derive from BaseException")
 
-        with self.assertRaises(InvalidTestCaseSetupCode):
+        with self.assertRaises(MissingFunctionDefinition):
             raise results.exception
 
     def testMockImportedFunction(self):
