@@ -128,7 +128,7 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install",
                                        f"{package}=={version}" if version else package],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as error:
                 raise Exception(f"Failed to install '{package}'!")
 
