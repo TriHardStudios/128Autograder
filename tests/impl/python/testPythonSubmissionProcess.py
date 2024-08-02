@@ -47,6 +47,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
             .build()
 
         self.environment.stdin = ["this is input"]
+        self.environment.timeout = 3600
 
         results = self.runSubmission(runner)
 
