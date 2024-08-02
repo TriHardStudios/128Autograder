@@ -22,7 +22,6 @@ import sys
 from io import StringIO
 
 from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from StudentSubmissionImpl.Python.PythonRunnersOld import GenericPythonRunner
 from StudentSubmissionImpl.Python.common import PythonTaskResult
 from Tasks.TaskRunner import TaskRunner
 from TestingFramework.SingleFunctionMock import SingleFunctionMock

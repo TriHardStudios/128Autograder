@@ -5,8 +5,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from utils.config.Config import AutograderConfigurationProvider
-from StudentSubmissionImpl.Python.PythonRunnersOld import MainModuleRunner
-
+from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
 
 class RequirementsTest(unittest.TestCase):
     @classmethod
@@ -21,14 +20,17 @@ class RequirementsTest(unittest.TestCase):
                 .validate()
 
     def setUp(self) -> None:
-        self.runner = MainModuleRunner()
-        self.environmentBuilder = ExecutionEnvironmentBuilder(self.studentSubmission)
+        self.environmentBuilder = ExecutionEnvironmentBuilder()
 
     @weight(10)
     def testCode(self):
         environment = self.environmentBuilder.build()
 
-        Executor.execute(environment, self.runner)
+        runner = PythonRunnerBuilder(self.studentSubmission)\
+            .setEntrypoint(module=True)\
+            .build()
+
+        Executor.execute(environment, runner)
 
         actualOutput = getResults(environment).stdout
 
