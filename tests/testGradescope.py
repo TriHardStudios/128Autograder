@@ -56,7 +56,7 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.assertEqual(10, self.autograderResults["score"])
 
-    def testLowerPreviousLimitExeceded(self):
+    def testLowerPreviousLimitExceeded(self):
         self.metadata["previous_submissions"].append({
             "results": {
                 "score": 9
