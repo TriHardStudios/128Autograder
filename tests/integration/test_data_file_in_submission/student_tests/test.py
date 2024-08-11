@@ -1,6 +1,6 @@
 import unittest
 import os
-from gradescope_utils.autograder_utils.decorators import weight
+from autograder_utils.Decorators import Weight
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
@@ -30,7 +30,7 @@ class DataFilesTest(unittest.TestCase):
                 .addFile(os.path.join(testFolder, "public_file.dat"), "public_file.dat")
 
 
-    @weight(5)
+    @Weight(5)
     def testSubmissionData(self):
         runner = PythonRunnerBuilder(self.studentSubmission)\
             .setEntrypoint(function="readFile")\
@@ -45,7 +45,7 @@ class DataFilesTest(unittest.TestCase):
 
         self.assertEqual("file.dat", actualOutput)
 
-    @weight(5)
+    @Weight(5)
     def testProvidedData(self):
         runner = PythonRunnerBuilder(self.studentSubmission) \
             .setEntrypoint(function="readFile") \

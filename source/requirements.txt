@@ -1,6 +1,4 @@
-# waiting on PR to be merged to fix a bug
-# gradescope-utils==0.5.0
-git+https://github.com/TriHardStudios/gradescope-utils
+git+https://github.com/gregbell26/HybridJsonTestRunner@0.7.0
 dill==0.3.6
 Better-PyUnit-Format==0.2.0
 schema==0.7.5
