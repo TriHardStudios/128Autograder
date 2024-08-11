@@ -1,5 +1,5 @@
 import unittest
-from gradescope_utils.autograder_utils.decorators import weight
+from autograder_utils.Decorators import Weight, ImageResult
 
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, getResults
@@ -22,8 +22,9 @@ class RequirementsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.environmentBuilder = ExecutionEnvironmentBuilder()
 
-    @weight(10)
-    def testCode(self):
+    @Weight(10)
+    @ImageResult()
+    def testCode(self, encode, setImageData):
         environment = self.environmentBuilder.build()
 
         runner = PythonRunnerBuilder(self.studentSubmission)\
@@ -36,4 +37,6 @@ class RequirementsTest(unittest.TestCase):
 
         self.assertEqual(1, len(actualOutput))
 
-        
+        imageData = encode(getResults(environment).file_out["plt.png"])
+
+        setImageData("Plot", imageData)

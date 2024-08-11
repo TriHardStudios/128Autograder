@@ -1,5 +1,4 @@
---extra-index-url https://csci128.github.io/PythonPackageRepository/
-HybridJSONTestRunner==0.6.0
+git+https://github.com/gregbell26/HybridJsonTestRunner@0.7.0
 dill==0.3.6
 Better-PyUnit-Format==0.2.0
 schema==0.7.5
