@@ -23,6 +23,8 @@ class Executor:
             raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {ex}")
 
         process = SubmissionProcessFactory.createProcess(environment, runner)
+        # remove unpickable object from runner
+        runner.submissionType = None
 
         if environment.files:
             for src, dest in environment.files.items():
