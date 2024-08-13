@@ -1,7 +1,8 @@
 import unittest
 from Tasks.Task import Task
 from Tasks.TaskRunner import TaskRunner
-from Tasks.common import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists
+from Tasks.common import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists, TaskDoesNotExist, \
+    AttemptToGetInvalidResults
 
 
 class TestTasks(unittest.TestCase):
@@ -54,7 +55,6 @@ class TestTasks(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-
     def testOnlyOneTaskPerName(self):
         expected = 3
 
@@ -63,6 +63,30 @@ class TestTasks(unittest.TestCase):
         with self.assertRaises(TaskAlreadyExists):
             runner.add(Task("1", TestTasks.returnBoi, [lambda: expected]))
             runner.add(Task("1", TestTasks.returnBoi, [lambda: runner.getResult("1")]))
+
+    def testTaskDoesNotExist(self):
+        runner = TaskRunner(None)  # type: ignore
+
+        runner.add(Task("1", TestTasks.returnBoi, [lambda: 1]))
+        runner.add(Task("2", TestTasks.returnBoi, [lambda: runner.getResult("3")]))
+
+        runner.run()
+
+        self.assertFalse(runner.wasSuccessful())
+
+        with self.assertRaises(FailedToLoadSuppliers):
+            raise runner.getAllErrors()[0]
+
+    def testCircularInputs(self):
+        runner = TaskRunner(None)  # type: ignore
+
+        runner.add(Task("1", TestTasks.returnBoi, [lambda: runner.getResult("1")]))
+
+        runner.run()
+
+        self.assertFalse(runner.wasSuccessful())
+        with self.assertRaises(FailedToLoadSuppliers):
+            raise runner.getAllErrors()[0]
 
     def testTasksMustBeCompleted(self):
         runner = TaskRunner(None)  # type: ignore
