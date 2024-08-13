@@ -8,8 +8,9 @@ from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, Py
 
 from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
 from Executors.Environment import ExecutionEnvironment, Results, getResults
-from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
+from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from Tasks.TaskRunner import TaskRunner
+from Tasks.common import FailedToLoadSuppliers
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
@@ -502,4 +503,47 @@ class TestPythonSubmissionProcess(unittest.TestCase):
         results: Results = self.runSubmission(runner)
 
         self.assertIsNotNone(results.file_out[os.path.basename(fileLocation)])
+
+
+    def testAutowiringExists(self):
+        expected = 3
+        program = \
+            "def autowireMe(val):\n"\
+            "   return val\n\n"\
+            "def runMe(funToCall):\n"\
+            f"   return funToCall({expected})"
+
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .addParameter(parameter=Parameter(autowiredName="autowireMe")) \
+            .build()
+
+        results: Results = self.runSubmission(runner)
+
+        self.assertEqual(expected, results.return_val)
+
+    def testAutowiringDoesNotExist(self):
+        expected = 3
+        program = \
+            "def runMe(funToCall):\n" \
+            f"   return funToCall({expected})"
+
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .addParameter(parameter=Parameter(autowiredName="autowireMe")) \
+            .build()
+
+        results: Results = self.runSubmission(runner)
+
+        self.assertIsNotNone(results.exception)
+
+        with self.assertRaises(RuntimeError) as ex:
+            raise results.exception
+
+        exceptionText = str(ex.exception)
+
+        self.assertIn("Failed to map 'autowireMe'", exceptionText)
+
 

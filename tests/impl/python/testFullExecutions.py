@@ -2,12 +2,14 @@ import os
 import shutil
 import unittest
 
+import dill.source
+
 from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, getResults
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults, PythonEnvironmentBuilder
 from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
-from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
+from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
@@ -364,7 +366,7 @@ class TestFullExecutions(unittest.TestCase):
             .validate()
 
         environment = ExecutionEnvironmentBuilder() \
-            .setTimeout(1000) \
+            .setTimeout(5) \
             .build()
 
         runner = PythonRunnerBuilder(submission) \
@@ -379,3 +381,41 @@ class TestFullExecutions(unittest.TestCase):
 
         self.assertEqual([expectedOutput], stdout)
         self.assertIsInstance(exception, Exception)
+
+    def testInjectedEntrypointForClasses(self):
+        program = \
+            "class Test1:\n"\
+            "   def __init__(self, val):\n"\
+            "       self.returnMe = val\n\n"\
+            "   def get(self):\n"\
+            "       return self.returnMe\n\n"
+
+        self.writePythonFile("test_code.py", program)
+
+        submission = PythonSubmission()\
+            .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+            .enableLooseMainMatching()\
+            .load()\
+            .build()\
+            .validate()
+
+        environment = ExecutionEnvironmentBuilder() \
+            .setTimeout(5)\
+            .build()
+
+        expected = "this is from Test 1"
+
+        def INJECTED_testClassTest1(test1Cls, expectedValue):
+            instance = test1Cls(expectedValue)
+            return instance.get()
+
+        runner = PythonRunnerBuilder(submission)\
+            .addInjectedCode(INJECTED_testClassTest1.__name__, dill.source.getsource(INJECTED_testClassTest1, lstrip=True))\
+            .setEntrypoint(function=INJECTED_testClassTest1.__name__)\
+            .addParameter(parameter=Parameter(autowiredName="Test1"))\
+            .addParameter(expected)\
+            .build()
+
+        Executor.execute(environment, runner)
+
+        self.assertEqual(expected, getResults(environment).return_val)

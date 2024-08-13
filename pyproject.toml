@@ -32,11 +32,12 @@ omit = ["sandbox/*", "testPrograms/*","test_code", "test_code.py", "setup_code",
 fail_under = 90
 skip_empty = true
 exclude_also = [
-    # Dont flag error conditions that cant be reached
+    # Dont flag error conditions that cant be reached or that are just defensive
     "raise AssertionError",
     "raise NotImplementedError",
     "raise EnvironmentError",
     "raise AttributeError",
+    "raise InvalidRunner",
 
     "if __name__ == .__main__.:",
 
