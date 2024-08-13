@@ -65,7 +65,6 @@ class TaskRunner:
     def getSubmissionType(self) -> Type[AbstractStudentSubmission]:
         return self.submissionType
 
-
     def __getstate__(self):
         return {"tasks": self.tasks, "order": self.order, "overallResultTask": self.overallResultTask, "errorOccurred": self.errorOccurred}
 

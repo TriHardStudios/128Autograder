@@ -156,7 +156,7 @@ class PythonRunnerBuilder:
     INJECTED_PREFIX: Final[str] = "INJECTED_"
 
     def __init__(self: Builder, submission: PythonSubmission):
-        self.submission: Final[PythonSubmission] = submission
+        self.submission: Final[CodeType] = submission.getExecutableSubmission()
         self.parameters: List[Parameter] = []
         self.mocks: Dict[str, Optional[SingleFunctionMock]] = {}
         self.injectedMethods: Dict[str, CodeType] = {}
@@ -245,13 +245,13 @@ class PythonRunnerBuilder:
         taskRunner = TaskRunner(PythonSubmission)
 
         if self.useModuleEntrypoint:
-            taskRunner.add(Task("main", PythonTaskLibrary.runMain, [lambda: self.submission.getExecutableSubmission()]))
+            taskRunner.add(Task("main", PythonTaskLibrary.runMain, [lambda: self.submission]))
             taskRunner.add(Task("resolve_mocks", PythonTaskLibrary.resolveMocks, [lambda: self.mocks]))
             taskRunner.add(Task("results", PythonTaskLibrary.aggregateResults,
                                 [lambda: None, lambda: taskRunner.getResult("resolve_mocks")]), isOverallResultTask=True)
             return taskRunner
 
-        taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission.getExecutableSubmission()]))
+        taskRunner.add(Task("import", PythonTaskLibrary.attemptToImport, [lambda: self.submission]))
         taskRunner.add(Task("injection", PythonTaskLibrary.applyInjectedCode,
                             [lambda: taskRunner.getResult("import"), lambda: self.injectedMethods.values()]))
         taskRunner.add(Task("apply_mock", PythonTaskLibrary.applyMocks, [lambda: taskRunner.getResult("import"), lambda: self.mocks]))
