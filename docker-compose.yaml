@@ -56,9 +56,9 @@ services:
   test_run_test_my_work:
     build:
       dockerfile: run.dockerfile
-    entrypoint: ["/app/entrypoint.sh"]
+    entrypoint: ["sh", "/app/entrypoint.sh"]
     volumes:
-      - "./tests/e2e/test_run_test_my_work/entrypoint.sh:/app/entrypoint.sh:777"
+      - "./tests/e2e/test_run_test_my_work/entrypoint.sh:/app/entrypoint.sh"
       - "./tests/e2e/test_run_test_my_work/results:/app/results"
       - "./tests/e2e/test_run_test_my_work/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_run_test_my_work/submission:/app/submission"
