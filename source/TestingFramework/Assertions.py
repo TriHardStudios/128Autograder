@@ -1,6 +1,7 @@
 import math
 import re
 import unittest
+from typing import Optional
 
 
 class Assertions(unittest.TestCase):
@@ -10,80 +11,80 @@ class Assertions(unittest.TestCase):
     The primary differentiation factor of this is that it formats the outputs in a nicer way for both gradescope and the
     local autograder
     """
-    def __init__(self, _testResults):
-        super().__init__(_testResults)
+    def __init__(self, testResults):
+        super().__init__(testResults)
         self.addTypeEqualityFunc(str, self.assertMultiLineEqual)
         # self.addTypeEqualityFunc(dict, self.assertDictEqual)
         self.addTypeEqualityFunc(list, self.assertListEqual)
         self.addTypeEqualityFunc(tuple, self.assertTupleEqual)
 
     @staticmethod
-    def _stripOutput(_str: str) -> str:
-        if not isinstance(_str, str):
-            raise AssertionError(f"Expected a string. Got {type(_str).__qualname__}")
+    def _stripOutput(outputLine: str) -> str:
+        if not isinstance(outputLine, str):
+            raise AssertionError(f"Expected a string. Got {type(outputLine).__qualname__}")
 
-        if "output " in _str.lower():
-            _str = _str[7:]
+        if "output " in outputLine.lower():
+            outputLine = outputLine[7:]
 
-        _str = _str.strip()
+        outputLine = outputLine.strip()
 
-        return _str
+        return outputLine
 
     @staticmethod
-    def _convertStringToList(_str: str) -> list[str]:
-        if not isinstance(_str, str):
-            raise AssertionError(f"Expected a string. Got {type(_str).__qualname__}")
+    def _convertStringToList(outputLine: str) -> list[str]:
+        if not isinstance(outputLine, str):
+            raise AssertionError(f"Expected a string. Got {type(outputLine).__qualname__}")
 
-        _str = Assertions._stripOutput(_str)
+        outputLine = Assertions._stripOutput(outputLine)
 
-        if "[" in _str:
-            _str = _str[1:]
-        if "]" in _str:
-            _str = _str[:-1]
-        _str = _str.strip()
+        if "[" in outputLine:
+            outputLine = outputLine[1:]
+        if "]" in outputLine:
+            outputLine = outputLine[:-1]
+        outputLine = outputLine.strip()
 
-        parsedList: list[str] = _str.split(",")
+        parsedList: list[str] = outputLine.split(",")
         charsToRemove = re.compile("[\"']")
         parsedList = [el.strip() for el in parsedList]
         parsedList = [re.sub(charsToRemove, "", el) for el in parsedList]
         return parsedList
 
     @staticmethod
-    def _raiseFailure(_shortDescription, _expectedObject, _actualObject, msg):
-        errorMsg = f"Incorrect {_shortDescription}.\n" + \
-                   f"Expected {_shortDescription}: {_expectedObject}\n" + \
-                   f"Your {_shortDescription}    : {_actualObject}"
-        if msg and msg is not ...:
+    def _raiseFailure(shortDescription: str, expectedObject: object, actualObject: object, msg: Optional[str]):
+        errorMsg = f"Incorrect {shortDescription}.\n" + \
+                   f"Expected {shortDescription}: {expectedObject}\n" + \
+                   f"Your {shortDescription}    : {actualObject}"
+        if msg:
             errorMsg += "\n\n" + str(msg)
 
         raise AssertionError(errorMsg)
 
     @staticmethod
-    def _convertIterableFromString(_expected, _actual):
-        for i in range(len(_expected)):
+    def _convertIterableFromString(expected, actual):
+        for i in range(len(expected)):
             parsedActual = object
-            expectedType = type(_expected[i])
+            expectedType = type(expected[i])
             try:
-                if isinstance(_actual[i], type(_expected[i])):
-                    parsedActual = _actual[i]
-                elif _expected[i] is None:
-                    if _actual[i] == "None":
+                if isinstance(actual[i], type(expected[i])):
+                    parsedActual = actual[i]
+                elif expected[i] is None:
+                    if actual[i] == "None":
                         parsedActual = None
-                elif isinstance(_expected[i], bool):
-                    parsedActual = True if _actual[i] == "True" else False
+                elif isinstance(expected[i], bool):
+                    parsedActual = True if actual[i] == "True" else False
                 else:
-                    parsedActual = expectedType(_actual[i])
+                    parsedActual = expectedType(actual[i])
             except Exception:
-                raise AssertionError(f"Failed to parse {expectedType.__qualname__} from {_actual[i]}")
+                raise AssertionError(f"Failed to parse {expectedType.__qualname__} from {actual[i]}")
 
-            _actual[i] = parsedActual
+            actual[i] = parsedActual
 
-        return _actual
+        return actual
 
-    def _assertIterableEqual(self, _expected, _actual, msg: any = ...):
-        for i in range(len(_expected)):
-            if _expected[i] != _actual[i]:
-                self._raiseFailure("output", _expected[i], _actual[i], msg)
+    def _assertIterableEqual(self, expected, actual, msg: Optional[str] = None):
+        for i in range(len(expected)):
+            if expected[i] != actual[i]:
+                self._raiseFailure("output", expected[i], actual[i], msg)
 
     @staticmethod
     def findPrecision(x: float):
@@ -103,64 +104,65 @@ class Assertions(unittest.TestCase):
         scale = int(math.log10(frac_digits))
         return magnitude + scale
 
-    def assertMultiLineEqual(self, _expected: str, _actual: str, msg: any = ...) -> None:
-        if not isinstance(_expected, str):
-            raise AttributeError(f"Expected must be string. Actually is {type(_expected).__qualname__}")
-        if not isinstance(_actual, str):
-            raise AssertionError(f"Expected a string. Got {type(_actual).__qualname__}")
+    def assertMultiLineEqual(self, expected: str, actual: str, msg: Optional[str] = None) -> None:
+        if not isinstance(expected, str):
+            raise AttributeError(f"Expected must be string. Actually is {type(expected).__qualname__}")
+        if not isinstance(actual, str):
+            raise AssertionError(f"Expected a string. Got {type(actual).__qualname__}")
 
-        if _expected != _actual:
-            self._raiseFailure("output", _expected, _actual, msg)
+        if expected != actual:
+            self._raiseFailure("output", expected, actual, msg)
 
-    def _assertListPreCheck(self, _expected: list[any], _actual: list[object] | str, msg: object = ...):
-        if not isinstance(_expected, list):
-            raise AttributeError(f"Expected must be a list. Actually is {type(_expected).__qualname__}")
-        if isinstance(_actual, str):
-            _actual = self._convertStringToList(_actual)
+    def _assertListPreCheck(self, expected: list[any], actual: list[object] | str, msg: Optional[str] = None):
+        if not isinstance(expected, list):
+            raise AttributeError(f"Expected must be a list. Actually is {type(expected).__qualname__}")
+        if isinstance(actual, str):
+            actual = self._convertStringToList(actual)
 
-        if not isinstance(_actual, list):
-            raise AssertionError(f"Expected a list. Got {type(_actual).__qualname__}")
+        if not isinstance(actual, list):
+            raise AssertionError(f"Expected a list. Got {type(actual).__qualname__}")
 
-        if len(_expected) != len(_actual):
-            self._raiseFailure("number of elements", len(_expected), len(_actual), msg)
+        if len(expected) != len(actual):
+            self._raiseFailure("number of elements", len(expected), len(actual), msg)
 
-        return self._convertIterableFromString(_expected, _actual)
+        return self._convertIterableFromString(expected, actual)
 
-    def assertListEqual(self, _expected: list[any], _actual: list[object] | str, msg: object = ...) -> None:
-        _actual = self._assertListPreCheck(_expected, _actual, msg)
-        self._assertIterableEqual(_expected, _actual, msg)
+    def assertListEqual(self, expected: list[any], actual: list[object] | str, msg: Optional[str] = None) -> None:
+        actual = self._assertListPreCheck(expected, actual, msg)
+        self._assertIterableEqual(expected, actual, msg)
 
-    def assertListAlmostEqual(self, _expected: list[any], _actual: list[object] | str, allowedDelta: float,
-                              msg: object = ...) -> None:
-        _actual = self._assertListPreCheck(_expected, _actual, msg)
-        for i in range(len(_expected)):
-            self.assertAlmostEquals(_expected[i], _actual[i], _delta=allowedDelta)
+    def assertListAlmostEqual(self, expected: list[any], actual: list[object] | str, allowedDelta: float,
+                              msg: Optional[str] = None) -> None:
+        actual = self._assertListPreCheck(expected, actual, msg)
+        for i in range(len(expected)):
+            self.assertAlmostEquals(expected[i], actual[i], delta=allowedDelta)
 
-    def assertTupleEqual(self, _expected: tuple[any, ...], _actual: tuple[object, ...], msg: object = ...) -> None:
-        if not isinstance(_expected, tuple):
-            raise AttributeError(f"Expected must be a tuple. Actually is {type(_expected).__qualname__}")
+    def assertTupleEqual(self, expected: tuple[any, ...], actual: tuple[object, ...], msg: Optional[str] = None) -> None:
+        if not isinstance(expected, tuple):
+            raise AttributeError(f"Expected must be a tuple. Actually is {type(expected).__qualname__}")
 
-        if not isinstance(_actual, tuple):
-            raise AssertionError(f"Expected a tuple. Got {type(_actual).__qualname__}")
+        if not isinstance(actual, tuple):
+            raise AssertionError(f"Expected a tuple. Got {type(actual).__qualname__}")
 
-        if len(_expected) != len(_actual):
-            self._raiseFailure("number of elements", len(_expected), len(_actual), msg)
+        if len(expected) != len(actual):
+            self._raiseFailure("number of elements", len(expected), len(actual), msg)
 
-        self._assertIterableEqual(_expected, _actual, msg)
+        self._assertIterableEqual(expected, actual, msg)
 
-    def assertDictEqual(self, _expected: dict[any, object], _actual: dict[object, object], msg: any = ...) -> None:
+    def assertDictEqual(self, expected: dict[any, object], actual: dict[object, object], msg: Optional[str] = None) -> None:
         raise NotImplementedError("Use base assert dict equal")
 
-    def assertAlmostEquals(self, _expected: float, _actual: float, _places: int = ..., msg: any = ...,
-                           _delta: float = ...) -> None:
-        if _places is None:
-            raise AttributeError("Use _delta not _places for assertAlmostEquals")
+    def assertAlmostEquals(self, expected: float, actual: float, places: int = ..., msg: Optional[str] = None,
+                           delta: float = ...) -> None:
+        if places is None:
+            raise AttributeError("Use delta not places for assertAlmostEquals")
 
-        if round(abs(_expected - _actual), self.findPrecision(_delta)) > _delta:
-            self._raiseFailure(f"output (allowed delta +/- {_delta})", _expected, _actual, msg)
+        if round(abs(expected - actual), self.findPrecision(delta)) > delta:
+            self._raiseFailure(f"output (allowed delta +/- {delta})", expected, actual, msg)
 
 
-    def assertCorrectNumberOfOutputLines(self, expected: list[str], actual: list[str]):
+    @staticmethod
+    def assertCorrectNumberOfOutputLines(expected: list[str], actual: list[str]):
         if len(actual) == 0:
             raise AssertionError("No OUTPUT lines found. Check OUTPUT formatting.")
 
