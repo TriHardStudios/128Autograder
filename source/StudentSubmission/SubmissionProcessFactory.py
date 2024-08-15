@@ -3,9 +3,9 @@ from typing import Dict, Type
 from Executors.Environment import ExecutionEnvironment
 
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.Runners import IRunner
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from Tasks.TaskRunner import TaskRunner
 
 
 class SubmissionProcessFactory:
@@ -24,8 +24,8 @@ class SubmissionProcessFactory:
         cls.registry[submission] = process
 
     @classmethod
-    def createProcess(cls, environment: ExecutionEnvironment, runner: IRunner) -> ISubmissionProcess:
-        submissionType = type(environment.submission)
+    def createProcess(cls, environment: ExecutionEnvironment, runner: TaskRunner) -> ISubmissionProcess:
+        submissionType = runner.getSubmissionType()
 
         if submissionType not in cls.registry.keys():
             raise TypeError(f"{submissionType} has not been registered. Lookup failed.")
