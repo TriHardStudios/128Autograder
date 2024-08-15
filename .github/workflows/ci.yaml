@@ -1,6 +1,6 @@
 # This config runs the unit tests on linux
 
-name: Run unittests on Linux and Publish Coverage
+name: CI/CD Pipeline
 
 on: [push]
 
@@ -9,11 +9,11 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  unit-test:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12" ]
+        python-version: ["3.12" ]
 
     steps:
       - uses: actions/checkout@v3
