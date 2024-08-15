@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pushd tests/integration > /dev/null
+pushd tests/e2e > /dev/null || exit 1
 
 for f in *; do 
   if [ -d $f  -a ! -h $f ];  
@@ -22,4 +22,4 @@ for f in *; do
   fi;
 done;
 
-popd > /dev/null
+popd > /dev/null || exit 1
