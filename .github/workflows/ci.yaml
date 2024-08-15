@@ -11,16 +11,12 @@ env:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12" ]
-
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.12
 
       - name: Install dependencies
         run: |
@@ -29,8 +25,8 @@ jobs:
 
       - name: Test with PyUnit and collect coverage
         run:
-          coverage run
-          coverage combine
+          python -m coverage run
+          python -m coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
