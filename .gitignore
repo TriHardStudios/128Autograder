@@ -7,8 +7,8 @@ __pycache__
 .DS_Store
 
 htmlcov
-tests/integration/*/results/*
-tests/integration/*/bin/*
+tests/e2e/*/results/*
+tests/e2e/*/bin/*
 .filehashes
 
 
