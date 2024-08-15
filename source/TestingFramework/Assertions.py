@@ -1,7 +1,7 @@
 import math
 import re
 import unittest
-from typing import Optional
+from typing import Optional, List, Any
 
 
 class Assertions(unittest.TestCase):
@@ -162,7 +162,7 @@ class Assertions(unittest.TestCase):
 
 
     @staticmethod
-    def assertCorrectNumberOfOutputLines(expected: list[str], actual: list[str]):
+    def assertCorrectNumberOfOutputLines(expected: List[Any], actual: List[Any]):
         if len(actual) == 0:
             raise AssertionError("No OUTPUT lines found. Check OUTPUT formatting.")
 

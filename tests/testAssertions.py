@@ -4,7 +4,7 @@ from TestingFramework.Assertions import Assertions
 class TestAssertions(Assertions):
 
     def testList(self):
-        self.assertListEqual([1, 1.0, "hello!", None, False], "[1, 1.0, \"hello!\", None, False]")
+        self.assertListEqual([1, 1.0, "hello!", None, False], "OUTPUT [1, 1.0, \"hello!\", None, False]")
         self.assertListEqual([1, 1.0, "hello!", None, False], [1, 1.0, "hello!", None, False])
 
     def testListFailure1(self):
@@ -36,11 +36,11 @@ class TestAssertions(Assertions):
             self.assertTupleEqual((1, 1), (1, 2))
 
     def testAlmostEquals(self):
-        self.assertAlmostEquals(1, 0.8, _delta=.2)
+        self.assertAlmostEquals(1, 0.8, delta=.2)
 
     def testAlmostEqualsFailure(self):
         with self.assertRaises(AssertionError):
-            self.assertAlmostEquals(1, 1.3, _delta=.2)
+            self.assertAlmostEquals(1, 1.3, delta=.2)
 
     def testAssertMultilineEqual(self):
         self.assertMultiLineEqual("this\nis\na\nof\nlines", "this\nis\na\nof\nlines")
@@ -57,3 +57,20 @@ class TestAssertions(Assertions):
         actualMsg = str(ex.exception)
 
         self.assertIn(expectedMsg, actualMsg)
+
+    def testAssertCorrectNumberOfOutputLinesEmpty(self):
+        expected = ["there should be at least one"]
+
+        with self.assertRaises(AssertionError):
+            self.assertCorrectNumberOfOutputLines(expected, [])
+
+    def testAssertCorrectNumberOfOutputLines(self):
+        expected = ["there should be one"]
+
+        self.assertCorrectNumberOfOutputLines(expected, [1])
+
+    def testAssertCorrectCorrectNumberOfOutputLinesFailure(self):
+        expected = ["there should be one"]
+
+        with self.assertRaises(AssertionError):
+            self.assertCorrectNumberOfOutputLines(expected, [1, 2])
