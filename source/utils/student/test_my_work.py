@@ -5,16 +5,27 @@ import subprocess
 import json
 import importlib.util
 import hashlib
+from typing import Dict, Tuple
 
 PACKAGE_ERROR: str = "Required Package Error"
 SUBMISSION_ERROR: str = "Student Submission Error"
+ENVIRONMENT_ERROR: str = "Environment Error"
 RED_COLOR: str = u"\u001b[31m"
 YELLOW_COLOR: str = u"\u001b[33m"
 RESET_COLOR: str = u"\u001b[0m"
 SUBMISSION_REGEX: re.Pattern = re.compile(r"^(\w|\s)+\.py$")
-FILE_HASHES_NAME: str = ".filehashes" 
+FILE_HASHES_NAME: str = ".filehashes"
+MIN_VERSION = (3, 11)
 
-REQUIRED_PACKAGES = {"gradescope_utils":"gradescope-utils", "dill":"dill", "BetterPyUnitFormat":"Better-PyUnit-Format", "schema":"schema", "requests":"requests", "tomli":"tomli"}
+REQUIRED_PACKAGES = {
+    "autograder_utils": "git+https://github.com/gregbell26/HybridJsonTestRunner@0.7.0",
+    "dill": "dill",
+    "BetterPyUnitFormat": "Better-PyUnit-Format",
+    "schema": "schema",
+    "requests": "requests",
+    "tomli": "tomli"
+}
+
 
 def printErrorMessage(errorType: str, errorText: str) -> None:
     """
@@ -31,7 +42,8 @@ def printErrorMessage(errorType: str, errorText: str) -> None:
 def printWarningMessage(warningType: str, warningText: str) -> None:
     print(f"[{YELLOW_COLOR}{warningType}{RESET_COLOR}]: {warningText}")
 
-def verifyRequiredPackages(packagesToVerify: dict[str, str]) -> bool:
+
+def verifyRequiredPackages(packagesToVerify: Dict[str, str]) -> bool:
     """
     This function verifies that all the required packages needed for the actual autograder are installed
     :return: true if they are false if not.
@@ -40,7 +52,7 @@ def verifyRequiredPackages(packagesToVerify: dict[str, str]) -> bool:
 
     for name, package in packagesToVerify.items():
         if importlib.util.find_spec(name) is None:
-            print(f"Installing missing dependancy: {package}...", end="")
+            print(f"Installing missing dependency: {package}...", end="")
             subprocess.run([sys.executable, "-m", "pip", "install", package], stdout=subprocess.DEVNULL)
             print(f"Done.")
 
@@ -50,7 +62,7 @@ def verifyRequiredPackages(packagesToVerify: dict[str, str]) -> bool:
 def verifyStudentWorkPresent(submissionDirectory: str) -> bool:
     """
     This function verifies that the student has work in the submission directory
-    :param _submissionDirectory: the directory that the student did their work in.
+    :param submissionDirectory: the directory that the student did their work in.
     :return: true if the student has work present
     """
 
@@ -69,10 +81,11 @@ def verifyStudentWorkPresent(submissionDirectory: str) -> bool:
 
     return True
 
+
 def cleanPreviousSubmissions(directory: str) -> None:
     """
     This function cleans out previous submissions if they exist.
-    :param _directory: the directory to run the detection in.
+    :param directory: the directory to run the detection in.
     """
     zipFiles = [os.path.join(directory, file) for file in os.listdir(directory) if file[-4:] == ".zip"]
     if len(zipFiles) > 0:
@@ -82,19 +95,19 @@ def cleanPreviousSubmissions(directory: str) -> None:
             os.remove(file)
 
 
-def generateHashes(submissionDirectory: str) -> dict[str, str]:
+def generateHashes(submissionDirectory: str) -> Dict[str, str]:
     """
     This function generates hashes for the files in submission directory.
 
-    :param _submissionDirectory: The directory to base all the hashes out of
+    :param submissionDirectory: The directory to base all the hashes out of
     """
 
     pythonFiles = [
-             os.path.join(submissionDirectory, file) 
-             for file in os.listdir(submissionDirectory) 
-             if SUBMISSION_REGEX.match(file)
-         ]
-    
+        os.path.join(submissionDirectory, file)
+        for file in os.listdir(submissionDirectory)
+        if SUBMISSION_REGEX.match(file)
+    ]
+
     fileHashes: dict[str, str] = {}
 
     for file in pythonFiles:
@@ -111,9 +124,9 @@ def verifyFileChanged(submissionDirectory: str) -> bool:
     """
     This function checks to see if a file has changed since the last run of this script.
 
-    It stores its results in `_submissionDirectory/.filehashes`. Currently it does not support sub directories.
+    It stores its results in `submissionDirectory/.filehashes`. Currently it does not support sub directories.
 
-    :param _submissionDirectory: the directory that the student is doing their work in.
+    :param submissionDirectory: the directory that the student is doing their work in.
 
     :return: true if at least of the files changed.
 
@@ -125,25 +138,32 @@ def verifyFileChanged(submissionDirectory: str) -> bool:
         with open(FILE_HASHES_PATH, 'w') as w:
             json.dump({}, w)
 
-
     with open(FILE_HASHES_PATH, 'r') as r:
         try:
             existingHashes = json.load(r)
         except json.JSONDecodeError:
             existingHashes = None
-        
 
     newHashes = generateHashes(submissionDirectory)
 
-    
     with open(FILE_HASHES_PATH, 'w') as w:
         json.dump(newHashes, w)
-
 
     return existingHashes != newHashes
 
 
+def verifyPythonVersion(minVersion: Tuple[int, int], pythonVersionTuple: Tuple[int, int, int, str, int]) -> bool:
+    if minVersion[0] != pythonVersionTuple[0] or minVersion[1] > pythonVersionTuple[1]:
+        printErrorMessage(ENVIRONMENT_ERROR, f"Unsupported Python Version. Expected Python >= {minVersion[0]}.{minVersion[1]}. Was {pythonVersionTuple[0]}.{pythonVersionTuple[1]}.{pythonVersionTuple[2]}")
+        return False
+
+    return True
+
+
 if __name__ == "__main__":
+    if not verifyPythonVersion(MIN_VERSION, sys.version_info):  # type: ignore
+        sys.exit(1)
+
     cleanPreviousSubmissions(".")
 
     submissionDirectory = "student_work/"

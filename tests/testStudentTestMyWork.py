@@ -165,3 +165,12 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertIsNotNone(importlib.util.find_spec("dill"))
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def testMinPythonVersionTooLow(self, _):
+        self.assertFalse(testMyWork.verifyPythonVersion((3, 12), (3, 11, 2, 'final', 0)))
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def testMinPythonVersionValid(self, _):
+        self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 11, 2, 'final', 0)))
+        self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 12, 2, 'final', 0)))
+
