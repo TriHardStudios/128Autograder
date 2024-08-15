@@ -24,9 +24,9 @@ jobs:
           pip install coverage[toml]
 
       - name: Test with PyUnit and collect coverage
-        run:
-          python -m coverage run
-          python -m coverage combine
+        run: |
+          coverage run
+          coverage combine
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
