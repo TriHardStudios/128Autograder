@@ -53,7 +53,7 @@ jobs:
         run: docker compose up
 
       - name: Verify test outputs
-        run: bash tests/integration/verify.sh
+        run: bash tests/e2e/verify.sh
 
   build-and-push-image-generic:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/main') }}

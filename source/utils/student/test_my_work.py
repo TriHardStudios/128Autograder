@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     cleanPreviousSubmissions(".")
 
-    submissionDirectory = "student_work/"
+    submissionDirectory = sys.argv[1] if len(sys.argv) == 2 else "student_work/"
 
     if not verifyRequiredPackages(REQUIRED_PACKAGES):
         sys.exit(1)
