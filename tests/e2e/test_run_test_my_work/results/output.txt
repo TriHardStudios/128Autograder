@@ -1,0 +1,15 @@
+====================
+--------------------
+[32m[ RUN      ][0m None (test.HelloWorld.testCode)
+[32m[       OK ][0m None
+-------------------- 
+
+====================
+[32m[  PASSED  ][0m 
+1 tests passed.
+0 tests failed.
+0 tests errored.
+0 tests skipped.
+1 / 1
+====================
+[[33mStudent Submission Warning[0m]: Student submision may not have changed

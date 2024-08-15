@@ -9,6 +9,7 @@ __pycache__
 htmlcov
 tests/integration/*/results/*
 tests/integration/*/bin/*
+.filehashes
 
 
 !.keep

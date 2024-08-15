@@ -1,0 +1,21 @@
+{
+    "tests": [
+        {
+            "name": "testProvidedData (test.DataFilesTest)",
+            "score": 5,
+            "max_score": 5,
+            "status": "passed"
+        },
+        {
+            "name": "testSubmissionData (test.DataFilesTest)",
+            "score": 5,
+            "max_score": 5,
+            "status": "passed"
+        }
+    ],
+    "leaderboard": [],
+    "visibility": "visible",
+    "execution_time": "0.04",
+    "score": 10,
+    "output": "Submission 1 of 3.\n"
+}
