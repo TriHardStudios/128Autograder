@@ -41,3 +41,19 @@ class TestAssertions(Assertions):
     def testAlmostEqualsFailure(self):
         with self.assertRaises(AssertionError):
             self.assertAlmostEquals(1, 1.3, _delta=.2)
+
+    def testAssertMultilineEqual(self):
+        self.assertMultiLineEqual("this\nis\na\nof\nlines", "this\nis\na\nof\nlines")
+
+    def testAssertMultilineEqualFailure(self):
+        with self.assertRaises(AssertionError):
+            self.assertMultiLineEqual("this\nis\na\nof\nlines", "this\nis\na\nof\nline")
+
+    def testAssertFailureWithMsg(self):
+        expectedMsg = "doubles aren't ints"
+        with self.assertRaises(AssertionError) as ex:
+            self.assertListEqual([2], [1.9], msg=expectedMsg)
+
+        actualMsg = str(ex.exception)
+
+        self.assertIn(expectedMsg, actualMsg)
