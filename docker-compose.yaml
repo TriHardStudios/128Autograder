@@ -64,3 +64,25 @@ services:
       - "./tests/e2e/test_run_test_my_work/submission:/app/submission"
       - "./tests/e2e/integration_config.toml:/app/source/config.toml"
 
+  test_run_with_prairie_learn:
+    profiles:
+      - skip
+    build:
+      dockerfile: run.dockerfile
+    command:
+      - --submission-directory
+      - /grade/student
+      - --test-directory
+      - /grade/tests
+      - --deployed-environment
+      - prairie_learn
+      - --results-path
+      - /grade/results/results.json
+      - --metadata-path
+      - /grade/data/data.json
+    volumes:
+      - "./tests/e2e/test_run_with_prairie_learn/results:/grade/results"
+      - "./tests/e2e/test_run_with_prairie_learn/student_tests:/grade/tests"
+      - "./tests/e2e/test_run_with_prairie_learn/submission:/grade/student"
+      - "./tests/e2e/test_run_with_prairie_learn/data.json:/grade/data/data.json"
+      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
