@@ -3,6 +3,15 @@ import os
 assert os.path.exists("./bin/generation/student/")
 assert os.path.exists("./bin/generation/gradescope/")
 
+expected_source_directories = ["Executors", "StudentSubmission", "StudentSubmissionImpl", "Tasks", "TestingFramework"]
+
+actual_gs_dirs = os.listdir("./bin/generation/gradescope/")
+actual_student_dirs = os.listdir("./bin/generation/student/")
+
+for file in expected_source_directories:
+    assert file in actual_gs_dirs
+    assert file in actual_student_dirs
+
 gradescopeExpectedTestFiles = [file for file in os.listdir("./student_tests/") if os.path.isfile(os.path.join("student_tests", file))]
 gradescopeExpectedTestFiles.sort()
 
