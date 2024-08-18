@@ -50,9 +50,7 @@ def processArgs() -> argparse.Namespace:
     return options
 
 
-def main():
-    options = processArgs()
-
+def main(options: argparse.Namespace):
     autograderConfig = AutograderConfigurationBuilder() \
         .fromTOML(file=options.config_file) \
         .setStudentSubmissionDirectory(options.submission_directory) \
@@ -94,7 +92,9 @@ def main():
 
 
 if __name__ == "__main__":
-    wasSuccessful = main()
+    options = processArgs()
+
+    wasSuccessful = main(options)
 
     if wasSuccessful:
         exit(0)
