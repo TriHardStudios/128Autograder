@@ -1,9 +1,10 @@
 import os
 import re
 import shutil
-from typing import Dict, List 
+from typing import Dict, List
 from utils.config.Config import AutograderConfiguration
 from enum import Enum
+
 
 class FilesEnum(Enum):
     PUBLIC_TEST = 0
@@ -12,11 +13,12 @@ class FilesEnum(Enum):
     PRIVATE_DATA = 3
     STARTER_CODE = 4
 
+
 class Build():
     IGNORE = ["__pycache__"]
     GRADESCOPE_ROOT = ["setup.sh", "run_autograder"]
 
-    def __init__(self, config: AutograderConfiguration, sourceRoot = os.getcwd(), binRoot = "bin") -> None:
+    def __init__(self, config: AutograderConfiguration, sourceRoot=os.getcwd(), binRoot="bin") -> None:
         self.config = config
         self.generationDirectory = os.path.join(binRoot, "generation")
         self.distDirectory = os.path.join(binRoot, "dist")
@@ -24,7 +26,7 @@ class Build():
         self.sourceDir = sourceRoot
 
     @staticmethod
-    def _discoverTestFiles(allowPrivate: bool, 
+    def _discoverTestFiles(allowPrivate: bool,
                            privateTestFileRegex: re.Pattern, publicTestFileRegex: re.Pattern,
                            testDirectory: str,
                            discoveredPrivateFiles: List[str], discoveredPublicFiles: List[str]):
@@ -56,7 +58,7 @@ class Build():
                 discoveredPublicFiles.append(path)
 
     @staticmethod
-    def _discoverDataFiles(allowPrivate: bool, dataFilesSource: str, 
+    def _discoverDataFiles(allowPrivate: bool, dataFilesSource: str,
                            discoveredPrivateFiles: List[str], discoveredPublicFiles: List[str]):
         """
         Description
@@ -119,7 +121,7 @@ class Build():
 
         self._discoverTestFiles(config.allow_private,
                                 re.compile(config.private_tests_regex), re.compile(config.public_tests_regex),
-                                self.config.config.test_directory, 
+                                self.config.config.test_directory,
                                 files[FilesEnum.PRIVATE_TEST], files[FilesEnum.PUBLIC_TEST])
 
         # imo, this is not worth moving into its function atm
@@ -150,10 +152,16 @@ class Build():
         return [implSource, studentSubmissionSource]
 
     @staticmethod
-    def buildTestingFramworkPath() -> List[str]:
+    def buildTasksPath() -> List[str]:
+        tasksSource = os.path.join("Tasks")
+
+        return [tasksSource]
+
+    @staticmethod
+    def buildTestingFrameworkPath() -> List[str]:
         testingFrameworkSource = os.path.join("TestingFramework")
 
-        return [testingFrameworkSource] 
+        return [testingFrameworkSource]
 
     @staticmethod
     def buildExecutorsPath() -> List[str]:
@@ -187,7 +195,6 @@ class Build():
 
         shutil.copy(src, dest)
 
-
     def createFolders(self):
         # clean build if it exists
         if os.path.exists(self.binRoot):
@@ -200,12 +207,11 @@ class Build():
         os.makedirs(self.generationDirectory, exist_ok=True)
         os.makedirs(self.distDirectory, exist_ok=True)
 
-
     @staticmethod
     def generateGradescope(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str]):
         generationPath = os.path.join(generationPath, "gradescope")
         os.makedirs(generationPath, exist_ok=True)
-        
+
         for file in autograderFiles:
             destPath = os.path.join(generationPath, file)
 
@@ -222,10 +228,11 @@ class Build():
                 Build.copy(file, destPath)
 
     @staticmethod
-    def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str], studentFiles: List[str]):
+    def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str],
+                        studentFiles: List[str]):
         generationPath = os.path.join(generationPath, "student")
         os.makedirs(generationPath, exist_ok=True)
-        
+
         # create student_work folder
         studentWorkFolder = os.path.join(generationPath, "student_work")
         os.makedirs(studentWorkFolder, exist_ok=True)
@@ -238,7 +245,6 @@ class Build():
             os.makedirs(os.path.dirname(generationPath), exist_ok=True)
             Build.copy(file, destPath)
 
-        
         for file in files[FilesEnum.PUBLIC_TEST]:
             destPath = os.path.join(generationPath, file)
             os.makedirs(os.path.dirname(destPath), exist_ok=True)
@@ -260,20 +266,19 @@ class Build():
             destPath = os.path.join(generationPath, os.path.basename(file))
             Build.copy(file, destPath)
 
-
         # create .keep so that we dont loose the file
         with open(os.path.join(studentWorkFolder, ".keep"), "w") as w:
             w.write("DO NOT WRITE YOUR CODE HERE!\nCreate a *new* file in this directory!!!")
-    
+
     @staticmethod
     def createDist(distType: str, generationPath: str, distPath: str, assignmentName: str):
         generationPath = os.path.join(generationPath, distType)
         if not os.path.exists(generationPath) or not os.path.isdir(generationPath):
             raise AttributeError(f"Invalid Gradescope generation path! {generationPath}")
-        
+
         os.makedirs(distPath, exist_ok=True)
 
-        assignmentName += f"-{distType}" 
+        assignmentName += f"-{distType}"
         distPath = os.path.join(distPath, assignmentName)
 
         shutil.make_archive(distPath, "zip", root_dir=generationPath)
@@ -285,7 +290,8 @@ class Build():
 
         autograderFiles.extend(self.buildUtilsPath())
         autograderFiles.extend(self.buildStudentSubmissionPath(self.config.config.impl_to_use))
-        autograderFiles.extend(self.buildTestingFramworkPath())
+        autograderFiles.extend(self.buildTasksPath())
+        autograderFiles.extend(self.buildTestingFrameworkPath())
         autograderFiles.extend(self.buildExecutorsPath())
         autograderFiles.extend(self.buildBasePath())
 
@@ -295,10 +301,10 @@ class Build():
 
         if self.config.build.build_gradescope:
             self.generateGradescope(self.generationDirectory, files, autograderFiles)
-            self.createDist("gradescope", self.generationDirectory, self.distDirectory, f"{self.config.semester}_{self.config.assignment_name}")
-
+            self.createDist("gradescope", self.generationDirectory, self.distDirectory,
+                            f"{self.config.semester}_{self.config.assignment_name}")
 
         if self.config.build.build_student:
             self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles)
-            self.createDist("student", self.generationDirectory, self.distDirectory, f"{self.config.semester}_{self.config.assignment_name}")
-
+            self.createDist("student", self.generationDirectory, self.distDirectory,
+                            f"{self.config.semester}_{self.config.assignment_name}")
