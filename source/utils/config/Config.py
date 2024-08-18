@@ -1,7 +1,7 @@
+import importlib
 import os
 from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
 from dataclasses import dataclass
-import requests
 
 from schema import And, Optional, Or, Regex, Schema, SchemaError
 
@@ -37,6 +37,7 @@ class BuildConfiguration:
     public_tests_regex: str
     """The pattern that should be used to identify public tests"""
 
+
 @dataclass(frozen=True)
 class PythonConfiguration:
     """
@@ -50,6 +51,7 @@ class PythonConfiguration:
     The extra packages that should be added to the autograder on build.
     Must be stored in 'package_name': 'version'. Similar to requirements.txt 
     """
+
 
 @dataclass(frozen=True)
 class CConfiguration:
@@ -72,6 +74,7 @@ class CConfiguration:
     """
     The file name that should be executed
     """
+
 
 @dataclass(frozen=True)
 class BasicConfiguration:
@@ -109,6 +112,7 @@ class BasicConfiguration:
     c: OptionalType[CConfiguration] = None
     """Extra C/C-like spefic configuration. See :ref:`CConfiguration` for options"""
 
+
 @dataclass(frozen=True)
 class AutograderConfiguration:
     """
@@ -140,11 +144,15 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
     This class builds to :ref:`AutograderConfiguration` for easy typing.
     """
-    IMPL_SOURCE = "./StudentSubmissionImpl"
+    IMPL_SOURCE = "StudentSubmissionImpl"
 
     @staticmethod
     def validateImplSource(implName: str) -> bool:
-        return implName in os.listdir(AutograderConfigurationSchema.IMPL_SOURCE)
+        try:
+            importlib.import_module(f"{AutograderConfigurationSchema.IMPL_SOURCE}.{implName}")
+        except ImportError:
+            return False
+        return True
 
     def __init__(self):
         self.currentSchema: Schema = Schema(
@@ -172,7 +180,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                         "use_makefile": bool,
                         "clean_target": str,
                         "submission_name": And(str, lambda x: len(x) >= 1)
-                        }, None),
+                    }, None),
                 },
                 "build": {
                     "use_starter_code": bool,
@@ -220,7 +228,6 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         return validated
 
-
     def build(self, data: Dict) -> AutograderConfiguration:
         """
         Description
@@ -243,10 +250,12 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
 
         return AutograderConfiguration(**data)
 
+
 # Using generics as PyRight and mypy are able to infer what `T` should be from the Schema
 #  as it inherits from BaseSchema
 T = TypeVar("T")
 Builder = TypeVar("Builder", bound="AutograderConfigurationBuilder[Any]")
+
 
 class AutograderConfigurationBuilder(Generic[T]):
     """
@@ -268,7 +277,6 @@ class AutograderConfigurationBuilder(Generic[T]):
     def __init__(self, configSchema: BaseSchema[T] = AutograderConfigurationSchema()):
         self.schema: BaseSchema[T] = configSchema
         self.data: Dict = {}
-
 
     def fromTOML(self: Builder, file=DEFAULT_CONFIG_FILE) -> Builder:
         try:
@@ -310,10 +318,11 @@ class AutograderConfigurationBuilder(Generic[T]):
         self.data["config"]["test_directory"] = testDirectory
 
         return self
-    
+
     def build(self) -> T:
         self.data = self.schema.validate(self.data)
         return self.schema.build(self.data)
+
 
 class AutograderConfigurationProvider:
     """
@@ -338,5 +347,3 @@ class AutograderConfigurationProvider:
             raise AttributeError("Configuration has already been set!")
 
         cls.config = config
-
-

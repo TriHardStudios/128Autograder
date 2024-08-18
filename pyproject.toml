@@ -1,58 +1,64 @@
-[project]
-name = "128Autograder"
-authors = [
-    { name = "Gregory Bell" }
-]
-maintainers = [
-    { name = "Gregory Bell" }
-]
+[build-system]
+    requires = ["setuptools"]
+    build-backend = "setuptools.build_meta"
+[tool.setuptools.packages.find]
+    where=["source"]
 
-version = "4.0.1"
-requires-python = ">=3.10.0"
+[project]
+    name = "128Autograder"
+    authors = [
+        { name = "Gregory Bell" }
+    ]
+    maintainers = [
+        { name = "Gregory Bell" }
+    ]
+
+    version = "4.0.2"
+    requires-python = ">=3.10.0"
 
 [tool.pyright]
-include = ["source"]
+    include = ["source"]
 
-exclude = ["**__pycache__**"]
-scrict = ["."]
+    exclude = ["**__pycache__**"]
+    scrict = ["."]
 
 executionEnvironments = [
     { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
 ]
 
 [tool.coverage.run]
-command_line = "-m unittest"
-concurrency = ["multiprocessing"]
-# Omit testing files, omit dynamic files, omit __init__.py
-# Doing it at the run level as it will that means they wont be run in the first place
-# Ignore build.py as its it is primarly covered by integration tests
-omit = [
-    "sandbox/*",
-    "testPrograms/*",
-    "test_code",
-    "test_code.py",
-    "setup_code",
-    "tests/*",
-    "*/student_submission",
-    "__init__.py",
-    "Build.py",
-    "INJECTED_*",
-    "__getstate__*",
-    "__setstate__*",
-]
+    command_line = "-m unittest"
+    concurrency = ["multiprocessing"]
+    # Omit testing files, omit dynamic files, omit __init__.py
+    # Doing it at the run level as it will that means they wont be run in the first place
+    # Ignore build.py as its it is primarly covered by integration tests
+    omit = [
+        "sandbox/*",
+        "testPrograms/*",
+        "test_code",
+        "test_code.py",
+        "setup_code",
+        "tests/*",
+        "*/student_submission",
+        "__init__.py",
+        "Build.py",
+        "INJECTED_*",
+        "__getstate__*",
+        "__setstate__*",
+    ]
 
 [tool.coverage.report]
-fail_under = 90
-skip_empty = true
-exclude_also = [
-    # Dont flag error conditions that cant be reached or that are just defensive
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "raise EnvironmentError",
-    "raise AttributeError",
-    "raise InvalidRunner",
-    "if __name__ == .__main__.:",
-    # Don't complain about abstract methods, they aren't run:
-    "@(abc\\.)?abstractmethod",
-]
+    fail_under = 90
+    skip_empty = true
+    exclude_also = [
+        # Dont flag error conditions that cant be reached or that are just defensive
+        "raise AssertionError",
+        "raise NotImplementedError",
+        "raise EnvironmentError",
+        "raise AttributeError",
+        "raise InvalidRunner",
+        "if __name__ == .__main__.:",
+        # Don't complain about abstract methods, they aren't run:
+        "@(abc\\.)?abstractmethod",
+    ]
 
