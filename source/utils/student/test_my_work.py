@@ -18,7 +18,7 @@ FILE_HASHES_NAME: str = ".filehashes"
 MIN_VERSION = (3, 11)
 
 REQUIRED_PACKAGES = {
-    "autograder_utils": "git+https://github.com/gregbell26/HybridJsonTestRunner@0.7.0",
+    "autograder_utils": "HybridJSONTestRunner",
     "dill": "dill",
     "BetterPyUnitFormat": "Better-PyUnit-Format",
     "schema": "schema",
@@ -53,7 +53,15 @@ def verifyRequiredPackages(packagesToVerify: Dict[str, str]) -> bool:
     for name, package in packagesToVerify.items():
         if importlib.util.find_spec(name) is None:
             print(f"Installing missing dependency: {package}...", end="")
-            subprocess.run([sys.executable, "-m", "pip", "install", package], stdout=subprocess.DEVNULL)
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            except subprocess.CalledProcessError:
+                print("Failed. Retrying...", end="")
+                try:
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", package, "--break-system-packages"], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                except subprocess.CalledProcessError: 
+                    print("Failed...", end="")
+                    errorOccurred = True
             print(f"Done.")
 
     return not errorOccurred
@@ -169,6 +177,7 @@ if __name__ == "__main__":
     submissionDirectory = sys.argv[1] if len(sys.argv) == 2 else "student_work/"
 
     if not verifyRequiredPackages(REQUIRED_PACKAGES):
+        printErrorMessage("Required Package Error", "Missing required packages!")
         sys.exit(1)
 
     if not verifyStudentWorkPresent(submissionDirectory):

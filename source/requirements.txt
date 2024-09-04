@@ -1,6 +1,6 @@
-git+https://github.com/gregbell26/HybridJsonTestRunner@0.7.0
+HybridJSONTestRunner==0.7.3
 dill==0.3.6
-Better-PyUnit-Format==0.2.0
+Better-PyUnit-Format==0.2.3
 schema==0.7.5
 requests==2.31.0
 tomli==2.0.1
