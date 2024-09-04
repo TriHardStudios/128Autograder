@@ -1,4 +1,5 @@
 import os
+from io import StringIO
 import random
 import shutil
 import string
@@ -33,7 +34,8 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
             if os.path.isfile(file) and file[-4:] == ".zip":
                 os.remove(file)
 
-    def testAddFolderToZipOnePy(self):
+    @patch('sys.stdout', new_callable=StringIO)
+    def testAddFolderToZipOnePy(self, _):
         zipMock = MagicMock(spec=zipfile.ZipFile)
 
         createGradescopeUpload.addFolderToZip(zipMock, self.STUDENT_WORK_FOLDER)
@@ -43,7 +45,8 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_once()
         writeMock.assert_called_with(os.path.join(self.STUDENT_WORK_FOLDER, "submission.py"))
 
-    def testAddFolderToZipDataFilesOnePy(self):
+    @patch('sys.stdout', new_callable=StringIO)
+    def testAddFolderToZipDataFilesOnePy(self, _):
         for _ in range(10):
             randomName = "".join([random.choice(string.ascii_lowercase) for _ in range(10)]) + ".dat"
 
@@ -60,7 +63,8 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_with(os.path.join(self.STUDENT_WORK_FOLDER, "submission.py"))
 
     @patch("create_gradescope_upload.ZipFile")
-    def testGenerateZipFileOnePy(self, zipMock):
+    @patch('sys.stdout', new_callable=StringIO)
+    def testGenerateZipFileOnePy(self, _, zipMock):
         zipFileMock = MagicMock()
         zipMock.return_value.__enter__ = zipFileMock
 
@@ -72,7 +76,8 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_with("submission.py")
 
     @patch("create_gradescope_upload.ZipFile")
-    def testGenerateZipFileDataFilesOnePy(self, zipMock):
+    @patch('sys.stdout', new_callable=StringIO)
+    def testGenerateZipFileDataFilesOnePy(self, _, zipMock):
         for _ in range(10):
             randomName = "".join([random.choice(string.ascii_lowercase) for _ in range(10)]) + ".dat"
 

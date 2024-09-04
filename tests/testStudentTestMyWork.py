@@ -72,7 +72,8 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def testCleanPrevSubmission(self):
+    @patch('sys.stdout', new_callable=StringIO)
+    def testCleanPrevSubmission(self, _):
         for _ in range(10):
             fileName = "".join([random.choice(string.ascii_letters) for _ in range(10)]) + ".zip"
 
@@ -150,12 +151,21 @@ class TestStudentTestMyWork(unittest.TestCase):
     def testMissingPackage(self, _):
         self.assertIsNone(importlib.util.find_spec("pip_install_test"))
 
-        testMyWork.verifyRequiredPackages({"pip_install_test": "pip-install-test"})
+        res = testMyWork.verifyRequiredPackages({"pip_install_test": "pip-install-test"})
 
         self.assertIsNotNone(importlib.util.find_spec("pip_install_test"))
 
-        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "pip-install-test"])
+        self.assertTrue(res)
+
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "pip-install-test"], stdout=subprocess.DEVNULL)
         
+    @patch('sys.stdout', new_callable=StringIO)
+    def testPackageDoesNotExist(self, _):
+        self.assertIsNone(importlib.util.find_spec("this_package_doesnt_exist"))
+
+        res = testMyWork.verifyRequiredPackages({"this_package_doesnt_exist": "this_package_doesnt_exist"})
+
+        self.assertFalse(res)
 
     @patch('sys.stdout', new_callable=StringIO)
     def testPackagesPresent(self, _):
