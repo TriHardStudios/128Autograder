@@ -166,10 +166,24 @@ def verifyPythonVersion(minVersion: Tuple[int, int], pythonVersionTuple: Tuple[i
         return False
 
     return True
-
+    
+def verifyWorkingDirectory(expectedPath: str) -> bool:
+    """
+    Checks if the working directory is the same as the "test_my_work.py" file.
+    
+    If not, the program is stopped before unknown errors occur."""
+    
+    if os.getcwd() != expectedPath:
+        printErrorMessage("Working Directory Error", f"Try using 'cd {expectedPath}' to set the correct directory to your project's path or ask a TA for assistance.")
+        return False
+    return True
+    
 
 if __name__ == "__main__":
     if not verifyPythonVersion(MIN_VERSION, sys.version_info):  # type: ignore
+        sys.exit(1)
+        
+    if not verifyWorkingDirectory(os.path.abspath(__file__)):
         sys.exit(1)
 
     cleanPreviousSubmissions(".")
