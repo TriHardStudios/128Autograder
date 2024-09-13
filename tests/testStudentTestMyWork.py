@@ -184,3 +184,10 @@ class TestStudentTestMyWork(unittest.TestCase):
         self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 11, 2, 'final', 0)))
         self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 12, 2, 'final', 0)))
 
+    @patch('sys.stdout', new_callable=StringIO)
+    def testWorkingDirectoryIncorrect(self, _):
+        self.assertFalse(testMyWork.verifyWorkingDirectory("./sandbox"))
+       
+    @patch('sys.stdout', new_callable=StringIO)
+    def testWorkingDirectoryIsCorrect(self, _):
+        self.assertTrue(testMyWork.verifyWorkingDirectory(os.getcwd()))
