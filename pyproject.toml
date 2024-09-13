@@ -18,15 +18,20 @@
     version = "4.0.6"
     requires-python = ">=3.10.0"
 
-[tool.pyright]
+[tool.basedpyright]
     include = ["source"]
 
     exclude = ["**__pycache__**"]
-    scrict = ["."]
+    # scrict = ["."]
 
-executionEnvironments = [
-    { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
-]
+    reportMissingTypeStubs = false
+    reportUnsafeMultipleInheritance = true
+    reportAny = true
+    reportDeprecated = false
+
+    executionEnvironments = [
+        { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
+    ]
 
 [tool.coverage.run]
     command_line = "-m unittest"

@@ -1,3 +1,4 @@
+from typing import override
 import unittest
 from unittest.mock import patch
 import sys
@@ -15,6 +16,7 @@ class TestStudentTestMyWork(unittest.TestCase):
     SUBMISSION_DIRECTORY: str = os.path.join(TEST_DIRECTORY, "submission")
 
     
+    @override
     def setUp(self) -> None:
         if os.path.exists(self.TEST_DIRECTORY):
             shutil.rmtree(self.TEST_DIRECTORY)
@@ -24,6 +26,7 @@ class TestStudentTestMyWork(unittest.TestCase):
         os.mkdir(self.SUBMISSION_DIRECTORY)
 
 
+    @override
     def tearDown(self) -> None:
         if os.path.exists(self.TEST_DIRECTORY):
             shutil.rmtree(self.TEST_DIRECTORY)
