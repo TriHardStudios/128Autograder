@@ -62,7 +62,7 @@ services:
       - "./tests/e2e/test_run_test_my_work/results:/app/results"
       - "./tests/e2e/test_run_test_my_work/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_run_test_my_work/submission:/app/submission"
-      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
+      - "./tests/e2e/test_run_test_my_work/test_my_work_config.toml:/app/source/config.toml"
 
   test_run_with_prairie_learn:
     profiles:

@@ -183,7 +183,7 @@ if __name__ == "__main__":
     if not verifyPythonVersion(MIN_VERSION, sys.version_info):  # type: ignore
         sys.exit(1)
         
-    if not verifyWorkingDirectory(os.path.abspath(__file__)):
+    if not verifyWorkingDirectory(os.path.dirname(os.path.abspath(__file__))):
         sys.exit(1)
 
     cleanPreviousSubmissions(".")
