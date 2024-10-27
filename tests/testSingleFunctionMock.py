@@ -39,12 +39,38 @@ class TestSingleFunctionMock(unittest.TestCase):
 
         funcToMock.assertCalledTimes(1)
 
+    def testCalledFailure(self):
+        def funcToMock():
+            return "hello"
+
+        funcToMock()
+
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
+
+        with self.assertRaises(AssertionError):
+            funcToMock.assertCalledTimes(1)
+
+        with self.assertRaises(AssertionError):
+            funcToMock.assertCalled()
+
+        funcToMock.assertNotCalled()
+
+
+
     def testCalledWith(self):
         funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
 
         funcToMock(1, 2, 3)
 
         funcToMock.assertCalledWith(1, 2, 3)
+
+    def testCalledWithFailure(self):
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
+
+        funcToMock(1, 2)
+
+        with self.assertRaises(AssertionError):
+            funcToMock.assertCalledWith(1, 2, 3)
 
     def testCalledWithManyCalls(self):
         funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
@@ -75,6 +101,14 @@ class TestSingleFunctionMock(unittest.TestCase):
 
         funToMock.assertCalledWith(1, 2, 3, a=1, b=2, c=3)
 
+    def testCalledWithKwargsFailure(self):
+        funToMock = SingleFunctionMock("funcToMock", None)
+
+        funToMock(1, 2, 3, a=1, b=2)
+
+        with self.assertRaises(AssertionError):
+            funToMock.assertCalledWith(1, 2, 3, a=1, b=2, c=3)
+
     def testCalledAtLeast(self):
         funcToMock = SingleFunctionMock("funcToMock", None)
 
@@ -82,3 +116,12 @@ class TestSingleFunctionMock(unittest.TestCase):
             funcToMock()
 
         funcToMock.assertCalledAtLeastTimes(4)
+
+    def testCalledAtLeastFailure(self):
+        funcToMock = SingleFunctionMock("funcToMock", None)
+
+        for _ in range(5):
+            funcToMock()
+
+        with self.assertRaises(AssertionError):
+            funcToMock.assertCalledAtLeastTimes(6)
