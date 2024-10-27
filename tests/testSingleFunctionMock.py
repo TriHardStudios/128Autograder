@@ -5,20 +5,14 @@ from TestingFramework.SingleFunctionMock import SingleFunctionMock
 class TestSingleFunctionMock(unittest.TestCase):
 
     def testSideEffect(self):
-        def funcToMock():
-            return "hello"
-
-        funcToMock = SingleFunctionMock("funcToMock", ["goodbye"]) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", ["goodbye"])  # type: ignore
 
         self.assertEqual("goodbye", funcToMock())
 
     def testSideEffectManyCalls(self):
-        def funcToMock():
-            return "hello"
-
         sideEffects = [1, 2, 3, 4, 5]
 
-        funcToMock = SingleFunctionMock("funcToMock", sideEffects) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", sideEffects)  # type: ignore
 
         actual = []
         for _ in range(10):
@@ -29,10 +23,7 @@ class TestSingleFunctionMock(unittest.TestCase):
         self.assertEqual(sideEffects, actual)
 
     def testVoidSideEffectManyCalls(self):
-        def funcToMock():
-            return "hello"
-
-        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
 
         self.assertIsNone(funcToMock())
 
@@ -42,34 +33,26 @@ class TestSingleFunctionMock(unittest.TestCase):
 
         funcToMock()
 
-        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
 
         funcToMock()
 
         funcToMock.assertCalledTimes(1)
 
     def testCalledWith(self):
-
-        def funcToMock():
-            return "hello"
-
-        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
 
         funcToMock(1, 2, 3)
 
         funcToMock.assertCalledWith(1, 2, 3)
 
     def testCalledWithManyCalls(self):
-        def funcToMock():
-            return "hello"
-
-        funcToMock = SingleFunctionMock("funcToMock", None) # type: ignore
+        funcToMock = SingleFunctionMock("funcToMock", None)  # type: ignore
 
         for i in range(10):
             funcToMock(i, i, i)
 
         funcToMock.assertCalledWith(3, 3, 3)
-
 
     def testCalledWithSpy(self):
         def funcToMock(a, b, c):
@@ -85,5 +68,17 @@ class TestSingleFunctionMock(unittest.TestCase):
         self.assertEqual(6, result)
         funcToMock.assertCalledTimes(1)
 
-        
+    def testCalledWithKwargs(self):
+        funToMock = SingleFunctionMock("funcToMock", None)
 
+        funToMock(1, 2, 3, a=1, b=2, c=3)
+
+        funToMock.assertCalledWith(1, 2, 3, a=1, b=2, c=3)
+
+    def testCalledAtLeast(self):
+        funcToMock = SingleFunctionMock("funcToMock", None)
+
+        for _ in range(5):
+            funcToMock()
+
+        funcToMock.assertCalledAtLeastTimes(4)

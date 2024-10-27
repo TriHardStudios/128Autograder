@@ -1,5 +1,13 @@
-from typing import Callable
+from typing import Callable, List, TypedDict, Tuple, Dict
 
+
+class CalledWith(TypedDict):
+    """
+    This dictionary type stores the parameters that the function was called with
+    Stores both kwargs and args
+    """
+    args: Tuple[object, ...]
+    kwargs: Dict[str, object]
 
 class SingleFunctionMock:
     """
@@ -7,25 +15,21 @@ class SingleFunctionMock:
     It is also pickleable, which is why the ref:`unittest.mock.Mock` could not be used in this application
     """
 
-    def __init__(self, name: str, sideEffect: list[object] | None = None, spy: bool = False):
-        self.called: bool = False
+    def __init__(self, name: str, sideEffect: List[object] | None = None, spy: bool = False):
         self.calledTimes: int = 0
-        self.calledWithArgs: list[tuple] = []
-        self.calledWithKwargs: list[dict[str, object]] = []
+        self.calledWith: List[CalledWith] = []
         self.mockName: str = name
         self.spyFunction: Callable = self
-        self.sideEffect: list[object] | None = sideEffect
+        self.sideEffect: List[object] | None = sideEffect
         self.spy = spy
 
-    def setSpyFunction(self, initalFunctionName: Callable):
-        self.spyFunction = initalFunctionName
+    def setSpyFunction(self, initialFunctionName: Callable):
+        self.spyFunction = initialFunctionName
 
 
     def __call__(self, *args, **kwargs):
-        self.called = True
         self.calledTimes += 1
-        self.calledWithArgs.append(args)
-        self.calledWithKwargs.append(kwargs)
+        self.calledWith.append({"args": args, "kwargs": kwargs})
 
         if self.spy:
             return self.spyFunction(*args, **kwargs)
@@ -39,22 +43,27 @@ class SingleFunctionMock:
         return self.sideEffect[self.calledTimes - 1]
 
     def assertCalled(self):
-        if not self.called:
+        if self.calledTimes == 0:
             raise AssertionError(f"Function: {self.mockName} was not called.\nExpected to be called")
 
     def assertNotCalled(self):
-        if self.called:
+        if self.calledTimes != 0:
             raise AssertionError(f"Function: {self.mockName} was called.\nExpected not to be called.")
 
-    def assertCalledWith(self, *args):
+    def assertCalledWith(self, *args, **kwargs):
         self.assertCalled()
-        for calledWithArgs in self.calledWithArgs:
-            if calledWithArgs == args:
+        for calledWith in self.calledWith:
+            if calledWith["args"] == args and calledWith["kwargs"] == kwargs:
                 return
 
-        raise AssertionError(f"Function: {self.mockName} was not called with arguments: {args}.")
+        raise AssertionError(f"Function: {self.mockName} was not called with arguments: {args} {kwargs}.")
 
-    def assertCalledTimes(self, _times: int):
-        if _times != self.calledTimes:
+    def assertCalledTimes(self, times: int):
+        if times != self.calledTimes:
             raise AssertionError(
-                f"Function: {self.mockName} was called {self.calledTimes}.\nExpected to be called {_times}")
+                f"Function: {self.mockName} was called {self.calledTimes} times.\nExpected to be called {times} times")
+
+    def assertCalledAtLeastTimes(self, times: int):
+        if times > self.calledTimes:
+            raise AssertionError(
+                f"Function: {self.mockName} was called {self.calledTimes} times.\nExpected to be called at least {times} times")
