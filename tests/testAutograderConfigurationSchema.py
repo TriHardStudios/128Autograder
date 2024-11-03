@@ -41,6 +41,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         actual = schema.validate(self.configFile)
         self.assertIn("submission_limit", actual["config"])
+        self.assertIn("buffer_size", actual["config"]["python"])
 
     def testValidOptionalFields(self):
         schema = self.createAutograderConfigurationSchema()
@@ -48,6 +49,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.configFile["config"]["python"] = {}
         actual = schema.validate(self.configFile)
         self.assertIn("extra_packages", actual["config"]["python"])
+        self.assertIn("buffer_size", actual["config"]["python"])
 
     def testInvalidOptionalFields(self):
         schema = self.createAutograderConfigurationSchema()
@@ -63,10 +65,12 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.configFile["config"]["python"] = {}
         packages = [{"name": "package", "version": "1.0.0"}]
         self.configFile["config"]["python"]["extra_packages"] = packages
+        self.configFile["config"]["python"]["buffer_size"] = 2 * 2 ** 10
 
         actual = schema.validate(self.configFile)
 
         self.assertEqual(packages, actual["config"]["python"]["extra_packages"])
+        self.assertEqual(2*2**10, actual["config"]["python"]["buffer_size"])
 
     def testExtraFields(self):
         schema = self.createAutograderConfigurationSchema()

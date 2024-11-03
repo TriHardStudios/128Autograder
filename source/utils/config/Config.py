@@ -51,6 +51,10 @@ class PythonConfiguration:
     The extra packages that should be added to the autograder on build.
     Must be stored in 'package_name': 'version'. Similar to requirements.txt 
     """
+    buffer_size: int
+    """
+    The size of the output buffer when the autograder runs
+    """
 
 
 @dataclass(frozen=True)
@@ -175,6 +179,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                             "name": str,
                             "version": str,
                         }],
+                        Optional("buffer_size", default=2**10): And(int, lambda x: x >= 2 ** 10)
                     }, None),
                     Optional("c", default=None): Or({
                         "use_makefile": bool,
