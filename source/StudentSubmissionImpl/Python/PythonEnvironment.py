@@ -116,9 +116,6 @@ class PythonEnvironmentBuilder():
 
             self.environment.import_loader.append(MockedModuleFinder(moduleName, module, self.moduleMocks[moduleName]))
 
-    def _setImplConfigOptions(self, config: PythonConfiguration):
-        pass
-
     def build(self) -> PythonEnvironment:
         self._processAndValidateModuleMocks()
 

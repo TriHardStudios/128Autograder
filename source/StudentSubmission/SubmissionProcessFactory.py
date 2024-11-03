@@ -27,17 +27,17 @@ class SubmissionProcessFactory:
             return
 
         if not issubclass(process, ISubmissionProcess):
-            raise TypeError(f"{process} is not a subclass of ISubmissionProcess! Registration failed!")
+            raise AttributeError(f"{process} is not a subclass of ISubmissionProcess! Registration failed!")
 
         if not issubclass(submission, AbstractStudentSubmission):
-            raise TypeError(f"{submission} is not a subclass of AbstractStudentSubmission! Registration failed!")
+            raise AttributeError(f"{submission} is not a subclass of AbstractStudentSubmission! Registration failed!")
 
         if implEnvironment is not None and implEnvironmentConfigMapper is None:
-            raise TypeError(
+            raise AttributeError(
                 f"Implementation environment is provided for submission type {submission}, but no mapper is defined! Registration Failed!")
 
         if implEnvironment is None and implEnvironmentConfigMapper is not None:
-            raise TypeError(
+            raise AttributeError(
                 f"Implementation environment mapper is provided for submission type {submission}, but no implementation environment is defined! Registration Failed!")
 
         # TODO Add logging here
@@ -49,7 +49,7 @@ class SubmissionProcessFactory:
         submissionType = runner.getSubmissionType()
 
         if submissionType not in cls.registry.keys():
-            raise TypeError(f"{submissionType} has not been registered. Lookup failed.")
+            raise AttributeError(f"{submissionType} has not been registered. Lookup failed.")
 
         processType, implEnvironmentType, mapper = cls.registry[submissionType]
 
