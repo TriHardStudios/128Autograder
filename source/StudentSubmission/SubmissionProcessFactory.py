@@ -19,9 +19,12 @@ class SubmissionProcessFactory:
 
     @classmethod
     def register(cls, submission: Type[AbstractStudentSubmission], process: Type[ISubmissionProcess],
-                 implEnvironment: Optional[ImplEnvironment] = None,
+                 implEnvironment: Optional[Type[ImplEnvironment]] = None,
                  implEnvironmentConfigMapper: Optional[
                      Callable[[ImplEnvironment, AutograderConfiguration], None]] = None) -> None:
+
+        if submission in cls.registry:
+            return
 
         if not issubclass(process, ISubmissionProcess):
             raise TypeError(f"{process} is not a subclass of ISubmissionProcess! Registration failed!")
@@ -30,10 +33,12 @@ class SubmissionProcessFactory:
             raise TypeError(f"{submission} is not a subclass of AbstractStudentSubmission! Registration failed!")
 
         if implEnvironment is not None and implEnvironmentConfigMapper is None:
-            raise TypeError(f"Implementation environment is provided for submission type {submission}, but no mapper is defined! Registration Failed!")
+            raise TypeError(
+                f"Implementation environment is provided for submission type {submission}, but no mapper is defined! Registration Failed!")
 
         if implEnvironment is None and implEnvironmentConfigMapper is not None:
-            raise TypeError(f"Implementation environment mapper is provided for submission type {submission}, but no implementation environment is defined! Registration Failed!")
+            raise TypeError(
+                f"Implementation environment mapper is provided for submission type {submission}, but no implementation environment is defined! Registration Failed!")
 
         # TODO Add logging here
         cls.registry[submission] = (process, implEnvironment, implEnvironmentConfigMapper)

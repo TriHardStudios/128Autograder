@@ -5,7 +5,7 @@ from importlib import import_module
 from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from utils.config.Config import PythonConfiguration
+from utils.config.Config import PythonConfiguration, AutograderConfiguration
 
 
 class PythonResults():
@@ -41,6 +41,13 @@ class PythonEnvironment():
     """The import loader. This shouldn't be set directly"""
     mocks: Dict[str, Optional[SingleFunctionMock]] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
+
+
+def configMapper(env: PythonEnvironment, config: AutograderConfiguration):
+    if config.config.python is None:
+        raise AttributeError("INVALID STATE: Implementation environment mapping FAILED! Python config is NONE when should be defined!")
+
+    env.buffer_size = config.config.python.buffer_size
 
 
 Builder = TypeVar("Builder", bound="PythonEnvironmentBuilder")

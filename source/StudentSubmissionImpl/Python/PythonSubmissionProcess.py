@@ -173,6 +173,11 @@ class StudentSubmissionProcess(multiprocessing.Process):
         serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
         sharedOutput = shared_memory.SharedMemory(self.outputDataMemName)
 
+        if sharedOutput.size < sys.getsizeof(serializedData):
+            print(f"FATAL ERROR: Submission generated output is LARGER than buffer size of {sharedOutput.size} bytes. Output size is {sys.getsizeof(serializedData)} bytes!", file=sys.stderr)
+            sharedOutput.close()
+            return
+
         sharedOutput.buf[:len(serializedData)] = serializedData
         sharedOutput.close()
 
@@ -222,7 +227,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
         self.timeoutTime: int = 0
-        self.bufferSize: int = 2 ** 10
+        self.bufferSize: int = 0
 
     def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: TaskRunner):
         """
@@ -239,8 +244,10 @@ class RunnableStudentSubmission(ISubmissionProcess):
         """
         self.studentSubmissionProcess = \
             StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION,
-                                     environment.impl_environment.import_loader if environment.impl_environment is not None else [],
+                                     environment.impl_environment.import_loader if environment.impl_environment.import_loader is not None else [],
                                      environment.timeout)
+
+        self.bufferSize = environment.impl_environment.buffer_size
 
         self.inputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
         self.outputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
