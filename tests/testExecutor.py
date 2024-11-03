@@ -2,6 +2,7 @@ import shutil
 from typing import Optional, Tuple, Any, List
 import unittest
 import os
+from unittest.mock import MagicMock
 
 from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
@@ -10,6 +11,7 @@ from Executors.Executor import Executor
 from Executors.Environment import ExecutionEnvironment, Results
 from Tasks.Task import Task
 from Tasks.TaskRunner import TaskRunner
+from utils.config.Config import AutograderConfigurationProvider
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):
@@ -88,6 +90,7 @@ class TestExecutor(unittest.TestCase):
         self.submission = MockSubmission().build()
         self.environment = ExecutionEnvironment()
         self.runner = TaskRunner(MockSubmission)
+        self.config = MagicMock()
 
     def tearDown(self) -> None:
         if os.path.exists(self.environment.SANDBOX_LOCATION):
@@ -97,7 +100,7 @@ class TestExecutor(unittest.TestCase):
             shutil.rmtree(self.TEST_FILE_ROOT)
 
     def testCreateSandbox(self):
-        Executor.setup(self.environment, self.runner)
+        Executor.setup(self.environment, self.runner, self.config)
 
         self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("."))
 
@@ -109,7 +112,7 @@ class TestExecutor(unittest.TestCase):
         with open(self.TEST_FILE_LOCATION, 'w') as w:
             w.write("this is a line in the file")
 
-        Executor.setup(self.environment, self.runner)
+        Executor.setup(self.environment, self.runner, self.config)
 
         self.assertIn(os.path.basename(self.TEST_FILE_LOCATION), os.listdir(self.environment.SANDBOX_LOCATION))
 
@@ -122,16 +125,20 @@ class TestExecutor(unittest.TestCase):
         with open(self.TEST_FILE_LOCATION, 'w') as w:
             w.write("this is a line in the file")
 
-        Executor.setup(self.environment, self.runner)
+        Executor.setup(self.environment, self.runner, self.config)
 
         self.assertIn("this_is_alais.txt", os.listdir(self.environment.SANDBOX_LOCATION))
 
     def testExceptionRaised(self):
 
+        AutograderConfigurationProvider.set(MagicMock())
+
         self.runner.add(Task("raise_exception", MockTaskLibrary.raiseException, [lambda: Exception()]))
 
         with self.assertRaises(AssertionError):
             Executor.execute(self.environment, self.runner)
+
+        AutograderConfigurationProvider.reset()
 
     def testSandboxNotCreatedCleanup(self):
         exception = None

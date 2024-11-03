@@ -65,12 +65,12 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         self.configFile["config"]["python"] = {}
         packages = [{"name": "package", "version": "1.0.0"}]
         self.configFile["config"]["python"]["extra_packages"] = packages
-        self.configFile["config"]["python"]["buffer_size"] = 2 * 2 ** 10
+        self.configFile["config"]["python"]["buffer_size"] = 2 * 2 ** 20
 
         actual = schema.validate(self.configFile)
 
         self.assertEqual(packages, actual["config"]["python"]["extra_packages"])
-        self.assertEqual(2*2**10, actual["config"]["python"]["buffer_size"])
+        self.assertEqual(2*2**20, actual["config"]["python"]["buffer_size"])
 
     def testExtraFields(self):
         schema = self.createAutograderConfigurationSchema()

@@ -54,9 +54,10 @@ class SubmissionProcessFactory:
         processType, implEnvironmentType, mapper = cls.registry[submissionType]
 
         if implEnvironmentType is not None and mapper is not None:
-            implEnvironment = environment.impl_environment if environment.impl_environment is not None else implEnvironmentType()
+            if environment.impl_environment is None:
+                environment.impl_environment = implEnvironmentType()
 
-            mapper(implEnvironment, autograderConfig)
+            mapper(environment.impl_environment, autograderConfig)
 
         process = processType()
 

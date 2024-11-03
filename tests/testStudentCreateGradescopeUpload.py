@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import zipfile
 
-import create_gradescope_upload as createGradescopeUpload
+from utils.student import create_gradescope_upload as createGradescopeUpload
 
 
 class TestStudentCreateGradescopeUpload(unittest.TestCase):
@@ -62,7 +62,7 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_once()
         writeMock.assert_called_with(os.path.join(self.STUDENT_WORK_FOLDER, "submission.py"))
 
-    @patch("create_gradescope_upload.ZipFile")
+    @patch("utils.student.create_gradescope_upload.ZipFile")
     @patch('sys.stdout', new_callable=StringIO)
     def testGenerateZipFileOnePy(self, _, zipMock):
         zipFileMock = MagicMock()
@@ -75,7 +75,7 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         writeMock.assert_called_once()
         writeMock.assert_called_with("submission.py")
 
-    @patch("create_gradescope_upload.ZipFile")
+    @patch("utils.student.create_gradescope_upload.ZipFile")
     @patch('sys.stdout', new_callable=StringIO)
     def testGenerateZipFileDataFilesOnePy(self, _, zipMock):
         for _ in range(10):

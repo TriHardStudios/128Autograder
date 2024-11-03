@@ -21,6 +21,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
     def setUp(self):
         self.environment = ExecutionEnvironment()
         self.environment.SANDBOX_LOCATION = "."
+        self.environment.impl_environment = PythonEnvironment()
         self.runnableSubmission = RunnableStudentSubmission()
         self.submission: PythonSubmission = PythonSubmission()
 

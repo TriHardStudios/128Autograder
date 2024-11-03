@@ -179,7 +179,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                             "name": str,
                             "version": str,
                         }],
-                        Optional("buffer_size", default=2**10): And(int, lambda x: x >= 2 ** 10)
+                        Optional("buffer_size", default=2**20): And(int, lambda x: x >= 2 ** 20)
                     }, None),
                     Optional("c", default=None): Or({
                         "use_makefile": bool,
@@ -352,3 +352,7 @@ class AutograderConfigurationProvider:
             raise AttributeError("Configuration has already been set!")
 
         cls.config = config
+
+    @classmethod
+    def reset(cls):
+        cls.config = None

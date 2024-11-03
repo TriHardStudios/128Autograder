@@ -241,7 +241,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         """
         self.studentSubmissionProcess = \
             StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION,
-                                     environment.impl_environment.import_loader if environment.impl_environment.import_loader is not None else [],
+                                     environment.impl_environment.import_loader,
                                      environment.timeout)
 
         self.bufferSize = environment.impl_environment.buffer_size

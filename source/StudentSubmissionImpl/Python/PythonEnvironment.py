@@ -35,7 +35,7 @@ class PythonResults():
 
 @dataclasses.dataclass
 class PythonEnvironment():
-    buffer_size: int
+    buffer_size: int = 2**20
     """Buffer size set from the config file. This shouldn't be set directly"""
     import_loader: List[AbstractModuleFinder] = dataclasses.field(default_factory=list)
     """The import loader. This shouldn't be set directly"""
