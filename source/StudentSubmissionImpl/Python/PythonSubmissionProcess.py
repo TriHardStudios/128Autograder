@@ -31,9 +31,6 @@ from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractMod
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads  # type: ignore
 multiprocessing.reduction.dump = dill.dump  # type: ignore
 
-SHARED_MEMORY_SIZE = 2 ** 20
-
-
 class StudentSubmissionProcess(multiprocessing.Process):
     """
     This class extends multiprocessing.Process to provide a simple way to run student submissions.
@@ -186,7 +183,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         exception: Optional[Exception] = None
 
-        results: PythonTaskResult = self.runner.run()
+        results: PythonTaskResult = self.runner.run()  # type: ignore
 
         if not self.runner.wasSuccessful():
             exceptions = self.runner.getAllErrors()
@@ -248,6 +245,9 @@ class RunnableStudentSubmission(ISubmissionProcess):
                                      environment.timeout)
 
         self.bufferSize = environment.impl_environment.buffer_size
+
+        if self.bufferSize <= 0:
+            raise AttributeError("INVALID STATE: Buffer size is ZERO. No data can be collected from the student's submission.")
 
         self.inputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
         self.outputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
