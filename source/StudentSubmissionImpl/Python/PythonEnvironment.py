@@ -5,6 +5,8 @@ from importlib import import_module
 from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from utils.config.Config import PythonConfiguration, AutograderConfiguration
+
 
 class PythonResults():
     class Mocks():
@@ -19,7 +21,7 @@ class PythonResults():
 
             return self.mocks[mockName]
 
-    def __init__(self, mocks = None):
+    def __init__(self, mocks=None):
         self.mocks = mocks
 
     @property
@@ -30,20 +32,32 @@ class PythonResults():
     def mocks(self, value: Optional[Dict[str, SingleFunctionMock]]):
         self._mocks = PythonResults.Mocks(value)
 
+
 @dataclasses.dataclass
 class PythonEnvironment():
+    buffer_size: int = 2**20
+    """Buffer size set from the config file. This shouldn't be set directly"""
     import_loader: List[AbstractModuleFinder] = dataclasses.field(default_factory=list)
     """The import loader. This shouldn't be set directly"""
     mocks: Dict[str, Optional[SingleFunctionMock]] = dataclasses.field(default_factory=dict)
     """What mocks have been defined for this run of the student's submission"""
 
+
+def configMapper(env: PythonEnvironment, config: AutograderConfiguration):
+    if config.config.python is None:
+        raise AttributeError("INVALID STATE: Implementation environment mapping FAILED! Python config is NONE when should be defined!")
+
+    env.buffer_size = config.config.python.buffer_size
+
+
 Builder = TypeVar("Builder", bound="PythonEnvironmentBuilder")
+
 
 class PythonEnvironmentBuilder():
     def __init__(self) -> None:
         self.environment: PythonEnvironment = PythonEnvironment()
         self.moduleMocks: Dict[str, Dict[str, SingleFunctionMock]] = {}
-        
+
     def addModuleMock(self: Builder, moduleName: str, mockedMethods: Dict[str, SingleFunctionMock]) -> Builder:
         """
         Description
@@ -106,4 +120,3 @@ class PythonEnvironmentBuilder():
         self._processAndValidateModuleMocks()
 
         return self.environment
-

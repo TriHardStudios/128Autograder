@@ -6,7 +6,7 @@ import shutil
 from io import StringIO
 import subprocess
 import importlib.util
-import test_my_work as testMyWork
+from utils.student import test_my_work as testMyWork
 import random
 import string
 

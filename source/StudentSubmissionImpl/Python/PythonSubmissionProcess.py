@@ -31,9 +31,6 @@ from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractMod
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads  # type: ignore
 multiprocessing.reduction.dump = dill.dump  # type: ignore
 
-SHARED_MEMORY_SIZE = 2 ** 20
-
-
 class StudentSubmissionProcess(multiprocessing.Process):
     """
     This class extends multiprocessing.Process to provide a simple way to run student submissions.
@@ -173,6 +170,11 @@ class StudentSubmissionProcess(multiprocessing.Process):
         serializedData = dill.dumps(dataToSerialize, dill.HIGHEST_PROTOCOL)
         sharedOutput = shared_memory.SharedMemory(self.outputDataMemName)
 
+        if sharedOutput.size < sys.getsizeof(serializedData):
+            print(f"FATAL ERROR: Submission generated output is LARGER than buffer size of {sharedOutput.size} bytes. Output size is {sys.getsizeof(serializedData)} bytes!", file=sys.stderr)
+            sharedOutput.close()
+            return
+
         sharedOutput.buf[:len(serializedData)] = serializedData
         sharedOutput.close()
 
@@ -181,7 +183,7 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         exception: Optional[Exception] = None
 
-        results: PythonTaskResult = self.runner.run()
+        results: PythonTaskResult = self.runner.run()  # type: ignore
 
         if not self.runner.wasSuccessful():
             exceptions = self.runner.getAllErrors()
@@ -215,13 +217,14 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.inputSharedMem: Optional[shared_memory.SharedMemory] = None
         self.outputSharedMem: Optional[shared_memory.SharedMemory] = None
 
-        self.runner: Optional[GenericPythonRunner] = None
+        self.runner: Optional[TaskRunner] = None
         self.executionDirectory: str = "."
         self.studentSubmissionProcess: Optional[StudentSubmissionProcess] = None
         self.exception: Optional[Exception] = None
         self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
         self.timeoutTime: int = 0
+        self.bufferSize: int = 0
 
     def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: TaskRunner):
         """
@@ -238,11 +241,16 @@ class RunnableStudentSubmission(ISubmissionProcess):
         """
         self.studentSubmissionProcess = \
             StudentSubmissionProcess(runner, environment.SANDBOX_LOCATION,
-                                     environment.impl_environment.import_loader if environment.impl_environment is not None else [],
+                                     environment.impl_environment.import_loader,
                                      environment.timeout)
 
-        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
-        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
+        self.bufferSize = environment.impl_environment.buffer_size
+
+        if self.bufferSize <= 0:
+            raise AttributeError("INVALID STATE: Buffer size is ZERO. No data can be collected from the student's submission.")
+
+        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
+        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
 
         self.studentSubmissionProcess.setInputDataMemName(self.inputSharedMem.name)
         self.studentSubmissionProcess.setOutputDataMenName(self.outputSharedMem.name)
@@ -297,7 +305,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
         outputBytes = self.outputSharedMem.buf.tobytes()
 
-        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+        if outputBytes == bytearray(self.bufferSize):
             self.exception = MissingOutputDataException(self.outputSharedMem.name)
             self._deallocate()
             return

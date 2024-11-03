@@ -51,6 +51,10 @@ class PythonConfiguration:
     The extra packages that should be added to the autograder on build.
     Must be stored in 'package_name': 'version'. Similar to requirements.txt 
     """
+    buffer_size: int
+    """
+    The size of the output buffer when the autograder runs
+    """
 
 
 @dataclass(frozen=True)
@@ -175,6 +179,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                             "name": str,
                             "version": str,
                         }],
+                        Optional("buffer_size", default=2**20): And(int, lambda x: x >= 2 ** 20)
                     }, None),
                     Optional("c", default=None): Or({
                         "use_makefile": bool,
@@ -329,8 +334,8 @@ class AutograderConfigurationProvider:
     AutograderConfigurationProvider
     ===============================
 
-    This class allows access to the same config acrossn the entire program.
-    This is using a similar pattern to signletons, however, its a bit better as its a seperate provider.
+    This class allows access to the same config across the entire program.
+    This is using a similar pattern to singletons, however, it's a bit better as it's a separate provider.
     """
     config: OptionalType[AutograderConfiguration] = None
 
@@ -347,3 +352,7 @@ class AutograderConfigurationProvider:
             raise AttributeError("Configuration has already been set!")
 
         cls.config = config
+
+    @classmethod
+    def reset(cls):
+        cls.config = None

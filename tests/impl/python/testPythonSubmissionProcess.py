@@ -1,7 +1,10 @@
 import shutil
+import sys
 from importlib import import_module
 import os
 import unittest
+from io import StringIO
+from unittest.mock import patch
 
 from StudentSubmissionImpl.Python import PythonSubmission
 from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
@@ -10,7 +13,6 @@ from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudent
 from Executors.Environment import ExecutionEnvironment, Results, getResults
 from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from Tasks.TaskRunner import TaskRunner
-from Tasks.common import FailedToLoadSuppliers
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
 from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
 from Executors.common import MissingOutputDataException
@@ -21,6 +23,7 @@ class TestPythonSubmissionProcess(unittest.TestCase):
     def setUp(self):
         self.environment = ExecutionEnvironment()
         self.environment.SANDBOX_LOCATION = "."
+        self.environment.impl_environment = PythonEnvironment()
         self.runnableSubmission = RunnableStudentSubmission()
         self.submission: PythonSubmission = PythonSubmission()
 
@@ -546,4 +549,21 @@ class TestPythonSubmissionProcess(unittest.TestCase):
 
         self.assertIn("Failed to map 'autowireMe'", exceptionText)
 
+    def testOverrunDataBuffer(self):
+        program = \
+            "def runMe():" \
+            f"   return bytearray({self.environment.impl_environment.buffer_size + 1})"
+
+
+        self.submission.getExecutableSubmission = lambda: compile(program, "test_code", "exec")
+        runner = PythonRunnerBuilder(self.submission) \
+            .setEntrypoint(function="runMe") \
+            .build()
+
+        results: Results = self.runSubmission(runner)
+
+        self.assertIsNotNone(results.exception)
+
+        with self.assertRaises(MissingOutputDataException):
+            raise results.exception
 

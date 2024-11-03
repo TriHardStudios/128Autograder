@@ -1,6 +1,7 @@
 import os
 import shutil
 import unittest
+from unittest.mock import MagicMock
 
 import dill.source
 
@@ -11,10 +12,21 @@ from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImpor
 from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
 from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from utils.config.Config import AutograderConfigurationProvider, AutograderConfiguration, BasicConfiguration
 
 
 # These serve as integration tests for the entire submission pipeline sans the gradescope stuff
 class TestFullExecutions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        configMock = MagicMock()
+        configMock.config.python.buffer_size = 2 ** 20
+        AutograderConfigurationProvider.set(configMock)
+
+    @classmethod
+    def tearDownClass(cls):
+        AutograderConfigurationProvider.reset()
+
     DATA_DIRECTORY: str = "./testData"
     TEST_FILE_NAME = "testFile.txt"
     OUTPUT_FILE_NAME = "outputFile.txt"
@@ -384,23 +396,23 @@ class TestFullExecutions(unittest.TestCase):
 
     def testInjectedEntrypointForClasses(self):
         program = \
-            "class Test1:\n"\
-            "   def __init__(self, val):\n"\
-            "       self.returnMe = val\n\n"\
-            "   def get(self):\n"\
+            "class Test1:\n" \
+            "   def __init__(self, val):\n" \
+            "       self.returnMe = val\n\n" \
+            "   def get(self):\n" \
             "       return self.returnMe\n\n"
 
         self.writePythonFile("test_code.py", program)
 
-        submission = PythonSubmission()\
-            .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
-            .enableLooseMainMatching()\
-            .load()\
-            .build()\
+        submission = PythonSubmission() \
+            .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY) \
+            .enableLooseMainMatching() \
+            .load() \
+            .build() \
             .validate()
 
         environment = ExecutionEnvironmentBuilder() \
-            .setTimeout(5)\
+            .setTimeout(5) \
             .build()
 
         expected = "this is from Test 1"
@@ -409,11 +421,12 @@ class TestFullExecutions(unittest.TestCase):
             instance = test1Cls(expectedValue)
             return instance.get()
 
-        runner = PythonRunnerBuilder(submission)\
-            .addInjectedCode(INJECTED_testClassTest1.__name__, dill.source.getsource(INJECTED_testClassTest1, lstrip=True))\
-            .setEntrypoint(function=INJECTED_testClassTest1.__name__)\
-            .addParameter(parameter=Parameter(autowiredName="Test1"))\
-            .addParameter(expected)\
+        runner = PythonRunnerBuilder(submission) \
+            .addInjectedCode(INJECTED_testClassTest1.__name__,
+                             dill.source.getsource(INJECTED_testClassTest1, lstrip=True)) \
+            .setEntrypoint(function=INJECTED_testClassTest1.__name__) \
+            .addParameter(parameter=Parameter(autowiredName="Test1")) \
+            .addParameter(expected) \
             .build()
 
         Executor.execute(environment, runner)
