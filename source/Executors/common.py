@@ -3,10 +3,12 @@ from typing import Dict, Iterable, List, Optional
 
 
 class MissingOutputDataException(Exception):
-    def __init__(self, _outputFileName):
+    def __init__(self, outputFileName):
         super().__init__("Output results are NULL.\n"
-                         f"Failed to parse results in {_outputFileName}.\n"
-                         f"Submission possibly crashed or terminated before harness could write to {_outputFileName}.")
+                         f"Failed to parse results in output buffer: {outputFileName}.\n"
+                         f"Submission possibly crashed or terminated before harness could write to output buffer: {outputFileName}.\n"
+                         f"Submission may have overrun buffer memory\n"
+                         f"Likely causes: The presence of exit or quit in student's code; extra debugging print statements")
 
 def filterStdOut(stdOut: Optional[List[str]]) -> Optional[List[str]]:
     """

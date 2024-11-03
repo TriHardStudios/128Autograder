@@ -215,13 +215,14 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.inputSharedMem: Optional[shared_memory.SharedMemory] = None
         self.outputSharedMem: Optional[shared_memory.SharedMemory] = None
 
-        self.runner: Optional[GenericPythonRunner] = None
+        self.runner: Optional[TaskRunner] = None
         self.executionDirectory: str = "."
         self.studentSubmissionProcess: Optional[StudentSubmissionProcess] = None
         self.exception: Optional[Exception] = None
         self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
         self.timeoutTime: int = 0
+        self.bufferSize: int = 0
 
     def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: TaskRunner):
         """
@@ -241,8 +242,8 @@ class RunnableStudentSubmission(ISubmissionProcess):
                                      environment.impl_environment.import_loader if environment.impl_environment is not None else [],
                                      environment.timeout)
 
-        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
-        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=SHARED_MEMORY_SIZE)
+        self.inputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
+        self.outputSharedMem = shared_memory.SharedMemory(create=True, size=self.bufferSize)
 
         self.studentSubmissionProcess.setInputDataMemName(self.inputSharedMem.name)
         self.studentSubmissionProcess.setOutputDataMenName(self.outputSharedMem.name)
@@ -297,7 +298,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         # This prolly isn't the best memory wise, but according to some chuckle head on reddit, this is superfast
         outputBytes = self.outputSharedMem.buf.tobytes()
 
-        if outputBytes == bytearray(SHARED_MEMORY_SIZE):
+        if outputBytes == bytearray(self.bufferSize):
             self.exception = MissingOutputDataException(self.outputSharedMem.name)
             self._deallocate()
             return
