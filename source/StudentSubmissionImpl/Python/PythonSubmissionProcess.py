@@ -222,7 +222,7 @@ class RunnableStudentSubmission(ISubmissionProcess):
         self.outputData: Dict[str, Any] = {}
         self.timeoutOccurred: bool = False
         self.timeoutTime: int = 0
-        self.bufferSize: int = 0
+        self.bufferSize: int = 2 ** 10
 
     def setup(self, environment: ExecutionEnvironment[PythonEnvironment, PythonResults], runner: TaskRunner):
         """

@@ -334,8 +334,8 @@ class AutograderConfigurationProvider:
     AutograderConfigurationProvider
     ===============================
 
-    This class allows access to the same config acrossn the entire program.
-    This is using a similar pattern to signletons, however, its a bit better as its a seperate provider.
+    This class allows access to the same config across the entire program.
+    This is using a similar pattern to singletons, however, it's a bit better as it's a separate provider.
     """
     config: OptionalType[AutograderConfiguration] = None
 

@@ -5,6 +5,7 @@ from Executors.Environment import ExecutionEnvironment
 
 from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from Tasks.TaskRunner import TaskRunner
+from utils.config.Config import AutograderConfigurationProvider, AutograderConfiguration
 
 # For typing only
 from StudentSubmission.ISubmissionProcess import ISubmissionProcess
@@ -12,9 +13,8 @@ from StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 class Executor:
     @classmethod
-    def setup(cls, environment: ExecutionEnvironment, runner: TaskRunner) -> ISubmissionProcess:
-        if os.path.exists(environment.SANDBOX_LOCATION):
-            shutil.rmtree(environment.SANDBOX_LOCATION)
+    def setup(cls, environment: ExecutionEnvironment, runner: TaskRunner, autograderConfig: AutograderConfiguration) -> ISubmissionProcess:
+        cls.cleanup(environment)
 
         try:
             # create the sandbox and ensure that we have RWX permissions
@@ -22,7 +22,9 @@ class Executor:
         except OSError as ex:
             raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {ex}")
 
-        process = SubmissionProcessFactory.createProcess(environment, runner)
+        # TODO Logging
+
+        process = SubmissionProcessFactory.createProcess(environment, runner, autograderConfig)
 
         if environment.files:
             for src, dest in environment.files.items():
@@ -36,7 +38,7 @@ class Executor:
         
     @classmethod
     def execute(cls, environment: ExecutionEnvironment, runner: TaskRunner, raiseExceptions: bool = True) -> None:
-        submissionProcess: ISubmissionProcess = cls.setup(environment, runner)
+        submissionProcess: ISubmissionProcess = cls.setup(environment, runner, AutograderConfigurationProvider.get())
 
         submissionProcess.run()
 
@@ -54,7 +56,6 @@ class Executor:
             # Moving this into the actual submission process allows for each process type to
             # handle their exceptions differently
             submissionProcess.processAndRaiseExceptions(environment)
-
 
 
     @classmethod
