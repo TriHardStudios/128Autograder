@@ -1,7 +1,6 @@
 import os
 import shutil
 import unittest
-from distutils.command.config import config
 from unittest.mock import MagicMock
 
 import dill.source
