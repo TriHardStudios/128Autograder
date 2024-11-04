@@ -62,5 +62,6 @@ executionEnvironments = [
         "if __name__ == .__main__.:",
         # Don't complain about abstract methods, they aren't run:
         "@(abc\\.)?abstractmethod",
+        "expect subprocess.CalledProcessError as _:"
     ]
 

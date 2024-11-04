@@ -131,7 +131,7 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
                 subprocess.check_call([sys.executable, "-m", "pip", "install",
                                        f"{package}=={version}" if version else package],
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError as error:
+            except subprocess.CalledProcessError as _:
                 try:
                     subprocess.check_call([sys.executable, "-m", "pip", "install",
                                            f"{package}=={version}" if version else package, "--break-system-packages"],
