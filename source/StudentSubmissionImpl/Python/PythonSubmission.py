@@ -132,7 +132,12 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
                                        f"{package}=={version}" if version else package],
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             except subprocess.CalledProcessError as error:
-                raise Exception(f"Failed to install '{package}'!")
+                try:
+                    subprocess.check_call([sys.executable, "-m", "pip", "install",
+                                           f"{package}=={version}" if version else package, "--break-system-packages"],
+                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except subprocess.CalledProcessError as error:
+                    raise Exception(f"Failed to install '{package}'!")
 
     def _identifyMainFile(self) -> str:
         if self.getLooseMainMatchingEnabled():
