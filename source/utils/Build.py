@@ -339,6 +339,11 @@ class Build():
                                 self.createSetupForGradescope, self.createRunFileForGradescope)
             self.createDist("docker/gradescope", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")
+        if self.config.build.build_prairie_learn:
+            self.generateDocker(self.generationDirectory, "prairielearn", files, autograderFiles,
+                                lambda _: None, self.createRunForPrairieLearn)
+            self.createDist("docker/prairielearn", self.generationDirectory, self.distDirectory,
+                            f"{self.config.semester}_{self.config.assignment_name}")
 
         if self.config.build.build_student:
             self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles,
