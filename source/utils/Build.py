@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Callable
 from utils.config.Config import AutograderConfiguration
 from enum import Enum
 
@@ -12,7 +12,6 @@ class FilesEnum(Enum):
     PUBLIC_DATA = 2
     PRIVATE_DATA = 3
     STARTER_CODE = 4
-
 
 class Build():
     IGNORE = ["__pycache__"]
@@ -208,8 +207,8 @@ class Build():
         os.makedirs(self.distDirectory, exist_ok=True)
 
     @staticmethod
-    def generateGradescope(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str]):
-        generationPath = os.path.join(generationPath, "gradescope")
+    def generateDocker(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str], setupFileGenerator: Callable[[str], None], runFileGenerator: Callable[[str], None]):
+        generationPath = os.path.join(generationPath, "docker")
         os.makedirs(generationPath, exist_ok=True)
 
         for file in autograderFiles:
@@ -229,12 +228,12 @@ class Build():
 
     @staticmethod
     def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str],
-                        studentFiles: List[str]):
+                        studentFiles: List[str], studentWorkFolder: str):
         generationPath = os.path.join(generationPath, "student")
         os.makedirs(generationPath, exist_ok=True)
 
         # create student_work folder
-        studentWorkFolder = os.path.join(generationPath, "student_work")
+        studentWorkFolder = os.path.join(generationPath, studentWorkFolder)
         os.makedirs(studentWorkFolder, exist_ok=True)
 
         for file in autograderFiles:
@@ -300,11 +299,11 @@ class Build():
         self.createFolders()
 
         if self.config.build.build_gradescope:
-            self.generateGradescope(self.generationDirectory, files, autograderFiles)
-            self.createDist("gradescope", self.generationDirectory, self.distDirectory,
+            self.generateDocker(self.generationDirectory, files, autograderFiles)
+            self.createDist("docker", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")
 
         if self.config.build.build_student:
-            self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles)
+            self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles, self.config.build.student_work_folder)
             self.createDist("student", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")

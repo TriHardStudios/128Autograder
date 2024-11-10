@@ -131,7 +131,7 @@ class PythonSubmission(AbstractStudentSubmission[CodeType]):
                 subprocess.check_call([sys.executable, "-m", "pip", "install",
                                        f"{package}=={version}" if version else package],
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            # this isn't testable :( - basically this reattempts install if it fails by adding the magic flag
+            # this isn't testable :( – basically this reattempts install if it fails by adding the magic flag
             except subprocess.CalledProcessError as _:  # pragma: no cover
                 try:  # pragma: no cover
                     subprocess.check_call([sys.executable, "-m", "pip", "install",  # pragma: no cover
