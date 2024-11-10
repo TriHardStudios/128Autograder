@@ -76,16 +76,18 @@ def main(options: argparse.Namespace):
 
     testResultBuilder = gradescopeResultBuilder
     resultFinalizer = gradescopeResultFinalizer
+    postProcessor = lambda resultsDict: gradescopePostProcessing(resultsDict,
+                                                                 autograderConfig,
+                                                                 options.metadata_path)
     if options.deployed_environment == "prairie_learn":
         testResultBuilder = prairieLearnResultBuilder
         resultFinalizer = prairieLearnResultFinalizer
+        postProcessor = lambda _: None
 
     with open(options.results_path, 'w') as results:
         testRunner = JSONTestRunner(visibility='visible',
                                     stream=results,
-                                    post_processor=lambda resultsDict: gradescopePostProcessing(resultsDict,
-                                                                                                autograderConfig,
-                                                                                                options.metadata_path),
+                                    post_processor=postProcessor,
                                     result_builder=testResultBuilder, result_finalizer=resultFinalizer)
         res = testRunner.run(tests)
         return res.wasSuccessful()
