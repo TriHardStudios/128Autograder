@@ -1,33 +1,43 @@
 services:
   test_many_non_main_files:
     build:
-      dockerfile: gradescope.dockerfile
+      dockerfile: docker/run.dockerfile
+
+    command:
+      - --test-directory
+      - /app/source/student_tests
     volumes:
       - "./tests/e2e/test_many_non_main_files/results:/autograder/results"
-      - "./tests/e2e/test_many_non_main_files/student_tests:/autograder/source/student_tests"
+      - "./tests/e2e/test_many_non_main_files/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_many_non_main_files/submission:/autograder/submission"
       - "./tests/e2e/test_many_non_main_files/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/e2e/integration_config.toml:/autograder/source/config.toml"
+      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
 
   test_requirements_in_submission:
     build:
-      dockerfile: gradescope.dockerfile
+      dockerfile: docker/run.dockerfile
+    command:
+      - --test-directory
+      - /app/source/student_tests
     volumes:
       - "./tests/e2e/test_requirements_in_submission/results:/autograder/results"
-      - "./tests/e2e/test_requirements_in_submission/student_tests:/autograder/source/student_tests"
+      - "./tests/e2e/test_requirements_in_submission/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_requirements_in_submission/submission:/autograder/submission"
       - "./tests/e2e/test_requirements_in_submission/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/e2e/integration_config.toml:/autograder/source/config.toml"
+      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
 
   test_data_file_in_submission:
     build:
-      dockerfile: gradescope.dockerfile
+      dockerfile: docker/run.dockerfile
+    command:
+      - --test-directory
+      - /app/source/student_tests
     volumes:
       - "./tests/e2e/test_data_file_in_submission/results:/autograder/results"
-      - "./tests/e2e/test_data_file_in_submission/student_tests:/autograder/source/student_tests"
+      - "./tests/e2e/test_data_file_in_submission/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_data_file_in_submission/submission:/autograder/submission"
       - "./tests/e2e/test_data_file_in_submission/submission_metadata.json:/autograder/submission_metadata.json"
-      - "./tests/e2e/integration_config.toml:/autograder/source/config.toml"
+      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
 
 #  test_c_build:
 #    build:
@@ -41,7 +51,7 @@ services:
 
   test_build:
     build:
-      dockerfile: run.dockerfile
+      dockerfile: docker/run.dockerfile
     command: 
       - "--build"
       - "-o"
@@ -55,7 +65,7 @@ services:
 
   test_run_test_my_work:
     build:
-      dockerfile: run.dockerfile
+      dockerfile: docker/run.dockerfile
     entrypoint: ["sh", "/app/entrypoint.sh"]
     volumes:
       - "./tests/e2e/test_run_test_my_work/entrypoint.sh:/app/entrypoint.sh"
@@ -68,7 +78,7 @@ services:
     profiles:
       - skip
     build:
-      dockerfile: run.dockerfile
+      dockerfile: docker/run.dockerfile
     command:
       - --submission-directory
       - /grade/student

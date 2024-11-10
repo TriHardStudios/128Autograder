@@ -64,7 +64,7 @@ class Build():
         Description
         ---
 
-        This function recursivly discovers the data files in the dataFilesSource.
+        This function recursively discovers the data files in the dataFilesSource.
         As opposed to the test file function, this will mark files as private if they contain 'private' anywhere in the path.
 
         Note: if allowPrivate is false, then all files that would otherwise be private will be added to the public list
@@ -172,12 +172,12 @@ class Build():
     @staticmethod
     def buildBasePath() -> List[str]:
         runSource = "run.py"
-        setupSource = "setup.sh"
+        # setupSource = "setup.sh"
         configSource = "config.toml"
         requirementsSource = "requirements.txt"
-        runAutograderSource = "run_autograder"
+        # runAutograderSource = "run_autograder"
 
-        return [runSource, setupSource, configSource, requirementsSource, runAutograderSource]
+        return [runSource, configSource, requirementsSource]
 
     @staticmethod
     def buildStudentPath() -> List[str]:
@@ -340,6 +340,7 @@ class Build():
             self.createDist("docker/gradescope", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")
         if self.config.build.build_prairie_learn:
+            # this build is a touch bigger than it needs to be, but for now I'm not super concerned about it
             self.generateDocker(self.generationDirectory, "prairielearn", files, autograderFiles,
                                 lambda _: None, self.createRunForPrairieLearn)
             self.createDist("docker/prairielearn", self.generationDirectory, self.distDirectory,
