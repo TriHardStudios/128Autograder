@@ -84,7 +84,7 @@ jobs:
         with:
           context: .
           push: true
-          file: run.dockerfile
+          file: docker/run.dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Generate artifact attestation
@@ -122,7 +122,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: gradescope.dockerfile
+          file: docker/gradescope.dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
