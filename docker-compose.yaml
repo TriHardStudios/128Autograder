@@ -1,7 +1,8 @@
 services:
   test_many_non_main_files:
     build:
-      dockerfile: docker/run.dockerfile
+      dockerfile: docker/generic.dockerfile
+      context: .
 
     command:
       - --test-directory
@@ -15,7 +16,8 @@ services:
 
   test_requirements_in_submission:
     build:
-      dockerfile: docker/run.dockerfile
+      dockerfile: docker/generic.dockerfile
+      context: .
     command:
       - --test-directory
       - /app/source/student_tests
@@ -28,7 +30,8 @@ services:
 
   test_data_file_in_submission:
     build:
-      dockerfile: docker/run.dockerfile
+      dockerfile: docker/generic.dockerfile
+      context: .
     command:
       - --test-directory
       - /app/source/student_tests
@@ -51,8 +54,9 @@ services:
 
   test_build:
     build:
-      dockerfile: docker/run.dockerfile
-    command: 
+      dockerfile: docker/generic.dockerfile
+      context: .
+    command:
       - "--build"
       - "-o"
       - "/app/bin"
@@ -62,10 +66,10 @@ services:
       - "./tests/e2e/integration_config.toml:/app/source/config.toml"
       - "./tests/e2e/test_build/starter_code/:/app/source/starter_code"
 
-
   test_run_test_my_work:
     build:
-      dockerfile: docker/run.dockerfile
+      dockerfile: docker/generic.dockerfile
+      context: .
     entrypoint: ["sh", "/app/entrypoint.sh"]
     volumes:
       - "./tests/e2e/test_run_test_my_work/entrypoint.sh:/app/entrypoint.sh"
@@ -76,7 +80,8 @@ services:
 
   test_run_with_prairie_learn:
     build:
-      dockerfile: docker/run.dockerfile
+      dockerfile: docker/generic.dockerfile
+      context: .
     command:
       - --submission-directory
       - /grade/student

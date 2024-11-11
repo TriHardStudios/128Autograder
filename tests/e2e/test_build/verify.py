@@ -2,6 +2,11 @@ import os
 
 assert os.path.exists("./bin/generation/student/")
 assert os.path.exists("./bin/generation/docker/gradescope/")
+assert os.path.exists("./bin/generation/docker/prairielearn/")
+
+assert os.path.exists("./bin/generation/docker/gradescope/run_autograder")
+assert os.path.exists("./bin/generation/docker/gradescope/setup.sh")
+assert os.path.exists("./bin/generation/docker/prairielearn/run_autograder")
 
 expected_source_directories = ["Executors", "StudentSubmission", "StudentSubmissionImpl", "Tasks", "TestingFramework"]
 
@@ -12,32 +17,36 @@ for file in expected_source_directories:
     assert file in actual_gs_dirs
     assert file in actual_student_dirs
 
-dockerExpectedTestFiles = [file for file in os.listdir("./student_tests/") if os.path.isfile(os.path.join("student_tests", file))]
-dockerExpectedTestFiles.sort()
+docker_expected_test_files = [file for file in os.listdir("./student_tests/") if os.path.isfile(os.path.join("student_tests", file))]
+docker_expected_test_files.sort()
 
-studentExpectedFiles = [file for file in dockerExpectedTestFiles if "test_public" in file]
-studentExpectedFiles.sort()
+student_expected_files = [file for file in docker_expected_test_files if "test_public" in file]
+student_expected_files.sort()
 
-dockerActualTestFiles = [file for file in os.listdir("./bin/generation/docker/gradescope/student_tests/") if os.path.isfile(os.path.join("./bin/generation/docker/gradescope/student_tests/", file))]
-dockerActualTestFiles.sort()
+gs_actual_test_files = [file for file in os.listdir("./bin/generation/docker/gradescope/student_tests/") if os.path.isfile(os.path.join("./bin/generation/docker/gradescope/student_tests/", file))]
+gs_actual_test_files.sort()
+pl_actual_test_files = [file for file in os.listdir("./bin/generation/docker/prairielearn/student_tests/") if os.path.isfile(os.path.join("./bin/generation/docker/prairielearn/student_tests/", file))]
+pl_actual_test_files.sort()
 
-studentActualFiles = [file for file in os.listdir("./bin/generation/student/student_tests/") if os.path.isfile(os.path.join("./bin/generation/student/student_tests/", file))]
-studentActualFiles.sort()
+student_actual_files = [file for file in os.listdir("./bin/generation/student/student_tests/") if os.path.isfile(os.path.join("./bin/generation/student/student_tests/", file))]
+student_actual_files.sort()
 
 
-assert dockerExpectedTestFiles == dockerActualTestFiles
-assert studentExpectedFiles == studentActualFiles
+assert docker_expected_test_files == gs_actual_test_files
+assert docker_expected_test_files == pl_actual_test_files
+assert student_expected_files == student_actual_files
 
-expectedStarterCode = os.listdir("./starter_code/")
+expected_starter_code = os.listdir("./starter_code/")
 
-actualStarterCode = os.listdir("./bin/generation/student/student_work/")
-actualStarterCode = [file for file in actualStarterCode if file[-3:] == ".py"]
+actual_starter_code = os.listdir("./bin/generation/student/student_work/")
+actual_starter_code = [file for file in actual_starter_code if file[-3:] == ".py"]
 
-assert len(actualStarterCode) == 1
-assert expectedStarterCode == actualStarterCode
+assert len(actual_starter_code) == 1
+assert expected_starter_code == actual_starter_code
 
 # assert that it did not get pulled in to docker
 assert not os.path.exists("./bin/generation/docker/gradescope/starter_code/")
+assert not os.path.exists("./bin/generation/docker/prairielearn/starter_code/")
 
 
 expected_public = os.listdir("./student_tests/data/files/test_public/")
@@ -51,12 +60,16 @@ docker_expected_directories.sort()
 
 student_expected_directories = ["test_public"]
 
-docker_actual_directories = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/")
-docker_actual_directories.sort()
+gs_actual_directories = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/")
+gs_actual_directories.sort()
+
+pl_actual_directories = os.listdir("./bin/generation/docker/prairielearn/student_tests/data/files/")
+pl_actual_directories.sort()
 
 student_actual_directories = os.listdir("./bin/generation/student/student_tests/data/files/")
 
-assert docker_expected_directories == docker_actual_directories
+assert docker_expected_directories == gs_actual_directories
+assert docker_expected_directories == pl_actual_directories
 assert student_expected_directories == student_actual_directories
 
 student_actual_files_data_folder = os.listdir("./bin/generation/student/student_tests/data/files/test_public/")
@@ -73,12 +86,20 @@ for file in expected_private:
     assert file not in student_student_work_folder
 
 
-docker_actual_public_files = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/test_public")
-docker_actual_public_files.sort()
+gs_actual_public_files = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/test_public")
+gs_actual_public_files.sort()
 
-docker_actual_private_files = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/test_private")
-docker_actual_private_files.sort()
+gs_actual_private_files = os.listdir("./bin/generation/docker/gradescope/student_tests/data/files/test_private")
+gs_actual_private_files.sort()
 
-assert docker_actual_private_files == expected_private
-assert docker_actual_public_files == expected_public
+pl_actual_public_files = os.listdir("./bin/generation/docker/prairielearn/student_tests/data/files/test_public")
+pl_actual_public_files.sort()
+
+pl_actual_private_files = os.listdir("./bin/generation/docker/prairielearn/student_tests/data/files/test_private")
+pl_actual_private_files.sort()
+
+assert gs_actual_private_files == expected_private
+assert gs_actual_public_files == expected_public
+assert pl_actual_private_files == expected_private
+assert pl_actual_public_files == expected_public
 

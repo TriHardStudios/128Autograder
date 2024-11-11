@@ -28,6 +28,7 @@ semester="S24"
 
     build_student=true
     build_gradescope=true
+    build_prairie_learn=true
 
     data_files_source="student_tests/data"
 
