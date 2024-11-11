@@ -1,8 +1,0 @@
-#!/bin/bash
-
-pushd source > /dev/null || echo "Autograder failed to open source"
-
-python3 run.py 
-
-popd > /dev/null || true
-

@@ -10,6 +10,6 @@ htmlcov
 tests/e2e/*/results/*
 tests/e2e/*/bin/*
 .filehashes
-
+tests/e2e/*/output
 
 !.keep

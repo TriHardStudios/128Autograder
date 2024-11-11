@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Callable
 from utils.config.Config import AutograderConfiguration
 from enum import Enum
 
@@ -64,7 +64,7 @@ class Build():
         Description
         ---
 
-        This function recursivly discovers the data files in the dataFilesSource.
+        This function recursively discovers the data files in the dataFilesSource.
         As opposed to the test file function, this will mark files as private if they contain 'private' anywhere in the path.
 
         Note: if allowPrivate is false, then all files that would otherwise be private will be added to the public list
@@ -172,12 +172,12 @@ class Build():
     @staticmethod
     def buildBasePath() -> List[str]:
         runSource = "run.py"
-        setupSource = "setup.sh"
+        # setupSource = "setup.sh"
         configSource = "config.toml"
         requirementsSource = "requirements.txt"
-        runAutograderSource = "run_autograder"
+        # runAutograderSource = "run_autograder"
 
-        return [runSource, setupSource, configSource, requirementsSource, runAutograderSource]
+        return [runSource, configSource, requirementsSource]
 
     @staticmethod
     def buildStudentPath() -> List[str]:
@@ -208,9 +208,44 @@ class Build():
         os.makedirs(self.distDirectory, exist_ok=True)
 
     @staticmethod
-    def generateGradescope(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str]):
-        generationPath = os.path.join(generationPath, "gradescope")
+    def createSetupForGradescope(path: str):
+        with open(os.path.join(path, "setup.sh"), "w") as w:
+            w.write(
+                "apt-get install python3.11 -y\n"
+                "apt-get install python3-pip -y\n"
+                "apt-get install -y libgbm-dev xvfb\n"
+                "pip3 install --upgrade pip\n"
+                "pip3 install -r /autograder/source/requirements.txt\n"
+            )
+
+    @staticmethod
+    def createRunFileForGradescope(path: str):
+        with open(os.path.join(path, "run_autograder"), "w") as w:
+            w.write(
+                "#!/bin/bash\n"
+                "pushd source > /dev/null || echo 'Autograder failed to open source'\n"
+                "python3 run.py\n"
+                "popd > /dev/null || true\n"
+            )
+
+    @staticmethod
+    def createRunForPrairieLearn(path: str):
+        with open(os.path.join(path, "run_autograder"), "w") as w:
+            w.write(
+                "#!/bin/bash\n"
+                "pushd source > /dev/null || echo 'Autograder failed to open source'\n"
+                "python3 run.py --submission-diretory /grade/student --test-directory /grade/tests --deployed-environment prairie_learn --results-path /grade/results/results.json --metadata-path /grade/data/data.json\n"
+                "popd > /dev/null || true\n"
+            )
+
+    @staticmethod
+    def generateDocker(generationPath: str, platform, files: Dict[FilesEnum, List[str]], autograderFiles: List[str],
+                       setupFileGenerator: Callable[[str], None], runFileGenerator: Callable[[str], None]):
+        generationPath = os.path.join(generationPath, "docker", platform)
         os.makedirs(generationPath, exist_ok=True)
+
+        setupFileGenerator(generationPath)
+        runFileGenerator(generationPath)
 
         for file in autograderFiles:
             destPath = os.path.join(generationPath, file)
@@ -229,12 +264,12 @@ class Build():
 
     @staticmethod
     def generateStudent(generationPath: str, files: Dict[FilesEnum, List[str]], autograderFiles: List[str],
-                        studentFiles: List[str]):
+                        studentFiles: List[str], studentWorkFolder: str):
         generationPath = os.path.join(generationPath, "student")
         os.makedirs(generationPath, exist_ok=True)
 
         # create student_work folder
-        studentWorkFolder = os.path.join(generationPath, "student_work")
+        studentWorkFolder = os.path.join(generationPath, studentWorkFolder)
         os.makedirs(studentWorkFolder, exist_ok=True)
 
         for file in autograderFiles:
@@ -274,11 +309,11 @@ class Build():
     def createDist(distType: str, generationPath: str, distPath: str, assignmentName: str):
         generationPath = os.path.join(generationPath, distType)
         if not os.path.exists(generationPath) or not os.path.isdir(generationPath):
-            raise AttributeError(f"Invalid Gradescope generation path! {generationPath}")
+            raise AttributeError(f"Invalid generation path: {generationPath}")
 
         os.makedirs(distPath, exist_ok=True)
 
-        assignmentName += f"-{distType}"
+        assignmentName += f"-{'-'.join(distType.split('/'))}"
         distPath = os.path.join(distPath, assignmentName)
 
         shutil.make_archive(distPath, "zip", root_dir=generationPath)
@@ -300,11 +335,19 @@ class Build():
         self.createFolders()
 
         if self.config.build.build_gradescope:
-            self.generateGradescope(self.generationDirectory, files, autograderFiles)
-            self.createDist("gradescope", self.generationDirectory, self.distDirectory,
+            self.generateDocker(self.generationDirectory, "gradescope", files, autograderFiles,
+                                self.createSetupForGradescope, self.createRunFileForGradescope)
+            self.createDist("docker/gradescope", self.generationDirectory, self.distDirectory,
+                            f"{self.config.semester}_{self.config.assignment_name}")
+        if self.config.build.build_prairie_learn:
+            # this build is a touch bigger than it needs to be, but for now I'm not super concerned about it
+            self.generateDocker(self.generationDirectory, "prairielearn", files, autograderFiles,
+                                lambda _: None, self.createRunForPrairieLearn)
+            self.createDist("docker/prairielearn", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")
 
         if self.config.build.build_student:
-            self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles)
+            self.generateStudent(self.generationDirectory, files, autograderFiles, studentFiles,
+                                 self.config.build.student_work_folder)
             self.createDist("student", self.generationDirectory, self.distDirectory,
                             f"{self.config.semester}_{self.config.assignment_name}")
