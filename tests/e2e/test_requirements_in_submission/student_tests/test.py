@@ -24,7 +24,7 @@ class RequirementsTest(unittest.TestCase):
 
     @Weight(10)
     @ImageResult()
-    def testCode(self, encode, setImageData):
+    def testCode(self, encode_image_data=None, set_image_data=None):
         environment = self.environmentBuilder.build()
 
         runner = PythonRunnerBuilder(self.studentSubmission)\
@@ -37,6 +37,6 @@ class RequirementsTest(unittest.TestCase):
 
         self.assertEqual(1, len(actualOutput))
 
-        imageData = encode(getResults(environment).file_out["plt.png"])
+        imageData = encode_image_data(getResults(environment).file_out["plt.png"])
 
-        setImageData("Plot", imageData)
+        set_image_data("Plot", imageData)
