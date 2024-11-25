@@ -1,4 +1,4 @@
-HybridJSONTestRunner==0.8.0
+HybridJSONTestRunner==0.8.1
 dill==0.3.6
 Better-PyUnit-Format==0.2.3
 schema==0.7.5
