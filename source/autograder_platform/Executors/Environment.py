@@ -2,7 +2,6 @@ import os
 from typing import Callable, Generic, List, Dict, Optional, Tuple, Type, TypeVar, Union, Any
 
 import dataclasses
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 
 ImplResults = TypeVar("ImplResults")
 

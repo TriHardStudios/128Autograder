@@ -1,9 +1,9 @@
 from collections import deque
 from typing import Dict, List, Optional, Type, Deque
 
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from Tasks.Task import Task
-from Tasks.common import TaskAlreadyExists, TaskDoesNotExist, TaskStatus
+from lib.StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from lib.Tasks.Task import Task
+from lib.Tasks.common import TaskAlreadyExists, TaskDoesNotExist, TaskStatus
 
 
 class TaskRunner:

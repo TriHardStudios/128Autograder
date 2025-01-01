@@ -1,9 +1,6 @@
-import re
-
 import unittest
-import unittest.mock as mock
 
-from utils.config.Config import AutograderConfigurationSchema, InvalidConfigException
+from lib.config import AutograderConfigurationSchema, InvalidConfigException
 
 
 def mockValidateImpl(_) -> bool: return True

@@ -1,8 +1,8 @@
 import unittest
-from Executors.Environment import ExecutionEnvironment, Results, getResults
+from lib.Executors.Environment import ExecutionEnvironment, Results, getResults
 
-from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from lib.TestingFramework import SingleFunctionMock
 
 class TestPythonEnvironmentGetResults(unittest.TestCase):
     def setUp(self) -> None:

@@ -1,17 +1,17 @@
 import shutil
-from typing import Optional, Tuple, Any, List
+from typing import Optional, List
 import unittest
 import os
 from unittest.mock import MagicMock
 
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
-from Executors.Executor import Executor
-from Executors.Environment import ExecutionEnvironment, Results
-from Tasks.Task import Task
-from Tasks.TaskRunner import TaskRunner
-from utils.config.Config import AutograderConfigurationProvider
+from lib.StudentSubmission import AbstractStudentSubmission
+from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from lib.StudentSubmission import SubmissionProcessFactory
+from lib.Executors.Executor import Executor
+from lib.Executors.Environment import ExecutionEnvironment, Results
+from lib.Tasks.Task import Task
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.config import AutograderConfigurationProvider
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):

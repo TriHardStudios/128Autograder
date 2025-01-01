@@ -1,10 +1,10 @@
 import abc
-from typing import Generic, List, Set, TypeVar, Any, Dict
+from typing import Generic, List, Set, TypeVar, Dict
 
-from StudentSubmission.common import ValidationError, ValidationHook
+from lib.StudentSubmission.common import ValidationError, ValidationHook
 
-from StudentSubmission.AbstractValidator import AbstractValidator
-from StudentSubmission.GenericValidators import SubmissionPathValidator
+from lib.StudentSubmission.AbstractValidator import AbstractValidator
+from lib.StudentSubmission.GenericValidators import SubmissionPathValidator
 
 T = TypeVar("T")
 

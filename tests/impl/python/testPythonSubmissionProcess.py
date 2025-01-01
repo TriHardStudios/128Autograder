@@ -1,22 +1,19 @@
 import shutil
-import sys
 from importlib import import_module
 import os
 import unittest
-from io import StringIO
-from unittest.mock import patch
 
-from StudentSubmissionImpl.Python import PythonSubmission
-from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from lib.StudentSubmissionImpl.Python import PythonSubmission
+from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 
-from StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from Executors.Environment import ExecutionEnvironment, Results, getResults
-from StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
-from Tasks.TaskRunner import TaskRunner
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from StudentSubmission.common import MissingFunctionDefinition, InvalidTestCaseSetupCode
-from Executors.common import MissingOutputDataException
-from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
+from lib.StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
+from lib.Executors.Environment import ExecutionEnvironment, Results, getResults
+from lib.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.TestingFramework import SingleFunctionMock
+from lib.StudentSubmission import MissingFunctionDefinition
+from lib.Executors.common import MissingOutputDataException
+from lib.StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 
 
 class TestPythonSubmissionProcess(unittest.TestCase):

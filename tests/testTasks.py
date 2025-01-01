@@ -1,8 +1,7 @@
 import unittest
-from Tasks.Task import Task
-from Tasks.TaskRunner import TaskRunner
-from Tasks.common import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists, TaskDoesNotExist, \
-    AttemptToGetInvalidResults
+from lib.Tasks.Task import Task
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.Tasks import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists
 
 
 class TestTasks(unittest.TestCase):

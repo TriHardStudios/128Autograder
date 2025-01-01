@@ -2,12 +2,9 @@ import importlib
 import os
 import shutil
 import sys
-from types import ModuleType
 import unittest
-import copy
-import dill
 
-from StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
+from lib.StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 
 class TestPythonImportFactory(unittest.TestCase):
     TEST_FILE_DIRECTORY: str = "./sandbox"

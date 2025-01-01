@@ -2,7 +2,7 @@ import os
 import shutil
 import unittest
 
-from Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, Results, getResults
+from lib.Executors.Environment import ExecutionEnvironment, ExecutionEnvironmentBuilder, Results, getResults
 
 
 class TestEnvironmentBuilder(unittest.TestCase):

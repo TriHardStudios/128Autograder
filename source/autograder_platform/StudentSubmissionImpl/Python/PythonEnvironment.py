@@ -2,10 +2,10 @@ import dataclasses
 from typing import List, Dict, Optional, TypeVar
 from importlib import import_module
 
-from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
-from StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from utils.config.Config import PythonConfiguration, AutograderConfiguration
+from lib.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
+from lib.StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
+from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from lib.config.Config import AutograderConfiguration
 
 
 class PythonResults():

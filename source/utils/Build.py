@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 from typing import Dict, List, Callable
-from utils.config.Config import AutograderConfiguration
+from lib.config import AutograderConfiguration
 from enum import Enum
 
 
@@ -213,7 +213,7 @@ class Build():
             w.write(
                 "apt-get install python3.11 -y\n"
                 "apt-get install python3-pip -y\n"
-                "apt-get install -y libgbm-dev xvfb\n"
+                # "apt-get install -y libgbm-dev xvfb\n"
                 "pip3 install --upgrade pip\n"
                 "pip3 install -r /autograder/source/requirements.txt\n"
             )
@@ -234,7 +234,7 @@ class Build():
             w.write(
                 "#!/bin/bash\n"
                 "pushd source > /dev/null || echo 'Autograder failed to open source'\n"
-                "python3 run.py --submission-diretory /grade/student --test-directory /grade/tests --deployed-environment prairie_learn --results-path /grade/results/results.json --metadata-path /grade/data/data.json\n"
+                "python3 run.py --submission-directory /grade/student --test-directory /grade/tests --deployed-environment prairie_learn --results-path /grade/results/results.json --metadata-path /grade/data/data.json\n"
                 "popd > /dev/null || true\n"
             )
 

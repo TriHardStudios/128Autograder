@@ -5,10 +5,10 @@ import unittest
 from unittest.mock import patch
 from io import StringIO
 import random
-from StudentSubmission.common import ValidationError
+from lib.StudentSubmission import ValidationError
 
-from StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
-from StudentSubmissionImpl.Python.common import FileTypeMap
+from lib.StudentSubmissionImpl.Python import PythonSubmission
+from lib.StudentSubmissionImpl.Python.common import FileTypeMap
 
 
 class TestStudentSubmission(unittest.TestCase):

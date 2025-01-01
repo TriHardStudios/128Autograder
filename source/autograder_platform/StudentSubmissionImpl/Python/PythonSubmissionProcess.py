@@ -10,9 +10,9 @@ before attempting to even connect to the object.
 """
 
 from typing import Any, Dict, Optional, TextIO, Tuple, List, Union
-from Executors.Environment import ExecutionEnvironment, Results
+from lib.Executors.Environment import ExecutionEnvironment, Results
 
-from StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 import dill
 import multiprocessing
@@ -21,12 +21,12 @@ import os
 import sys
 from io import StringIO
 
-from Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from StudentSubmissionImpl.Python.common import PythonTaskResult
-from Tasks.TaskRunner import TaskRunner
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
-from StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
-from StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
+from lib.Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
+from lib.StudentSubmissionImpl.Python.common import PythonTaskResult
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from lib.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads  # type: ignore
 multiprocessing.reduction.dump = dill.dump  # type: ignore

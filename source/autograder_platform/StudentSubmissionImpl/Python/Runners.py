@@ -2,12 +2,12 @@ from importlib import import_module
 from types import CodeType, ModuleType
 from typing import TypeVar, Tuple, List, Final, Optional, Dict, Callable, TypedDict
 
-from StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
-from StudentSubmissionImpl.Python import PythonSubmission
-from StudentSubmissionImpl.Python.common import PythonTaskResult
-from Tasks.TaskRunner import TaskRunner
-from Tasks.Task import Task
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from lib.StudentSubmission.common import InvalidRunner, MissingFunctionDefinition
+from lib.StudentSubmissionImpl.Python import PythonSubmission
+from lib.StudentSubmissionImpl.Python.common import PythonTaskResult
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.Tasks.Task import Task
+from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 Builder = TypeVar('Builder', bound="PythonRunnerBuilder")
 

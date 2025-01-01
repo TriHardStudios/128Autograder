@@ -2,9 +2,9 @@ import unittest
 import os
 import shutil
 
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from StudentSubmission.AbstractValidator import AbstractValidator
-from StudentSubmission.common import ValidationError, ValidationHook
+from lib.StudentSubmission import AbstractStudentSubmission
+from lib.StudentSubmission import AbstractValidator
+from lib.StudentSubmission import ValidationError, ValidationHook
 
 
 class StudentSubmission(AbstractStudentSubmission[str]):

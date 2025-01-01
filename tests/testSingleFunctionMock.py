@@ -1,5 +1,5 @@
 import unittest
-from TestingFramework.SingleFunctionMock import SingleFunctionMock
+from lib.TestingFramework import SingleFunctionMock
 
 
 class TestSingleFunctionMock(unittest.TestCase):

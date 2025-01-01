@@ -1,7 +1,7 @@
 from typing import Dict
 import json
 import os
-from utils.config.Config import AutograderConfiguration
+from lib.config import AutograderConfiguration
 
 
 def gradescopePostProcessing(autograderResults: Dict, autograderConfiguration: AutograderConfiguration, metadataPath: str):

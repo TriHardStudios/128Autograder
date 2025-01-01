@@ -1,0 +1,7 @@
+from lib.StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
+from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, configMapper
+
+from lib.StudentSubmissionImpl.Python.PythonSubmission import PythonSubmission
+from lib.StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
+
+SubmissionProcessFactory.register(PythonSubmission, RunnableStudentSubmission, PythonEnvironment, configMapper)

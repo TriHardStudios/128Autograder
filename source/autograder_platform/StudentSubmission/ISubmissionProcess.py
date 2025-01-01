@@ -1,7 +1,7 @@
 import abc
-from Executors.Environment import ExecutionEnvironment
+from lib.Executors.Environment import ExecutionEnvironment
 
-from Tasks.TaskRunner import TaskRunner
+from lib.Tasks.TaskRunner import TaskRunner
 
 
 class ISubmissionProcess(abc.ABC):

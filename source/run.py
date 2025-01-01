@@ -1,6 +1,6 @@
 import unittest
 import argparse
-from utils.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
+from lib.config import AutograderConfigurationBuilder, AutograderConfigurationProvider
 from utils.Gradescope import gradescopePostProcessing
 from autograder_utils.JSONTestRunner import JSONTestRunner
 from autograder_utils.ResultFinalizers import prairieLearnResultFinalizer, gradescopeResultFinalizer

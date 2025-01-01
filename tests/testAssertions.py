@@ -1,4 +1,4 @@
-from TestingFramework.Assertions import Assertions
+from lib.TestingFramework import Assertions
 
 
 class TestAssertions(Assertions):

@@ -1,14 +1,14 @@
 import shutil
 import os
 
-from Executors.Environment import ExecutionEnvironment
+from lib.Executors.Environment import ExecutionEnvironment
 
-from StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
-from Tasks.TaskRunner import TaskRunner
-from utils.config.Config import AutograderConfigurationProvider, AutograderConfiguration
+from lib.StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
+from lib.Tasks.TaskRunner import TaskRunner
+from lib.config.Config import AutograderConfigurationProvider, AutograderConfiguration
 
 # For typing only
-from StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 
 class Executor:

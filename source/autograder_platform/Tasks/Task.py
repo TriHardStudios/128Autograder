@@ -1,5 +1,5 @@
 from typing import Callable, Final, List, Optional, Tuple
-from Tasks.common import TaskStatus, FailedToLoadSuppliers, AttemptToGetInvalidResults
+from lib.Tasks.common import TaskStatus, FailedToLoadSuppliers, AttemptToGetInvalidResults
 
 
 class Task:

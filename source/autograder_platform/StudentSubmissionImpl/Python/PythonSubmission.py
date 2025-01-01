@@ -2,12 +2,11 @@ import os
 import re
 import sys
 import subprocess
-from io import StringIO
 from types import CodeType
 from typing import Dict, Iterable, List, Optional, TypeVar
-from StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from StudentSubmissionImpl.Python.PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
-from StudentSubmissionImpl.Python.common import FileTypeMap
+from lib.StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from lib.StudentSubmissionImpl.Python.PythonValidators import PythonFileValidator, PackageValidator, RequirementsValidator
+from lib.StudentSubmissionImpl.Python.common import FileTypeMap
 
 Builder = TypeVar("Builder", bound="PythonSubmission")
 
