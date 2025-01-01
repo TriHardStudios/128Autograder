@@ -1,3 +1,4 @@
+import argparse
 import importlib
 import os
 from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
@@ -181,7 +182,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
                             "name": str,
                             "version": str,
                         }],
-                        Optional("buffer_size", default=2**20): And(int, lambda x: x >= 2 ** 20)
+                        Optional("buffer_size", default=2 ** 20): And(int, lambda x: x >= 2 ** 20)
                     }, None),
                     Optional("c", default=None): Or({
                         "use_makefile": bool,
@@ -286,19 +287,40 @@ class AutograderConfigurationBuilder(Generic[T]):
         self.schema: BaseSchema[T] = configSchema
         self.data: Dict = {}
 
-    def fromTOML(self: Builder, file=DEFAULT_CONFIG_FILE) -> Builder:
+    def fromTOML(self: Builder, file=DEFAULT_CONFIG_FILE, merge=True) -> Builder:
+        """
+        Attempt to load the autograder config from the TOML config file.
+        This file is assumed to be located in the same directory as the actual test cases
+        """
         try:
             from tomli import load
         except ModuleNotFoundError:
             raise MissingParsingLibrary("tomlkit", "AutograderConfigurationBuilder.fromTOML")
 
         with open(file, 'rb') as rb:
-            self.data = load(rb)
+            if not merge or not self.data:
+                self.data = load(rb)
+            else:
+                pass
 
         return self
 
-    # Really easy to add support for other file formats. 
+    # Really easy to add support for other file formats.
     # YAML or JSON would work as well
+
+    def fromArgs(self: Builder, args: Dict, merge=True) -> Builder:
+        # we need to ignore some subcommands -
+        # some functionality exposed by the cli is not supported by the autograder config
+
+        if not merge or not self.data:
+            self.data = args
+        else:
+            pass
+
+        return self
+
+    def _merge(self):
+        pass
 
     @staticmethod
     def _createKeyIfDoesntExist(source: Dict[str, Any], key: str):
