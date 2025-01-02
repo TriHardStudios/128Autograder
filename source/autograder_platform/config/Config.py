@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from schema import And, Optional, Or, Regex, Schema, SchemaError
 
-from lib.config.common import BaseSchema, MissingParsingLibrary, InvalidConfigException
+from autograder_platform.config.common import BaseSchema, MissingParsingLibrary, InvalidConfigException
 
 
 @dataclass(frozen=True)
