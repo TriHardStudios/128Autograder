@@ -85,7 +85,7 @@ def generateZipFile(_submissionDirectory: str) -> None:
     print(f"\n\n{GREEN_COLOR}Submit {zipName} to Gradescope under the corresponding assignment.{RESET_COLOR}")
 
 
-if __name__ == "__main__":
+def tool():
     submissionDirectory = "student_work"
 
     if len(sys.argv) == 2:
@@ -96,3 +96,7 @@ if __name__ == "__main__":
         submissionDirectory += "/"
 
     generateZipFile(submissionDirectory)
+
+
+if __name__ == "__main__":
+    tool()

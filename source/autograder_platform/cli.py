@@ -114,13 +114,15 @@ def main(options: argparse.Namespace):
 class AutograderCLITool(abc.ABC):
 
     PACKAGE_ERROR: str = "Required Package Error"
+    SUBMISSION_ERROR: str = "Student Submission Error"
     ENVIRONMENT_ERROR: str = "Environment Error"
     RED_COLOR: str = u"\u001b[31m"
     YELLOW_COLOR: str = u"\u001b[33m"
+    BLUE_COLOR: str = u"\u001b[34m"
     RESET_COLOR: str = u"\u001b[0m"
 
     @classmethod
-    def printErrorMessage(cls, errorType: str, errorText: str) -> None:
+    def print_error_message(cls, errorType: str, errorText: str) -> None:
         """
         This function prints out a validation error message as they occur.
         The error type is colored red when it is printed
@@ -133,8 +135,12 @@ class AutograderCLITool(abc.ABC):
 
 
     @classmethod
-    def printWarningMessage(cls, warningType: str, warningText: str) -> None:
+    def print_warning_message(cls, warningType: str, warningText: str) -> None:
         print(f"[{cls.YELLOW_COLOR}{warningType}{cls.RESET_COLOR}]: {warningText}")
+
+    @classmethod
+    def print_info_message(cls, text: str) -> None:
+        print(f"[{cls.BLUE_COLOR}INFORMATION{cls.RESET_COLOR}]: {text}")
 
     def __init__(self, tool_name: str):
         self.config: Optional[AutograderConfiguration] = None
