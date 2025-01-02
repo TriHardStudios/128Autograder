@@ -1,31 +1,12 @@
+import abc
 import argparse
 import unittest.loader
-from typing import List, Callable, Dict
+from argparse import ArgumentParser
+from typing import List, Callable, Dict, Optional
 from unittest import TestSuite
 
-from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
-
-PACKAGE_ERROR: str = "Required Package Error"
-ENVIRONMENT_ERROR: str = "Environment Error"
-RED_COLOR: str = u"\u001b[31m"
-YELLOW_COLOR: str = u"\u001b[33m"
-RESET_COLOR: str = u"\u001b[0m"
-
-
-def printErrorMessage(errorType: str, errorText: str) -> None:
-    """
-    This function prints out a validation error message as they occur.
-    The error type is colored red when it is printed
-    the format used is `[<error_type>] <error_text>`
-    :param errorType: The error type
-    :param errorText: the text for the error
-    :return:
-    """
-    print(f"[{RED_COLOR}{errorType}{RESET_COLOR}]: {errorText}")
-
-
-def printWarningMessage(warningType: str, warningText: str) -> None:
-    print(f"[{YELLOW_COLOR}{warningType}{RESET_COLOR}]: {warningText}")
+from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider, \
+    AutograderConfiguration
 
 def buildCommonOptions() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")
@@ -128,3 +109,69 @@ def main(options: argparse.Namespace):
                                     result_builder=testResultBuilder, result_finalizer=resultFinalizer)
         res = testRunner.run(tests)
         return res.wasSuccessful()
+
+
+class AutograderCLITool(abc.ABC):
+
+    PACKAGE_ERROR: str = "Required Package Error"
+    ENVIRONMENT_ERROR: str = "Environment Error"
+    RED_COLOR: str = u"\u001b[31m"
+    YELLOW_COLOR: str = u"\u001b[33m"
+    RESET_COLOR: str = u"\u001b[0m"
+
+    @classmethod
+    def printErrorMessage(cls, errorType: str, errorText: str) -> None:
+        """
+        This function prints out a validation error message as they occur.
+        The error type is colored red when it is printed
+        the format used is `[<error_type>] <error_text>`
+        :param errorType: The error type
+        :param errorText: the text for the error
+        :return:
+        """
+        print(f"[{cls.RED_COLOR}{errorType}{cls.RESET_COLOR}]: {errorText}")
+
+
+    @classmethod
+    def printWarningMessage(cls, warningType: str, warningText: str) -> None:
+        print(f"[{cls.YELLOW_COLOR}{warningType}{cls.RESET_COLOR}]: {warningText}")
+
+    def __init__(self, tool_name: str):
+        self.config: Optional[AutograderConfiguration] = None
+        self.arguments: Optional[argparse.Namespace] = None
+        self.tests: Optional[TestSuite] = None
+
+        self.parser: ArgumentParser = argparse.ArgumentParser(description=f"Autograder Platform - {tool_name}")
+
+        # required CLI arguments
+        self.parser.add_argument("--config-file", default="./config.toml",
+                            help="Set the location of the config file")
+
+    @abc.abstractmethod
+    def configure_options(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def run(self) -> bool:
+        raise NotImplementedError()
+
+    def load_config(self):
+        self.arguments = self.parser.parse_args()
+
+        # load toml then override any options in toml with things that are passed to the runtime
+        builder = AutograderConfigurationBuilder() \
+            .fromTOML(file=self.arguments.config_file)
+
+        self.set_config_arguments(builder)
+
+        self.config = builder.build()
+
+        AutograderConfigurationProvider.set(self.config)
+
+    def discover_tests(self):
+        self.tests = unittest.loader.defaultTestLoader.discover(self.config.config.test_directory)
+
