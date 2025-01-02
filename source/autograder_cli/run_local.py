@@ -213,7 +213,7 @@ class LocalAutograderCLI(AutograderCLITool):
         if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
             return False
 
-        fileChanged = verifyFileChanged(root_directory)
+        fileChanged = verifyFileChanged(os.path.join(root_directory, self.arguments.submission_directory))
 
         self.config = AutograderConfigurationBuilder() \
             .fromTOML(self.config_location) \
