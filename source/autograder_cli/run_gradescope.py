@@ -95,10 +95,10 @@ class GradescopeAutograderCLI(AutograderCLITool):
             return res.wasSuccessful()
 
 
-if __name__ == "__main__":
-    tool = GradescopeAutograderCLI()
+tool = GradescopeAutograderCLI().run
 
-    res = tool.run()
+if __name__ == "__main__":
+    res = tool()
 
     if res:
         exit(0)

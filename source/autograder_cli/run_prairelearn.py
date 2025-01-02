@@ -43,10 +43,10 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
             return res.wasSuccessful()
 
 
-if __name__ == "__main__":
-    tool = PrairieLearnAutograderCLI()
+tool = PrairieLearnAutograderCLI().run
 
-    res = tool.run()
+if __name__ == "__main__":
+    res = tool()
 
     if res:
         exit(0)
