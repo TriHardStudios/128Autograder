@@ -2,9 +2,9 @@ import importlib.util
 from typing import Callable, Dict, List
 import requests
 import os
-from lib.StudentSubmission.AbstractValidator import AbstractValidator
-from lib.StudentSubmission.common import ValidationHook
-from lib.StudentSubmissionImpl.Python.common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
+from autograder_platform.StudentSubmission.AbstractValidator import AbstractValidator
+from autograder_platform.StudentSubmission.common import ValidationHook
+from autograder_platform.StudentSubmissionImpl.Python.common import FileTypeMap, InvalidPackageError, InvalidRequirementsFileError, MissingMainFileError, NoPyFilesError, TooManyFilesError
 
 class PythonFileValidator(AbstractValidator):
 

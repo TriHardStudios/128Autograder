@@ -10,9 +10,9 @@ before attempting to even connect to the object.
 """
 
 from typing import Any, Dict, Optional, TextIO, Tuple, List, Union
-from lib.Executors.Environment import ExecutionEnvironment, Results
+from autograder_platform.Executors.Environment import ExecutionEnvironment, Results
 
-from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from autograder_platform.StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
 import dill
 import multiprocessing
@@ -21,12 +21,12 @@ import os
 import sys
 from io import StringIO
 
-from lib.Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
-from lib.StudentSubmissionImpl.Python.common import PythonTaskResult
-from lib.Tasks.TaskRunner import TaskRunner
-from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
-from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
-from lib.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
+from autograder_platform.Executors.common import MissingOutputDataException, detectFileSystemChanges, filterStdOut
+from autograder_platform.StudentSubmissionImpl.Python.common import PythonTaskResult
+from autograder_platform.Tasks.TaskRunner import TaskRunner
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from autograder_platform.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from autograder_platform.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
 dill.Pickler.dumps, dill.Pickler.loads = dill.dumps, dill.loads  # type: ignore
 multiprocessing.reduction.dump = dill.dump  # type: ignore

@@ -2,9 +2,9 @@ import unittest
 import os
 import shutil
 
-from lib.StudentSubmission import AbstractStudentSubmission
-from lib.StudentSubmission import AbstractValidator
-from lib.StudentSubmission import ValidationError, ValidationHook
+from autograder_platform.StudentSubmission import AbstractStudentSubmission
+from autograder_platform.StudentSubmission import AbstractValidator
+from autograder_platform.StudentSubmission import ValidationError, ValidationHook
 
 
 class StudentSubmission(AbstractStudentSubmission[str]):

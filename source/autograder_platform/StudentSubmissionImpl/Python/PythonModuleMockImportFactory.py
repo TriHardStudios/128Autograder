@@ -3,8 +3,8 @@ from importlib.machinery import ModuleSpec
 from types import ModuleType
 from typing import Optional, List, Dict
 
-from lib.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
-from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from autograder_platform.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
 class MockedModuleFinder(AbstractModuleFinder, Loader):

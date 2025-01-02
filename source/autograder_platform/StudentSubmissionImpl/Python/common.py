@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Iterable, TypedDict, Tuple, Dict, Optional
 
-from lib.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 
 class FileTypeMap(Enum):

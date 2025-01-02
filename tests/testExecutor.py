@@ -4,14 +4,14 @@ import unittest
 import os
 from unittest.mock import MagicMock
 
-from lib.StudentSubmission import AbstractStudentSubmission
-from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from lib.StudentSubmission import SubmissionProcessFactory
-from lib.Executors.Executor import Executor
-from lib.Executors.Environment import ExecutionEnvironment, Results
-from lib.Tasks.Task import Task
-from lib.Tasks.TaskRunner import TaskRunner
-from lib.config import AutograderConfigurationProvider
+from autograder_platform.StudentSubmission import AbstractStudentSubmission
+from autograder_platform.StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from autograder_platform.StudentSubmission import SubmissionProcessFactory
+from autograder_platform.Executors.Executor import Executor
+from autograder_platform.Executors.Environment import ExecutionEnvironment, Results
+from autograder_platform.Tasks.Task import Task
+from autograder_platform.Tasks.TaskRunner import TaskRunner
+from autograder_platform.config import AutograderConfigurationProvider
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):

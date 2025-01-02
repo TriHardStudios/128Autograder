@@ -10,7 +10,6 @@ import tomli
 from autograder_platform.cli import AutograderCLITool
 from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfiguration, \
     AutograderConfigurationProvider
-from utils.student.test_my_work import verifyFileChanged
 
 
 class LocalAutograderCLI(AutograderCLITool):
@@ -213,7 +212,7 @@ class LocalAutograderCLI(AutograderCLITool):
         if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
             return False
 
-        fileChanged = verifyFileChanged(os.path.join(root_directory, self.arguments.submission_directory))
+        fileChanged = self.verify_file_changed(os.path.join(root_directory, self.arguments.submission_directory))
 
         self.config = AutograderConfigurationBuilder() \
             .fromTOML(self.config_location) \

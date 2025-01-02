@@ -6,7 +6,7 @@ from typing import Dict, Optional, List
 from importlib.abc import Loader
 from importlib.util import spec_from_file_location
 
-from lib.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
+from autograder_platform.StudentSubmissionImpl.Python.AbstractPythonImportFactory import AbstractModuleFinder
 
 class ModuleFinder(AbstractModuleFinder):
     def __init__(self) -> None:

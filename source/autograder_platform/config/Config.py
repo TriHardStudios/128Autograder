@@ -156,7 +156,7 @@ class AutograderConfigurationSchema(BaseSchema[AutograderConfiguration]):
     @staticmethod
     def validateImplSource(implName: str) -> bool:
         try:
-            importlib.import_module(f"{AutograderConfigurationSchema.IMPL_SOURCE}.{implName}")
+            importlib.import_module(f"autograder_platform.{AutograderConfigurationSchema.IMPL_SOURCE}.{implName}")
         except ImportError:
             return False
         return True

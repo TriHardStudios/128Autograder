@@ -4,8 +4,8 @@ import shutil
 from typing import Dict, List
 import unittest
 
-from lib.config import AutograderConfigurationBuilder, AutograderConfigurationProvider
-from lib.config import BaseSchema
+from autograder_platform.config import AutograderConfigurationBuilder, AutograderConfigurationProvider
+from autograder_platform.config import BaseSchema
 
 
 @dataclass

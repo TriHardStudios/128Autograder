@@ -1,7 +1,7 @@
 import abc
-from lib.Executors.Environment import ExecutionEnvironment
+from autograder_platform.Executors.Environment import ExecutionEnvironment
 
-from lib.Tasks.TaskRunner import TaskRunner
+from autograder_platform.Tasks.TaskRunner import TaskRunner
 
 
 class ISubmissionProcess(abc.ABC):

@@ -3,17 +3,17 @@ from importlib import import_module
 import os
 import unittest
 
-from lib.StudentSubmissionImpl.Python import PythonSubmission
-from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
+from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
+from autograder_platform.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
 
-from lib.StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
-from lib.Executors.Environment import ExecutionEnvironment, Results, getResults
-from lib.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
-from lib.Tasks.TaskRunner import TaskRunner
-from lib.TestingFramework import SingleFunctionMock
-from lib.StudentSubmission import MissingFunctionDefinition
-from lib.Executors.common import MissingOutputDataException
-from lib.StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
+from autograder_platform.StudentSubmissionImpl.Python.PythonSubmissionProcess import RunnableStudentSubmission
+from autograder_platform.Executors.Environment import ExecutionEnvironment, Results, getResults
+from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
+from autograder_platform.Tasks.TaskRunner import TaskRunner
+from autograder_platform.TestingFramework import SingleFunctionMock
+from autograder_platform.StudentSubmission import MissingFunctionDefinition
+from autograder_platform.Executors.common import MissingOutputDataException
+from autograder_platform.StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 
 
 class TestPythonSubmissionProcess(unittest.TestCase):

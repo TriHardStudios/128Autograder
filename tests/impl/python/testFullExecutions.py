@@ -5,14 +5,14 @@ from unittest.mock import MagicMock
 
 import dill.source
 
-from lib.Executors.Executor import Executor
-from lib.Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, getResults
-from lib.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults, PythonEnvironmentBuilder
-from lib.StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
-from lib.StudentSubmissionImpl.Python import PythonSubmission
-from lib.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
-from lib.TestingFramework import SingleFunctionMock
-from lib.config import AutograderConfigurationProvider
+from autograder_platform.Executors.Executor import Executor
+from autograder_platform.Executors.Environment import ExecutionEnvironmentBuilder, ExecutionEnvironment, getResults
+from autograder_platform.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults, PythonEnvironmentBuilder
+from autograder_platform.StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
+from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
+from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
+from autograder_platform.TestingFramework import SingleFunctionMock
+from autograder_platform.config import AutograderConfigurationProvider
 
 
 # These serve as integration tests for the entire submission pipeline sans the gradescope stuff

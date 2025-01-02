@@ -1,5 +1,5 @@
 import unittest
-from lib.TestingFramework import SingleFunctionMock
+from autograder_platform.TestingFramework import SingleFunctionMock
 
 
 class TestSingleFunctionMock(unittest.TestCase):

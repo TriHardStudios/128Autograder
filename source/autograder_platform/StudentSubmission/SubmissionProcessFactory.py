@@ -1,12 +1,12 @@
 from typing import Dict, Type, Tuple, Optional, Callable
 
-from lib.Executors.Environment import ExecutionEnvironment, ImplEnvironment, ImplResults
+from autograder_platform.Executors.Environment import ExecutionEnvironment, ImplEnvironment, ImplResults
 
-from lib.StudentSubmission.ISubmissionProcess import ISubmissionProcess
+from autograder_platform.StudentSubmission.ISubmissionProcess import ISubmissionProcess
 
-from lib.StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
-from lib.Tasks.TaskRunner import TaskRunner
-from lib.config.Config import AutograderConfiguration
+from autograder_platform.StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
+from autograder_platform.Tasks.TaskRunner import TaskRunner
+from autograder_platform.config.Config import AutograderConfiguration
 
 
 class SubmissionProcessFactory:

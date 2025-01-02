@@ -1,4 +1,4 @@
-from lib.TestingFramework import Assertions
+from autograder_platform.TestingFramework import Assertions
 
 
 class TestAssertions(Assertions):

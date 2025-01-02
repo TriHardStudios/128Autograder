@@ -1,11 +1,11 @@
 import unittest
 from autograder_utils.Decorators import Weight
 
-from lib.Executors.Executor import Executor
-from lib.Executors.Environment import ExecutionEnvironmentBuilder, getResults
-from lib.StudentSubmissionImpl.Python import PythonSubmission
-from lib.config import AutograderConfigurationProvider
-from lib.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
+from autograder_platform.Executors.Executor import Executor
+from autograder_platform.Executors.Environment import ExecutionEnvironmentBuilder, getResults
+from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
+from autograder_platform.config import AutograderConfigurationProvider
+from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder
 
 
 class HelloWorld(unittest.TestCase):

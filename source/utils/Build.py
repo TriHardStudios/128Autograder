@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 from typing import Dict, List, Callable
-from lib.config import AutograderConfiguration
+from autograder_platform.config import AutograderConfiguration
 from enum import Enum
 
 
