@@ -122,7 +122,7 @@ class LocalAutograderCLI(AutograderCLITool):
             if "__" in path:
                 continue
 
-            if "." in path:
+            if os.path.basename(path)[0] == ".":
                 continue
 
             if os.path.isfile(path) and os.path.basename(path) == "config.toml":
@@ -158,10 +158,10 @@ class LocalAutograderCLI(AutograderCLITool):
             return None
 
         if len(autograders) == 1:
-            self.print_info_message(f"Selecting autograder located in {autograders[0]}")
+            self.print_info_message(f"Selecting autograder config located at '{autograders[0]}'")
             return autograders[0]
 
-        self.print_info_message(f"Multiple autograders found in {full_path}!")
+        self.print_info_message(f"Multiple autograders found at {full_path}!")
         self.print_info_message(f"Please select the autograder you want to run")
 
         for i, path in enumerate(autograders):
@@ -170,7 +170,7 @@ class LocalAutograderCLI(AutograderCLITool):
             if name is None:
                 continue
 
-            print(f"[{i + 1:02f}] {name}")
+            print(f"[{i + 1:02}] {name}")
 
         selection = len(autograders) + 1
 
@@ -181,7 +181,7 @@ class LocalAutograderCLI(AutograderCLITool):
             except ValueError:
                 selection = len(autograders) + 1
 
-        self.print_info_message(f"Selecting autograder located in {autograders[selection - 1]}")
+        self.print_info_message(f"Selecting autograder config located at '{autograders[selection - 1]}'")
         return autograders[selection - 1]
 
     def configure_options(self):
@@ -208,7 +208,9 @@ class LocalAutograderCLI(AutograderCLITool):
 
         root_directory = os.path.dirname(self.config_location)
 
-        if not self.verify_student_work_present(root_directory):
+        self.print_info_message(f"Running autograder from '{root_directory}'")
+
+        if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
             return False
 
         fileChanged = verifyFileChanged(root_directory)
@@ -222,6 +224,8 @@ class LocalAutograderCLI(AutograderCLITool):
         AutograderConfigurationProvider.set(self.config)
 
         self.discover_tests()
+
+        self.print_info_message("Starting autograder")
 
         runner = BetterPyUnitFormat.BetterPyUnitTestRunner()
 
