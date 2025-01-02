@@ -298,10 +298,11 @@ class AutograderConfigurationBuilder(Generic[T]):
             raise MissingParsingLibrary("tomlkit", "AutograderConfigurationBuilder.fromTOML")
 
         with open(file, 'rb') as rb:
+            data = load(rb)
             if not merge or not self.data:
-                self.data = load(rb)
+                self.data = data
             else:
-                pass
+                self.data = self._merge(self.data, data)
 
         return self
 
@@ -315,12 +316,13 @@ class AutograderConfigurationBuilder(Generic[T]):
         if not merge or not self.data:
             self.data = args
         else:
-            pass
+            self.data = self._merge(self.data, args)
 
         return self
 
-    def _merge(self):
-        pass
+    @staticmethod
+    def _merge(existing: Dict, incoming: Dict) -> Dict:
+        return existing | incoming
 
     @staticmethod
     def _createKeyIfDoesntExist(source: Dict[str, Any], key: str):

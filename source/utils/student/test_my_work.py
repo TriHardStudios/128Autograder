@@ -27,20 +27,6 @@ REQUIRED_PACKAGES = {
 }
 
 
-def printErrorMessage(errorType: str, errorText: str) -> None:
-    """
-    This function prints out a validation error message as they occur.
-    The error type is colored red when it is printed
-    the format used is `[<error_type>] <error_text>`
-    :param errorType: The error type
-    :param errorText: the text for the error
-    :return:
-    """
-    print(f"[{RED_COLOR}{errorType}{RESET_COLOR}]: {errorText}")
-
-
-def printWarningMessage(warningType: str, warningText: str) -> None:
-    print(f"[{YELLOW_COLOR}{warningType}{RESET_COLOR}]: {warningText}")
 
 
 def verifyRequiredPackages(packagesToVerify: Dict[str, str]) -> bool:

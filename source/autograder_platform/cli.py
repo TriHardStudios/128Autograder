@@ -1,10 +1,33 @@
 import argparse
+import unittest.loader
 from typing import List, Callable, Dict
+from unittest import TestSuite
 
 from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
 
+PACKAGE_ERROR: str = "Required Package Error"
+ENVIRONMENT_ERROR: str = "Environment Error"
+RED_COLOR: str = u"\u001b[31m"
+YELLOW_COLOR: str = u"\u001b[33m"
+RESET_COLOR: str = u"\u001b[0m"
 
-def buildCommonOptions() -> argparse.Namespace:
+
+def printErrorMessage(errorType: str, errorText: str) -> None:
+    """
+    This function prints out a validation error message as they occur.
+    The error type is colored red when it is printed
+    the format used is `[<error_type>] <error_text>`
+    :param errorType: The error type
+    :param errorText: the text for the error
+    :return:
+    """
+    print(f"[{RED_COLOR}{errorType}{RESET_COLOR}]: {errorText}")
+
+
+def printWarningMessage(warningType: str, warningText: str) -> None:
+    print(f"[{YELLOW_COLOR}{warningType}{RESET_COLOR}]: {warningText}")
+
+def buildCommonOptions() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CSCI 128 Autograder Platform")
 
     parser.add_argument("--build", action="store_true",
@@ -38,19 +61,15 @@ def buildCommonOptions() -> argparse.Namespace:
     parser.add_argument("--metadata-path", default="/autograder/submission_metadata.json",
                         help="The path that the autograder should read submission metadata from")
 
-    options = parser.parse_args()
-
-    if options.build:
-        options.submission_directory = "."
-
-    return options
+    return parser
 
 
-def load_config(args: List[str], cli_parser: argparse.ArgumentParser):
+
+def loadConfig(args: List[str], cliParser: argparse.ArgumentParser):
     """
     This function creates an autograder config given a CLI
     """
-    parsed_args = cli_parser.parse_args(args)
+    parsed_args = cliParser.parse_args(args)
 
     # load toml then override any options in toml with things that are passed to the runtime
     autograderConfig = AutograderConfigurationBuilder()\
@@ -59,6 +78,13 @@ def load_config(args: List[str], cli_parser: argparse.ArgumentParser):
         .build()
 
     AutograderConfigurationProvider.set(autograderConfig)
+
+def discoverTests() -> TestSuite:
+    config = AutograderConfigurationProvider.get()
+
+    tests = unittest.loader.defaultTestLoader.discover(config.config.test_directory)
+
+    return tests
 
 
 def main(options: argparse.Namespace):
