@@ -62,8 +62,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
             autograderResults['output'] += f"Score has been set to a floor of 0 to ensure no negative scores.\n"
             autograderResults['score'] = 0
 
-    # pragma: no cover
-    def configure_options(self):
+    def configure_options(self):  # pragma: no cover
         self.parser.add_argument("--results-location", default="/autograder/results/results.json",
                                  help="The location for the autograder JSON results")
         self.parser.add_argument("--metadata-path", default="submission_metadata.json",
@@ -71,15 +70,13 @@ class GradescopeAutograderCLI(AutograderCLITool):
         self.parser.add_argument("--submission-directory", default="/autograder/submission",
                                  help="The directory where the student's submission is located")
 
-    # pragma: no cover
-    def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
+    def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):  # pragma: no cover
         if self.arguments is None:
             return
 
         configBuilder.setStudentSubmissionDirectory(self.arguments.submission_directory)
 
-    # pragma: no cover
-    def run(self) -> bool:
+    def run(self) -> bool:  # pragma: no cover
         self.configure_options()
 
         self.load_config()

@@ -174,20 +174,17 @@ class LocalAutograderCLI(AutograderCLITool):
         self.print_info_message(f"Selecting autograder config located at '{autograders[selection - 1]}'")
         return autograders[selection - 1]
 
-    # pragma: no cover
-    def configure_options(self):
+    def configure_options(self):  # pragma: no cover
         # currently no extra options
         self.parser.add_argument("--submission-directory", default="student_work",
                                  help="The location for the student's submission relative to the submission root")
         self.parser.add_argument("--test-directory", default="student_tests",
                                  help="The location for the tests for the autograder relative to the submission root")
 
-    # pragma: no cover
-    def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
+    def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):  # pragma: no cover
         pass
 
-    # pragma: no cover
-    def run(self) -> bool:
+    def run(self) -> bool:  # pragma: no cover
         self.configure_options()
 
         self.arguments = self.parser.parse_args()
