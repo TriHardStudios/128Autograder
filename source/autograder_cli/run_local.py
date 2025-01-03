@@ -2,6 +2,8 @@ import hashlib
 import json
 import os
 import re
+import subprocess
+import sys
 from typing import Dict, List, Optional
 
 import BetterPyUnitFormat
@@ -132,6 +134,48 @@ class LocalAutograderCLI(AutograderCLITool):
 
         return data["assignment_name"]
 
+    @staticmethod
+    def get_autograder_version(path) -> Optional[str]:
+        with open(path, 'rb') as rb:
+            data = tomli.load(rb)
+
+        if "config" not in data or "autograder_version" not in data["config"]:
+            return None
+
+        return data["config"]["autograder_version"]
+
+
+    def compare_autograder_versions(self, required_version: str) -> bool:
+        version = list(map(int, required_version.split(".")))
+        actual_version = list(map(int, self.get_version().split(".")))
+
+        # major versions are breaking - so must match between assignments
+        if version[0] != actual_version[0]:
+            return False
+
+        # minor must be at least the same
+        if version[1] < actual_version[1]:
+            return False
+
+        # minor must be at least the same
+        if version[2] < actual_version[2]:
+            return False
+
+        return True
+
+
+    def update_autograder(self) -> bool:
+        self.print_info_message("Updating autograder...")
+
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "128Autograder", "--break-system-packages"])
+        except subprocess.CalledProcessError:
+            self.print_error_message(self.ENVIRONMENT_ERROR, "Failed to update autograder!")
+            return False
+
+        self.print_info_message("Autograder Updated")
+        return True
+
     def select_root(self) -> Optional[str]:
         autograders = []
 
@@ -180,6 +224,7 @@ class LocalAutograderCLI(AutograderCLITool):
                                  help="The location for the student's submission relative to the submission root")
         self.parser.add_argument("--test-directory", default="student_tests",
                                  help="The location for the tests for the autograder relative to the submission root")
+        self.parser.add_argument("--bypass-version-check", action="store_true", default=False, help="Bypass autograder version verification. Note: This may cause the autograder to fail!")
 
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):  # pragma: no cover
         pass
@@ -199,6 +244,17 @@ class LocalAutograderCLI(AutograderCLITool):
         root_directory = os.path.dirname(self.config_location)
 
         self.print_info_message(f"Running autograder from '{root_directory}'")
+
+        self.print_info_message("Verifying autograder version")
+        version = self.get_autograder_version(self.config_location)
+
+        if not self.arguments.bypass_version_check and not self.compare_autograder_versions(version):
+            if self.update_autograder():
+                self.print_info_message("Updated succeeded! Please rerun the script!")
+                return False
+            else:
+                self.print_error_message(self.ENVIRONMENT_ERROR, "Update failed! Please see above for failure reason or rerun as 'test_my_work --bypass-version-check'")
+                return False
 
         if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
             return False
