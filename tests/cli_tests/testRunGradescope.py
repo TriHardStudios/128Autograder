@@ -44,6 +44,29 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.assertEqual(10, self.autograderResults["score"])
 
+    def testNegativeScore(self):
+        self.writeMetadata()
+
+        self.autograderResults["score"] = -1
+
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
+
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
+
+        self.assertEqual(0, self.autograderResults["score"])
+
+    def testMetadataDoesntExist(self):
+        # This should never happen, but if it does, then we are just going to accept the raw autograder results
+        self.autograderResults["score"] = 10
+
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
+
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
+
+        self.assertEqual(10, self.autograderResults["score"])
+
     def testHigherPriorSubmission(self):
         self.metadata["previous_submissions"].append({
             "results": {
@@ -142,3 +165,5 @@ class TestGradescopeUtils(unittest.TestCase):
         self.assertEqual(10, self.autograderResults["score"])
 
 
+    # TODO Add test for score greater than autograder score
+    # TODO Add test for not enforcing submission limit
