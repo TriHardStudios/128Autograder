@@ -1,16 +1,12 @@
 FROM python:3.12-alpine
 
-ADD source/requirements.txt /app/source/requirements.txt
+ADD source /tmp/source
 
 RUN apk add --no-cache git && \
     apk add --no-cache build-base && \
     apk add --no-cache bash && \
-    python3 -m pip install --break-system-package -r /app/source/requirements.txt 
+    python3 -m pip install --break-system-package /tmp/source
 
-ADD source /app/source
+RUN mkdir -p /autograder/{bin,submission,tests}
 
-RUN mkdir -p /app/bin
-
-WORKDIR /app/source
-
-ENTRYPOINT [ "python", "run.py" ]
+WORKDIR /autograder

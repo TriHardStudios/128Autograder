@@ -11,7 +11,7 @@ from autograder_platform.StudentSubmissionImpl.Python.PythonEnvironment import P
 from autograder_platform.StudentSubmissionImpl.Python.PythonFileImportFactory import PythonFileImportFactory
 from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
 from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
-from autograder_platform.TestingFramework import SingleFunctionMock
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
 from autograder_platform.config.Config import AutograderConfigurationProvider
 
 

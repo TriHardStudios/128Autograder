@@ -102,7 +102,7 @@ class TestExecutor(unittest.TestCase):
     def testCreateSandbox(self):
         Executor.setup(self.environment, self.runner, self.config)
 
-        self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("../../source"))
+        self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("."))
 
     def testMoveFiles(self):
         self.environment.files = {
