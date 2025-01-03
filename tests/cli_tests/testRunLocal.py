@@ -180,7 +180,7 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertEqual(config_paths, autograders)
 
-    def testSelectRoot(self, ):
+    # def testSelectRoot(self, ):
 
 
     @patch('sys.stdout', new_callable=StringIO)

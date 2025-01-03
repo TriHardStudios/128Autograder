@@ -33,7 +33,8 @@
 
 [project.optional-dependencies]
     dev = [
-        "coverage[toml]"
+        "coverage[toml]",
+        "build",
     ]
 
 [project.scripts]
