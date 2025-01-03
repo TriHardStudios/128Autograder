@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 from io import StringIO
 import random
-from autograder_platform.StudentSubmission import ValidationError
+from autograder_platform.StudentSubmission.common import ValidationError
 
 from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
 from autograder_platform.StudentSubmissionImpl.Python.common import FileTypeMap

@@ -4,8 +4,8 @@ import shutil
 from typing import Dict, List
 import unittest
 
-from autograder_platform.config import AutograderConfigurationBuilder, AutograderConfigurationProvider
-from autograder_platform.config import BaseSchema
+from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider
+from autograder_platform.config.common import BaseSchema
 
 
 @dataclass
@@ -14,6 +14,7 @@ class MockConfiguration:
     int_property: int
     list_of_tables: List[Dict[str, str]] = field(default_factory=list)
     config: Dict = field(default_factory=dict)
+
 
 class MockSchema(BaseSchema[MockConfiguration]):
     def __init__(self) -> None:
@@ -24,6 +25,7 @@ class MockSchema(BaseSchema[MockConfiguration]):
 
     def build(self, data) -> MockConfiguration:
         return MockConfiguration(**data)
+
 
 class TestAutograderConfigurationBuilder(unittest.TestCase):
     DATA_DIRECTORY: str = "./testData/"
@@ -45,15 +47,14 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
         with open(self.DATA_FILE, 'w') as w:
             w.write(
-                f"string_property = '{expectedString}'\n"\
+                f"string_property = '{expectedString}'\n" \
                 f"int_property = {expectedInt}\n"
             )
 
-
         actual = \
-            AutograderConfigurationBuilder(configSchema=MockSchema())\
-            .fromTOML(file=self.DATA_FILE)\
-            .build()
+            AutograderConfigurationBuilder(configSchema=MockSchema()) \
+                .fromTOML(file=self.DATA_FILE) \
+                .build()
 
         self.assertEqual(expectedString, actual.string_property)
         self.assertEqual(expectedInt, actual.int_property)
@@ -64,15 +65,14 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
         with open(self.DATA_FILE, 'w') as w:
             w.write(
-                f"string_property: '{expectedString}'\n"\
+                f"string_property: '{expectedString}'\n" \
                 f"int_property = {expectedInt}\n"
             )
 
-
         with self.assertRaises(Exception):
             # Might want to wrap this in the future
-            AutograderConfigurationBuilder(configSchema=MockSchema())\
-                .fromTOML(file=self.DATA_FILE)\
+            AutograderConfigurationBuilder(configSchema=MockSchema()) \
+                .fromTOML(file=self.DATA_FILE) \
                 .build()
 
     def testCreateKeyAsNeeded(self):
@@ -80,15 +80,15 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
         with open(self.DATA_FILE, 'w') as w:
             w.write(
-                f"string_property = 'hello'\n"\
+                f"string_property = 'hello'\n" \
                 f"int_property = 0\n"
             )
 
         actual = \
-                AutograderConfigurationBuilder(configSchema=MockSchema())\
-                .fromTOML(file=self.DATA_FILE)\
-                .setStudentSubmissionDirectory(expectedDir)\
-                .setTestDirectory(expectedDir)\
+            AutograderConfigurationBuilder(configSchema=MockSchema()) \
+                .fromTOML(file=self.DATA_FILE) \
+                .setStudentSubmissionDirectory(expectedDir) \
+                .setTestDirectory(expectedDir) \
                 .build()
 
         self.assertEqual(expectedDir, actual.config["student_submission_directory"])
@@ -97,15 +97,15 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
     def testNoneDoesntModifyConfig(self):
         with open(self.DATA_FILE, 'w') as w:
             w.write(
-                f"string_property = 'hello'\n"\
+                f"string_property = 'hello'\n" \
                 f"int_property = 0\n"
             )
 
         actual = \
-                AutograderConfigurationBuilder(configSchema=MockSchema())\
-                .fromTOML(file=self.DATA_FILE)\
-                .setStudentSubmissionDirectory(None)\
-                .setTestDirectory(None).build() # type: ignore 
+            AutograderConfigurationBuilder(configSchema=MockSchema()) \
+                .fromTOML(file=self.DATA_FILE) \
+                .setStudentSubmissionDirectory(None) \
+                .setTestDirectory(None).build()  # type: ignore
 
         self.assertNotIn("test_directory", actual.config)
         self.assertNotIn("student_submission_directory", actual.config)
@@ -115,32 +115,33 @@ class TestAutograderConfigurationBuilder(unittest.TestCase):
 
         with open(self.DATA_FILE, 'w') as w:
             w.write(
-                f"string_property = 'hello'\n"\
-                f"int_property = 0\n"\
-                f"[[list_of_tables]]\n"\
-                f"type='int'\n"\
-                f"value=6\n"\
-                f"[[list_of_tables]]\n"\
-                f"type='str'\n"\
+                f"string_property = 'hello'\n" \
+                f"int_property = 0\n" \
+                f"[[list_of_tables]]\n" \
+                f"type='int'\n" \
+                f"value=6\n" \
+                f"[[list_of_tables]]\n" \
+                f"type='str'\n" \
                 f"value='huzzah!'\n"
             )
 
         actual = \
-            AutograderConfigurationBuilder(configSchema=MockSchema())\
-            .fromTOML(file=self.DATA_FILE)\
-            .build()
+            AutograderConfigurationBuilder(configSchema=MockSchema()) \
+                .fromTOML(file=self.DATA_FILE) \
+                .build()
 
         self.assertEqual(actual.list_of_tables, expectedNested)
+
 
 class TestAutograderConfigurationProvider(unittest.TestCase):
     # Ig i need tests for this??
     CONFIG = MockConfiguration("string!", 10)
 
     def testOnlyOneSetAllowed(self):
-        AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+        AutograderConfigurationProvider.set(self.CONFIG)  # type: ignore
 
         with self.assertRaises(AttributeError):
-            AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+            AutograderConfigurationProvider.set(self.CONFIG)  # type: ignore
 
         AutograderConfigurationProvider.config = None
 
@@ -151,9 +152,8 @@ class TestAutograderConfigurationProvider(unittest.TestCase):
         AutograderConfigurationProvider.config = None
 
     def testGetConfig(self):
-        AutograderConfigurationProvider.set(self.CONFIG) # type: ignore
+        AutograderConfigurationProvider.set(self.CONFIG)  # type: ignore
 
         self.assertEqual(self.CONFIG, AutograderConfigurationProvider.get())
 
         AutograderConfigurationProvider.config = None
-        

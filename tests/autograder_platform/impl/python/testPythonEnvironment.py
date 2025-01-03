@@ -2,7 +2,7 @@ import unittest
 from autograder_platform.Executors.Environment import ExecutionEnvironment, Results, getResults
 
 from autograder_platform.StudentSubmissionImpl.Python.PythonEnvironment import PythonEnvironment, PythonResults
-from autograder_platform.TestingFramework import SingleFunctionMock
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
 
 class TestPythonEnvironmentGetResults(unittest.TestCase):
     def setUp(self) -> None:

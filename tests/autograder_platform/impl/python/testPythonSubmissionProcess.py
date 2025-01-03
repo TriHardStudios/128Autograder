@@ -10,8 +10,8 @@ from autograder_platform.StudentSubmissionImpl.Python.PythonSubmissionProcess im
 from autograder_platform.Executors.Environment import ExecutionEnvironment, Results, getResults
 from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from autograder_platform.Tasks.TaskRunner import TaskRunner
-from autograder_platform.TestingFramework import SingleFunctionMock
-from autograder_platform.StudentSubmission import MissingFunctionDefinition
+from autograder_platform.TestingFramework.SingleFunctionMock import SingleFunctionMock
+from autograder_platform.StudentSubmission.common import MissingFunctionDefinition
 from autograder_platform.Executors.common import MissingOutputDataException
 from autograder_platform.StudentSubmissionImpl.Python.PythonModuleMockImportFactory import MockedModuleFinder
 

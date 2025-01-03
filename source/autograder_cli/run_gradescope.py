@@ -15,7 +15,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
     def __init__(self):
         super().__init__("Gradescope")
 
-    def _gradescopePostProcessing(self, autograderResults: Dict):
+    def gradescope_post_processing(self, autograderResults: Dict):
         if not os.path.exists(self.arguments.metadata_path):
             return
 
@@ -88,7 +88,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
             testRunner = JSONTestRunner(visibility='visible', stream=w,
                                         result_builder=gradescopeResultBuilder,
                                         result_finalizer=gradescopeResultFinalizer,
-                                        post_processor=lambda results: self._gradescopePostProcessing(results))
+                                        post_processor=lambda results: self.gradescope_post_processing(results))
 
             res = testRunner.run(self.tests)
 

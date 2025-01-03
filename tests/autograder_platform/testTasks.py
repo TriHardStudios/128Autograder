@@ -1,7 +1,7 @@
 import unittest
 from autograder_platform.Tasks.Task import Task
 from autograder_platform.Tasks.TaskRunner import TaskRunner
-from autograder_platform.Tasks import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists
+from autograder_platform.Tasks.common import TaskStatus, FailedToLoadSuppliers, TaskAlreadyExists
 
 
 class TestTasks(unittest.TestCase):

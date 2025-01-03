@@ -1,6 +1,6 @@
 import unittest
 
-from autograder_platform.config import AutograderConfigurationSchema, InvalidConfigException
+from autograder_platform.config.Config import AutograderConfigurationSchema, InvalidConfigException
 
 
 def mockValidateImpl(_) -> bool: return True

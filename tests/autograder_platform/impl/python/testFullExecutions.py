@@ -12,7 +12,7 @@ from autograder_platform.StudentSubmissionImpl.Python.PythonFileImportFactory im
 from autograder_platform.StudentSubmissionImpl.Python import PythonSubmission
 from autograder_platform.StudentSubmissionImpl.Python.Runners import PythonRunnerBuilder, Parameter
 from autograder_platform.TestingFramework import SingleFunctionMock
-from autograder_platform.config import AutograderConfigurationProvider
+from autograder_platform.config.Config import AutograderConfigurationProvider
 
 
 # These serve as integration tests for the entire submission pipeline sans the gradescope stuff

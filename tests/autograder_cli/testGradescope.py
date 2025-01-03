@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 import json
 
-from utils.Gradescope import gradescopePostProcessing 
+from autograder_cli.run_gradescope import GradescopeAutograderCLI
 
 class TestGradescopeUtils(unittest.TestCase):
     METADATA_PATH = "./metadata.json"

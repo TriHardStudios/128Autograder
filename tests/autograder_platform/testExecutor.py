@@ -4,14 +4,14 @@ import unittest
 import os
 from unittest.mock import MagicMock
 
-from autograder_platform.StudentSubmission import AbstractStudentSubmission
+from autograder_platform.StudentSubmission.AbstractStudentSubmission import AbstractStudentSubmission
 from autograder_platform.StudentSubmission.ISubmissionProcess import ISubmissionProcess
-from autograder_platform.StudentSubmission import SubmissionProcessFactory
+from autograder_platform.StudentSubmission.SubmissionProcessFactory import SubmissionProcessFactory
 from autograder_platform.Executors.Executor import Executor
 from autograder_platform.Executors.Environment import ExecutionEnvironment, Results
 from autograder_platform.Tasks.Task import Task
 from autograder_platform.Tasks.TaskRunner import TaskRunner
-from autograder_platform.config import AutograderConfigurationProvider
+from autograder_platform.config.Config import AutograderConfigurationProvider
 
 
 class MockSubmission(AbstractStudentSubmission[List[str]]):
@@ -102,7 +102,7 @@ class TestExecutor(unittest.TestCase):
     def testCreateSandbox(self):
         Executor.setup(self.environment, self.runner, self.config)
 
-        self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("."))
+        self.assertIn(os.path.basename(self.environment.SANDBOX_LOCATION), os.listdir("../../source"))
 
     def testMoveFiles(self):
         self.environment.files = {
