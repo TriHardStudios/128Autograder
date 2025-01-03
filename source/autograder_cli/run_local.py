@@ -236,6 +236,7 @@ class LocalAutograderCLI(AutograderCLITool):
 
         if self.arguments.version:
             self.print_info_message(f"Autograder version: {self.get_version()}")
+            return True
 
         self.config_location = os.path.abspath(self.arguments.config_file) if \
             os.path.exists(self.arguments.config_file) else self.select_root()
