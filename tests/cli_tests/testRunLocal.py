@@ -149,6 +149,38 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.assertTrue(result)
 
+    def testDiscoverAutogradersOneAvailable(self):
+        config_loc = os.path.join(self.TEST_DIRECTORY, "config.toml")
+
+        with open(config_loc, 'w') as w:
+            w.write("")
+
+        autograders = []
+        self.localCLI.discover_autograders(self.TEST_DIRECTORY, autograders)
+
+        self.assertEqual([config_loc], autograders)
+
+    def testDiscoverManyAutograders(self):
+        config_paths = []
+
+        for i in range(5):
+            path = os.path.join(self.TEST_DIRECTORY, str(i), "config.toml")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+
+            with open(path, 'w') as w:
+                w.write(f"assignment_name=\"A{i:02}\"")
+
+            config_paths.append(path)
+
+        autograders = []
+        self.localCLI.discover_autograders(self.TEST_DIRECTORY, autograders)
+
+        autograders.sort()
+        config_paths.sort()
+
+        self.assertEqual(config_paths, autograders)
+
+
     @patch('sys.stdout', new_callable=StringIO)
     @unittest.skip("This feature is no longer available in the CLI")
     def testMissingPackage(self, _):
