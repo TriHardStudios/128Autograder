@@ -63,11 +63,11 @@ class GradescopeAutograderCLI(AutograderCLITool):
             autograderResults['score'] = 0
 
     def configure_options(self):
-        self.parser.add_argument("--results-location", default="/grade/results/results.json",
+        self.parser.add_argument("--results-location", default="/autograder/results/results.json",
                                  help="The location for the autograder JSON results")
-        self.parser.add_argument("--metadata-path", default="/grade/data/data.json",
+        self.parser.add_argument("--metadata-path", default="submission_metadata.json",
                                  help="The location for the submission metadata JSON")
-        self.parser.add_argument("--submission-directory", default="/grade/submission",
+        self.parser.add_argument("--submission-directory", default="/autograder/submission",
                                  help="The directory where the student's submission is located")
 
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
@@ -77,6 +77,8 @@ class GradescopeAutograderCLI(AutograderCLITool):
         configBuilder.setStudentSubmissionDirectory(self.arguments.submission_directory)
 
     def run(self) -> bool:
+        self.configure_options()
+
         self.load_config()
 
         if self.arguments is None:

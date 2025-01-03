@@ -26,6 +26,8 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
         configBuilder.setStudentSubmissionDirectory(self.arguments.submission_directory)
 
     def run(self) -> bool:
+        self.configure_options()
+
         self.load_config()
 
         if self.arguments is None:

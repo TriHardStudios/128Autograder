@@ -33,7 +33,7 @@
 
 [project.scripts]
     run_gradescope = "autograder_cli.run_gradescope:tool"
-    run_prarielearn = "autograder_cli.run_prairielearn:tool"
+    run_prairielearn = "autograder_cli.run_prairielearn:tool"
     test_my_work = "autograder_cli.run_local:tool"
     run_autograder = "autograder_cli.run_local:tool"
     create_gradescope_upload = "autograder_cli.create_upload:tool"
