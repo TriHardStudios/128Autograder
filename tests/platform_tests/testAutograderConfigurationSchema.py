@@ -3,8 +3,6 @@ import unittest
 from autograder_platform.config.Config import AutograderConfigurationSchema, InvalidConfigException
 
 
-def mockValidateImpl(_) -> bool: return True
-
 class TestAutograderConfigurationSchema(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -30,7 +28,6 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
     @staticmethod
     def createAutograderConfigurationSchema() -> AutograderConfigurationSchema:
-        AutograderConfigurationSchema.validateImplSource = mockValidateImpl # type: ignore
         return AutograderConfigurationSchema()
 
     def testValidNoOptionalFields(self):
@@ -109,6 +106,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         self.assertIsNotNone(actual.config.python.extra_packages)
 
+    @unittest.skip("C is no longer supported")
     def testBuildWithCImpl(self):
         schema = self.createAutograderConfigurationSchema()
         self.configFile["config"]["impl_to_use"] = "C"
@@ -159,7 +157,7 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
     def testMissingImplConfig(self):
         schema = self.createAutograderConfigurationSchema()
 
-        self.configFile["config"]["python"] = None
+        self.configFile["config"]["python"] = None  # type: ignore
 
         with self.assertRaises(InvalidConfigException):
             schema.validate(self.configFile)
