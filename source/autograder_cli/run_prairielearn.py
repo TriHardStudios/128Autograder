@@ -16,7 +16,9 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
                                  help="The location for the autograder JSON results")
         self.parser.add_argument("--metadata-path", default="/grade/data/data.json",
                                  help="The location for the submission metadata JSON")
-        self.parser.add_argument("--submission-directory", default="/grade/submission",
+        self.parser.add_argument("--test-directory", default="/grade/tests",
+                                 help="The location for the student tests")
+        self.parser.add_argument("--submission-directory", default="/grade/student",
                                  help="The directory where the student's submission is located")
 
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
@@ -24,6 +26,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
             return
 
         configBuilder.setStudentSubmissionDirectory(self.arguments.submission_directory)
+        configBuilder.setTestDirectory(self.arguments.test_directory)
 
     def run(self) -> bool:
         self.configure_options()
