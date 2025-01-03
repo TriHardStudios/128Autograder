@@ -85,6 +85,7 @@ def generateZipFile(_submissionDirectory: str) -> None:
     print(f"\n\n{GREEN_COLOR}Submit {zipName} to Gradescope under the corresponding assignment.{RESET_COLOR}")
 
 
+# pragma: no cover
 def tool():
     submissionDirectory = "student_work"
 

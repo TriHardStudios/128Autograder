@@ -11,6 +11,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
     def __init__(self):
         super().__init__("PrairieLearn")
 
+    # pragma: no cover
     def configure_options(self):
         self.parser.add_argument("--results-location", default="/grade/results/results.json",
                                  help="The location for the autograder JSON results")
@@ -21,6 +22,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
         self.parser.add_argument("--submission-directory", default="/grade/student",
                                  help="The directory where the student's submission is located")
 
+    # pragma: no cover
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
         if self.arguments is None:
             return
@@ -28,6 +30,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
         configBuilder.setStudentSubmissionDirectory(self.arguments.submission_directory)
         configBuilder.setTestDirectory(self.arguments.test_directory)
 
+    # pragma: no cover
     def run(self) -> bool:
         self.configure_options()
 
