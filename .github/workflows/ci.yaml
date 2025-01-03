@@ -93,6 +93,21 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+  build-and-publish-pypi:
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    needs: [ unit-tests, e2e-tests ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: pip install -e '.[dev]'
+      - name: Build
+        run: python -m build
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+
 # We are no longer going to build the gradescope image
 #  build-and-push-image-gs:
 #    if: ${{ startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/main') }}

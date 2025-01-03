@@ -144,7 +144,6 @@ class LocalAutograderCLI(AutograderCLITool):
 
         return data["config"]["autograder_version"]
 
-
     def compare_autograder_versions(self, required_version: str) -> bool:
         version = list(map(int, required_version.split(".")))
         actual_version = list(map(int, self.get_version().split(".")))
@@ -162,7 +161,6 @@ class LocalAutograderCLI(AutograderCLITool):
             return False
 
         return True
-
 
     def update_autograder(self) -> bool:
         self.print_info_message("Updating autograder...")
@@ -224,7 +222,9 @@ class LocalAutograderCLI(AutograderCLITool):
                                  help="The location for the student's submission relative to the submission root")
         self.parser.add_argument("--test-directory", default="student_tests",
                                  help="The location for the tests for the autograder relative to the submission root")
-        self.parser.add_argument("--bypass-version-check", action="store_true", default=False, help="Bypass autograder version verification. Note: This may cause the autograder to fail!")
+        self.parser.add_argument("--bypass-version-check", action="store_true", default=False,
+                                 help="Bypass autograder version verification. Note: This may cause the autograder to fail!")
+        self.parser.add_argument("--version", action="store_true", default=False, help="Print out version and exit")
 
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):  # pragma: no cover
         pass
@@ -233,6 +233,9 @@ class LocalAutograderCLI(AutograderCLITool):
         self.configure_options()
 
         self.arguments = self.parser.parse_args()
+
+        if self.arguments.version:
+            self.print_info_message(f"Autograder version: {self.get_version()}")
 
         self.config_location = os.path.abspath(self.arguments.config_file) if \
             os.path.exists(self.arguments.config_file) else self.select_root()
@@ -253,7 +256,8 @@ class LocalAutograderCLI(AutograderCLITool):
                 self.print_info_message("Updated succeeded! Please rerun the script!")
                 return False
             else:
-                self.print_error_message(self.ENVIRONMENT_ERROR, "Update failed! Please see above for failure reason or rerun as 'test_my_work --bypass-version-check'")
+                self.print_error_message(self.ENVIRONMENT_ERROR,
+                                         "Update failed! Please see above for failure reason or rerun as 'test_my_work --bypass-version-check'")
                 return False
 
         if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
