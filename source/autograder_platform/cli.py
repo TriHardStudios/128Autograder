@@ -67,7 +67,7 @@ class AutograderCLITool(abc.ABC):
     def run(self) -> bool:
         raise NotImplementedError()
 
-    def load_config(self):
+    def load_config(self):  # pragma: no cover
         self.arguments = self.parser.parse_args()
 
         # load toml then override any options in toml with things that are passed to the runtime
@@ -80,6 +80,6 @@ class AutograderCLITool(abc.ABC):
 
         AutograderConfigurationProvider.set(self.config)
 
-    def discover_tests(self):
+    def discover_tests(self):  # pragma: no cover
         self.tests = unittest.loader.defaultTestLoader.discover(self.config.config.test_directory)
 

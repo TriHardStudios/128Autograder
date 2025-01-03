@@ -85,7 +85,6 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
         with self.assertRaises(InvalidConfigException):
             schema.validate(self.configFile)
 
-
     def testBuildNoOptional(self):
         schema = self.createAutograderConfigurationSchema()
 
@@ -164,3 +163,13 @@ class TestAutograderConfigurationSchema(unittest.TestCase):
 
         with self.assertRaises(InvalidConfigException):
             schema.validate(self.configFile)
+
+    def testValidateImplValid(self):
+        res = AutograderConfigurationSchema.validateImplSource("Python")
+
+        self.assertTrue(res)
+
+    def testValidateImplInvalid(self):
+        res = AutograderConfigurationSchema.validateImplSource("DNE")
+
+        self.assertFalse(res)

@@ -1,4 +1,3 @@
-import argparse
 import importlib
 import os
 from typing import Dict, Generic, List, Optional as OptionalType, TypeVar, Any
@@ -298,31 +297,12 @@ class AutograderConfigurationBuilder(Generic[T]):
             raise MissingParsingLibrary("tomlkit", "AutograderConfigurationBuilder.fromTOML")
 
         with open(file, 'rb') as rb:
-            data = load(rb)
-            if not merge or not self.data:
-                self.data = data
-            else:
-                self.data = self._merge(self.data, data)
+            self.data = load(rb)
 
         return self
 
     # Really easy to add support for other file formats.
     # YAML or JSON would work as well
-
-    def fromArgs(self: Builder, args: Dict, merge=True) -> Builder:
-        # we need to ignore some subcommands -
-        # some functionality exposed by the cli is not supported by the autograder config
-
-        if not merge or not self.data:
-            self.data = args
-        else:
-            self.data = self._merge(self.data, args)
-
-        return self
-
-    @staticmethod
-    def _merge(existing: Dict, incoming: Dict) -> Dict:
-        return existing | incoming
 
     @staticmethod
     def _createKeyIfDoesntExist(source: Dict[str, Any], key: str):
