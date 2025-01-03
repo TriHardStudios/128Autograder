@@ -6,7 +6,7 @@ import shutil
 from io import StringIO
 import subprocess
 import importlib.util
-from utils.student import test_my_work as testMyWork
+from autograder_cli.run_local import LocalAutograderCLI
 import random
 import string
 
@@ -23,6 +23,8 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         os.mkdir(self.SUBMISSION_DIRECTORY)
 
+        self.localCLI = LocalAutograderCLI()
+
 
     def tearDown(self) -> None:
         if os.path.exists(self.TEST_DIRECTORY):
@@ -31,7 +33,7 @@ class TestStudentTestMyWork(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def testStudentWorkNotPresent(self, capturedStdout: StringIO):
-        result = testMyWork.verifyStudentWorkPresent(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_student_work_present(self.SUBMISSION_DIRECTORY)
 
         self.assertFalse(result)
 
@@ -40,7 +42,7 @@ class TestStudentTestMyWork(unittest.TestCase):
     
     @patch('sys.stdout', new_callable=StringIO)
     def testStudentWorkInvalidDirectory(self, capturedStdout: StringIO):
-        result = testMyWork.verifyStudentWorkPresent("./DNE")
+        result = self.localCLI.verify_student_work_present("./DNE")
 
         self.assertFalse(result)
 
@@ -55,7 +57,7 @@ class TestStudentTestMyWork(unittest.TestCase):
             with open(os.path.join(self.SUBMISSION_DIRECTORY, fileName), 'w') as w:
                 w.write("\n")
 
-        result = testMyWork.verifyStudentWorkPresent(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_student_work_present(self.SUBMISSION_DIRECTORY)
 
         self.assertFalse(result)
 
@@ -68,7 +70,7 @@ class TestStudentTestMyWork(unittest.TestCase):
             with open(os.path.join(self.SUBMISSION_DIRECTORY, fileName), 'w') as w:
                 w.write("\n")
 
-        result = testMyWork.verifyStudentWorkPresent(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_student_work_present(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
@@ -82,7 +84,7 @@ class TestStudentTestMyWork(unittest.TestCase):
         
         self.assertTrue(len(os.listdir(self.TEST_DIRECTORY)) > 1)
         
-        testMyWork.cleanPreviousSubmissions(self.TEST_DIRECTORY)
+        self.localCLI.clean_previous_submissions(self.TEST_DIRECTORY)
 
         self.assertFalse(len(os.listdir(self.TEST_DIRECTORY)) > 1)
 
@@ -90,22 +92,22 @@ class TestStudentTestMyWork(unittest.TestCase):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
             w.write("First run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
     def testChangesDetectedManyRuns(self):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
-            w.write("Frist run!")
+            w.write("First run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'a') as w:
             w.write("Second run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
@@ -113,11 +115,11 @@ class TestStudentTestMyWork(unittest.TestCase):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission.py"), 'w') as w:
             w.write("Frist run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertFalse(result)
 
@@ -128,30 +130,31 @@ class TestStudentTestMyWork(unittest.TestCase):
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission2.py"), 'w') as w:
             w.write("First run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
         
         self.assertTrue(result)
 
         with open(os.path.join(self.SUBMISSION_DIRECTORY, "submission2.py"), 'a') as w:
             w.write("Second run!")
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
         
         self.assertTrue(result)
 
     def testEmptyJson(self):
-        with open(os.path.join(self.SUBMISSION_DIRECTORY, testMyWork.FILE_HASHES_NAME), "w") as _:
+        with open(os.path.join(self.SUBMISSION_DIRECTORY, self.localCLI.FILE_HASHES_NAME), "w") as _:
             pass
 
-        result = testMyWork.verifyFileChanged(self.SUBMISSION_DIRECTORY)
+        result = self.localCLI.verify_file_changed(self.SUBMISSION_DIRECTORY)
 
         self.assertTrue(result)
 
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testMissingPackage(self, _):
         self.assertIsNone(importlib.util.find_spec("pip_install_test"))
 
-        res = testMyWork.verifyRequiredPackages({"pip_install_test": "pip-install-test"})
+        res = self.localCLI.verifyRequiredPackages({"pip_install_test": "pip-install-test"})
 
         self.assertIsNotNone(importlib.util.find_spec("pip_install_test"))
 
@@ -160,34 +163,40 @@ class TestStudentTestMyWork(unittest.TestCase):
         subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "pip-install-test"], stdout=subprocess.DEVNULL)
         
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testPackageDoesNotExist(self, _):
         self.assertIsNone(importlib.util.find_spec("this_package_doesnt_exist"))
 
-        res = testMyWork.verifyRequiredPackages({"this_package_doesnt_exist": "this_package_doesnt_exist"})
+        res = self.localCLI.verifyRequiredPackages({"this_package_doesnt_exist": "this_package_doesnt_exist"})
 
         self.assertFalse(res)
 
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testPackagesPresent(self, _):
         self.assertIsNotNone(importlib.util.find_spec("dill"))
 
-        testMyWork.verifyRequiredPackages({"dill": "dill-install-test"})
+        self.localCLI.verifyRequiredPackages({"dill": "dill-install-test"})
 
         self.assertIsNotNone(importlib.util.find_spec("dill"))
 
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testMinPythonVersionTooLow(self, _):
-        self.assertFalse(testMyWork.verifyPythonVersion((3, 12), (3, 11, 2, 'final', 0)))
+        self.assertFalse(self.localCLI.verifyPythonVersion((3, 12), (3, 11, 2, 'final', 0)))
 
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testMinPythonVersionValid(self, _):
-        self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 11, 2, 'final', 0)))
-        self.assertTrue(testMyWork.verifyPythonVersion((3, 11), (3, 12, 2, 'final', 0)))
+        self.assertTrue(self.localCLI.verifyPythonVersion((3, 11), (3, 11, 2, 'final', 0)))
+        self.assertTrue(self.localCLI.verifyPythonVersion((3, 11), (3, 12, 2, 'final', 0)))
 
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testWorkingDirectoryIncorrect(self, _):
-        self.assertFalse(testMyWork.verifyWorkingDirectory("./sandbox"))
+        self.assertFalse(self.localCLI.verifyWorkingDirectory("./sandbox"))
        
     @patch('sys.stdout', new_callable=StringIO)
+    @unittest.skip("This feature is no longer available in the CLI")
     def testWorkingDirectoryIsCorrect(self, _):
-        self.assertTrue(testMyWork.verifyWorkingDirectory(os.getcwd()))
+        self.assertTrue(self.localCLI.verifyWorkingDirectory(os.getcwd()))

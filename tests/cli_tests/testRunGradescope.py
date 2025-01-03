@@ -5,6 +5,8 @@ import json
 
 from autograder_cli.run_gradescope import GradescopeAutograderCLI
 
+
+# noinspection PyDataclass
 class TestGradescopeUtils(unittest.TestCase):
     METADATA_PATH = "./metadata.json"
 
@@ -16,7 +18,11 @@ class TestGradescopeUtils(unittest.TestCase):
         self.autograderResults = {
             "score": 0
         }
-        self.autograderConfig = mock.Mock()
+        self.gradescopeCLI = GradescopeAutograderCLI()
+
+        self.gradescopeCLI.config = mock.Mock()
+        self.gradescopeCLI.arguments = mock.Mock()
+        self.gradescopeCLI.arguments.metadata_path = self.METADATA_PATH
 
     def tearDown(self) -> None:
         if os.path.exists(self.METADATA_PATH):
@@ -31,10 +37,10 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.autograderResults["score"] = 10
 
-        self.autograderConfig.config.submission_limit = 3
-        self.autograderConfig.config.take_highest = True
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
 
-        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
 
         self.assertEqual(10, self.autograderResults["score"])
 
@@ -48,11 +54,11 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.writeMetadata()
 
-        self.autograderConfig.config.submission_limit = 1000
-        self.autograderConfig.config.take_highest = True
+        self.gradescopeCLI.config.config.submission_limit = 1000
+        self.gradescopeCLI.config.config.take_highest = True
 
 
-        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
 
         self.assertEqual(10, self.autograderResults["score"])
 
@@ -79,11 +85,11 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.writeMetadata()
 
-        self.autograderConfig.config.submission_limit = 3
-        self.autograderConfig.config.take_highest = True
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
 
 
-        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
 
         self.assertEqual(9.5, self.autograderResults["score"])
 
@@ -104,11 +110,11 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.writeMetadata()
 
-        self.autograderConfig.config.submission_limit = 3
-        self.autograderConfig.config.take_highest = True
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
 
 
-        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
 
         self.assertEqual(10, self.autograderResults["score"])
 
@@ -127,11 +133,11 @@ class TestGradescopeUtils(unittest.TestCase):
 
         self.writeMetadata()
 
-        self.autograderConfig.config.submission_limit = 3
-        self.autograderConfig.config.take_highest = True
+        self.gradescopeCLI.config.config.submission_limit = 3
+        self.gradescopeCLI.config.config.take_highest = True
 
 
-        gradescopePostProcessing(self.autograderResults, self.autograderConfig, self.METADATA_PATH)
+        self.gradescopeCLI.gradescope_post_processing(self.autograderResults)
 
         self.assertEqual(10, self.autograderResults["score"])
 

@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from typing import List, Callable, Dict, Optional
 from unittest import TestSuite
 
+import autograder_platform
 from autograder_platform.config.Config import AutograderConfigurationBuilder, AutograderConfigurationProvider, \
     AutograderConfiguration
 
@@ -49,6 +50,10 @@ class AutograderCLITool(abc.ABC):
         # required CLI arguments
         self.parser.add_argument("--config-file", default="./config.toml",
                             help="Set the location of the config file")
+
+    @staticmethod
+    def get_version() -> str:
+        return autograder_platform.__version__
 
     @abc.abstractmethod
     def configure_options(self):

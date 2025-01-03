@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import zipfile
 
-from utils.student import create_gradescope_upload as createGradescopeUpload
+from autograder_cli import create_upload
 
 
 class TestStudentCreateGradescopeUpload(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         shutil.rmtree(self.STUDENT_WORK_FOLDER)
 
         # clean up any zip files
-        for file in os.listdir("../../source"):
+        for file in os.listdir("."):
             if os.path.isfile(file) and file[-4:] == ".zip":
                 os.remove(file)
 
@@ -38,7 +38,7 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
     def testAddFolderToZipOnePy(self, _):
         zipMock = MagicMock(spec=zipfile.ZipFile)
 
-        createGradescopeUpload.addFolderToZip(zipMock, self.STUDENT_WORK_FOLDER)
+        create_upload.addFolderToZip(zipMock, self.STUDENT_WORK_FOLDER)
 
         writeMock: MagicMock = zipMock.write
 
@@ -55,27 +55,27 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
 
         zipMock = MagicMock(spec=zipfile.ZipFile)
 
-        createGradescopeUpload.addFolderToZip(zipMock, self.STUDENT_WORK_FOLDER)
+        create_upload.addFolderToZip(zipMock, self.STUDENT_WORK_FOLDER)
 
         writeMock: MagicMock = zipMock.write
 
         writeMock.assert_called_once()
         writeMock.assert_called_with(os.path.join(self.STUDENT_WORK_FOLDER, "submission.py"))
 
-    @patch("utils.student.create_gradescope_upload.ZipFile")
+    @patch("autograder_cli.create_upload.ZipFile")
     @patch('sys.stdout', new_callable=StringIO)
     def testGenerateZipFileOnePy(self, _, zipMock):
         zipFileMock = MagicMock()
         zipMock.return_value.__enter__ = zipFileMock
 
-        createGradescopeUpload.generateZipFile(self.STUDENT_WORK_FOLDER)
+        create_upload.generateZipFile(self.STUDENT_WORK_FOLDER)
 
         writeMock: MagicMock = zipFileMock().write
 
         writeMock.assert_called_once()
         writeMock.assert_called_with("submission.py")
 
-    @patch("utils.student.create_gradescope_upload.ZipFile")
+    @patch("autograder_cli.create_upload.ZipFile")
     @patch('sys.stdout', new_callable=StringIO)
     def testGenerateZipFileDataFilesOnePy(self, _, zipMock):
         for _ in range(10):
@@ -87,7 +87,7 @@ class TestStudentCreateGradescopeUpload(unittest.TestCase):
         zipFileMock = MagicMock()
         zipMock.return_value.__enter__ = zipFileMock
 
-        createGradescopeUpload.generateZipFile(self.STUDENT_WORK_FOLDER)
+        create_upload.generateZipFile(self.STUDENT_WORK_FOLDER)
 
         writeMock: MagicMock = zipFileMock().write
 

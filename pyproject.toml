@@ -6,6 +6,9 @@
     where=["source"]
     exclude =["tests"]
 
+[tool.setuptools.dynamic]
+    version = {attr = "autograder_platform.__version__"}
+
 [project]
     name = "128Autograder"
     authors = [
@@ -15,7 +18,8 @@
         { name = "Gregory Bell" }
     ]
 
-    version = "5.0.0"
+    dynamic = ["version"]
+
     requires-python = ">=3.11.0"
 
     dependencies = [

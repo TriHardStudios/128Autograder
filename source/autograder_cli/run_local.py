@@ -87,10 +87,6 @@ class LocalAutograderCLI(AutograderCLITool):
 
         return existingHashes != newHashes
 
-    @staticmethod
-    def verify_working_directory(expected_path: str):
-        pass
-
     def verify_student_work_present(self, submission_directory: str) -> bool:
         if not os.path.exists(submission_directory):
             self.print_error_message(self.SUBMISSION_ERROR, f"Failed to locate student work in {submission_directory}")
@@ -105,11 +101,6 @@ class LocalAutograderCLI(AutograderCLITool):
             return False
 
         return True
-
-    # @staticmethod
-    # def verify_required_packages(package_to_verify: Dict[str, str]):
-    #
-    #     pass
 
     @staticmethod
     def discover_autograders(current_root: str, autograders: List[str]):
