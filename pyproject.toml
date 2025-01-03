@@ -31,6 +31,11 @@
         "tomli==2.0.1",
     ]
 
+[project.optional-dependencies]
+    dev = [
+        "coverage[toml]"
+    ]
+
 [project.scripts]
     run_gradescope = "autograder_cli.run_gradescope:tool"
     run_prairielearn = "autograder_cli.run_prairielearn:tool"
@@ -44,11 +49,16 @@
     exclude = ["**__pycache__**"]
     scrict = ["."]
 
-executionEnvironments = [
-    { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
-]
+    executionEnvironments = [
+        { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
+    ]
 
 [tool.coverage.run]
+#    include = [
+#        "source/autograder_cli",
+#        "source/autograder_platform",
+#
+#    ]
     command_line = "-m unittest"
     concurrency = ["multiprocessing"]
     # Omit testing files, omit dynamic files, omit __init__.py
