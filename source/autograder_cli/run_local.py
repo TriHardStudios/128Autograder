@@ -19,7 +19,7 @@ class LocalAutograderCLI(AutograderCLITool):
     FILE_HASHES_NAME = ".filehashes"
 
     def __init__(self):
-        super().__init__("Local")
+        super().__init__(f"Local v{AutograderCLITool.get_version()}")
 
         self.config_location = ""
 

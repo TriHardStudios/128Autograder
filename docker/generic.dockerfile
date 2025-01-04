@@ -9,6 +9,9 @@ ADD . /tmp/source
 RUN python3 -m pip install --break-system-packages /tmp/source
 
 
-RUN mkdir -p /autograder/{bin,submission,tests}
+RUN mkdir -p /autograder/bin && \
+    mkdir -p /autograder/submission && \
+    mkdir -p /autograder/tests && \
+    mkdir -p /autograder/results
 
 WORKDIR /autograder

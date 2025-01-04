@@ -42,20 +42,19 @@ services:
       - "./tests/e2e/integration_config.toml:/autograder/source/config.toml"
 
   test_build:
-    profiles:
-      - skip
     build:
       dockerfile: docker/generic.dockerfile
       context: .
+    entrypoint: build_autograder
+    working_dir: /autograder/source
     command:
-      - "--build"
       - "-o"
-      - "/app/bin"
+      - "/autograder/bin"
     volumes:
-      - "./tests/e2e/test_build/student_tests:/app/source/student_tests"
-      - "./tests/e2e/test_build/bin:/app/bin"
-      - "./tests/e2e/integration_config.toml:/app/source/config.toml"
-      - "./tests/e2e/test_build/starter_code/:/app/source/starter_code"
+      - "./tests/e2e/test_build/student_tests:/autograder/source/student_tests"
+      - "./tests/e2e/test_build/bin:/autograder/bin"
+      - "./tests/e2e/integration_config.toml:/autograder/source/config.toml"
+      - "./tests/e2e/test_build/starter_code/:/autograder/source/starter_code"
 
   test_run_local:
     build:
@@ -65,7 +64,7 @@ services:
     working_dir: /app/source
     volumes:
       - "./tests/e2e/test_run_test_my_work/entrypoint.sh:/app/entrypoint.sh"
-      - "./tests/e2e/test_run_test_my_work/results:/app/results"
+      - "./tests/e2e/test_run_test_my_work/results:/autograder/results"
       - "./tests/e2e/test_run_test_my_work/student_tests:/app/source/student_tests"
       - "./tests/e2e/test_run_test_my_work/submission:/app/submission"
       - "./tests/e2e/test_run_test_my_work/test_my_work_config.toml:/app/source/config.toml"
