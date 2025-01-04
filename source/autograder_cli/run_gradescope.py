@@ -19,6 +19,10 @@ class GradescopeAutograderCLI(AutograderCLITool):
         if not os.path.exists(self.arguments.metadata_path):
             return
 
+        if "tests" not in autograderResults or len(autograderResults["tests"]) == 0:
+            autograderResults['output'] = "No tests were run. If you are a student seeing this message, please notify course staff."
+            return
+
         # for now, we aren't implementing any new features for this
         submissionLimit = self.config.config.submission_limit
         takeHighest = self.config.config.take_highest

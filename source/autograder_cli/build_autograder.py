@@ -165,11 +165,13 @@ class Build:
     def createSetupForGradescope(path: str, version: str):
         with open(os.path.join(path, "setup.sh"), "w") as w:
             w.write(
-                "apt-get install python3.11 -y\n"
-                "apt-get install python3-pip -y\n"
-                # "apt-get install -y libgbm-dev xvfb\n"
-                "pip3 install --upgrade pip\n"
-                f"pip3 install 128Autograder=={version}\n"
+                "add-apt-repository ppa:deadsnakes/ppa -y\n"
+                "apt update"
+                "apt-get install python3.12 -y\n"
+                "apt-get install python3.12-venv -y\n"
+                "python3.12 -m venv /autograder/.venv\n"
+                "source /autograder/.venv/bin/activate\n"
+                f"pip install 128Autograder=={version}\n"
             )
 
     @staticmethod
@@ -177,6 +179,7 @@ class Build:
         with open(os.path.join(path, "run_autograder"), "w") as w:
             w.write(
                 "#!/bin/bash\n"
+                "source /autograder/.venv/bin/activate\n"
                 "pushd source > /dev/null || echo 'Autograder failed to open source'\n"
                 "run_gradescope\n"
                 "popd > /dev/null || true\n"
