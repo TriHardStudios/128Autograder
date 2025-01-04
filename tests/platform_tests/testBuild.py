@@ -3,7 +3,7 @@ import shutil
 import unittest
 from unittest.mock import Mock
 
-from utils.Build import Build, FilesEnum
+from autograder_cli.build_autograder import Build, FilesEnum
 
 class TestBuildFileDiscovery(unittest.TestCase):
     SANDBOX = "sandbox"
@@ -66,7 +66,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
                 w.write("Public!")
 
     def testDiscoverPublicAndPrivateTests(self):
-        build = Build(self.config)
+        build = Build(self.config, ".", "./bin", "1.0.0")
 
         self.writeTestFiles()
 
@@ -77,7 +77,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
 
     def testPrivateTestFilesWhenConflict(self):
         self.config.build.private_tests_regex=r"^test_?\w*\.py$"
-        build = Build(self.config)
+        build = Build(self.config, ".", "./bin", "1.0.0")
 
         self.writeTestFiles()
 
@@ -89,7 +89,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
     def testAllPublicWhenPrivateFalse(self):
         self.config.build.allow_private = False
 
-        build = Build(self.config)
+        build = Build(self.config, ".", "./bin", "1.0.0")
 
         self.writeTestFiles()
 
@@ -103,7 +103,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
         self.config.build.use_data_files = True
         self.config.build.data_files_source = self.TEST_ROOT
 
-        build = Build(self.config)
+        build = Build(self.config, ".", "./bin", "1.0.0")
 
         self.writeTestFiles()
 
@@ -115,7 +115,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
     def testDiscoverPublicAndPrivateDataFiles(self):
         self.config.build.use_data_files = True
 
-        build = Build(self.config) 
+        build = Build(self.config, ".", "./bin", "1.0.0") 
 
         self.writeDataFiles()
 
@@ -135,7 +135,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
         with open(os.path.join(self.DATA_SOURCE_ROOT, ".hidden", "data.dat"), "w") as w:
             w.write("Ignore!")
         
-        build = Build(self.config) 
+        build = Build(self.config, ".", "./bin", "1.0.0") 
 
         result = build.discoverFiles()
 
@@ -151,7 +151,7 @@ class TestBuildFileDiscovery(unittest.TestCase):
         with open(starterCodePath, 'w') as w:
             w.write("Starter Code!")
 
-        build = Build(self.config) 
+        build = Build(self.config, ".", "./bin", "1.0.0") 
 
         result = build.discoverFiles()
 
