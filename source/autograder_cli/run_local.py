@@ -148,15 +148,16 @@ class LocalAutograderCLI(AutograderCLITool):
         version = list(map(int, required_version.split(".")))
         actual_version = list(map(int, self.get_version().split(".")))
 
-        # major versions are breaking - so must match between assignments
+        status = False
         if version[0] != actual_version[0]:
             return False
 
-        # minor must be at least the same
-        if version[1] > actual_version[1] and version[2] > actual_version[2]:
-            return False
+        if actual_version[1] > version[1]:
+            status = True
+        elif actual_version[1] == version[1] and actual_version[2] >= version[2]:
+            status = True
 
-        return True
+        return status
 
     def update_autograder(self, version) -> bool:
         self.print_info_message("Updating autograder...")
