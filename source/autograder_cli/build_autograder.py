@@ -168,8 +168,8 @@ class Build:
                 "apt-get install python3.11 -y\n"
                 "apt-get install python3-pip -y\n"
                 # "apt-get install -y libgbm-dev xvfb\n"
-                "pip3 install --upgrade pip\n"
-                f"pip3 install 128Autograder=={version}\n"
+                "python3.11 -m pip install --upgrade pip\n"
+                f"python3.11 -m pip install 128Autograder=={version}\n"
             )
 
     @staticmethod
