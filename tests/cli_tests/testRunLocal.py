@@ -222,6 +222,36 @@ class TestStudentTestMyWork(unittest.TestCase):
 
         self.localCLI.get_version = get_version
 
+    def testCompareVersionCurrentIsOlderMinorPatchHigher(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.0.1"
+
+        res = self.localCLI.compare_autograder_versions("2.1.0")
+
+        self.assertFalse(res)
+
+        self.localCLI.get_version = get_version
+
+    def testCompareVersionCurrentIsOlderPatch(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.0.1"
+
+        res = self.localCLI.compare_autograder_versions("2.0.2")
+
+        self.assertFalse(res)
+
+        self.localCLI.get_version = get_version
+
+    def testMajorMismatch(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "3.1.0"
+
+        res = self.localCLI.compare_autograder_versions("2.0.2")
+
+        self.assertFalse(res)
+
+        self.localCLI.get_version = get_version
+
     @patch('sys.stdout', new_callable=StringIO)
     @unittest.skip("This feature is no longer available in the CLI")
     def testMissingPackage(self, _):
