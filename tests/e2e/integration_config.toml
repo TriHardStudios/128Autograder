@@ -2,7 +2,7 @@ assignment_name="IntegrationTests"
 semester="S24"
 
 [config]
-    autograder_version="2.0.0"
+    autograder_version="5.0.0"
     impl_to_use = "Python"
 
     test_directory = "student_tests"

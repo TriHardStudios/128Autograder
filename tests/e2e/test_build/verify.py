@@ -6,16 +6,12 @@ assert os.path.exists("./bin/generation/docker/prairielearn/")
 
 assert os.path.exists("./bin/generation/docker/gradescope/run_autograder")
 assert os.path.exists("./bin/generation/docker/gradescope/setup.sh")
+assert os.path.exists("./bin/generation/docker/gradescope/config.toml")
 assert os.path.exists("./bin/generation/docker/prairielearn/run_autograder")
-
-expected_source_directories = ["Executors", "StudentSubmission", "StudentSubmissionImpl", "Tasks", "TestingFramework"]
+assert os.path.exists("./bin/generation/docker/prairielearn/config.toml")
 
 actual_gs_dirs = os.listdir("./bin/generation/docker/gradescope/")
 actual_student_dirs = os.listdir("./bin/generation/student/")
-
-for file in expected_source_directories:
-    assert file in actual_gs_dirs
-    assert file in actual_student_dirs
 
 docker_expected_test_files = [file for file in os.listdir("./student_tests/") if os.path.isfile(os.path.join("student_tests", file))]
 docker_expected_test_files.sort()

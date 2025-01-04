@@ -1,10 +1,13 @@
 [build-system]
-    requires = ["setuptools"]
+    requires = ["setuptools >= 61"]
     build-backend = "setuptools.build_meta"
+
 [tool.setuptools.packages.find]
-    where=["source", "."]
+    where=["source"]
     exclude =["tests"]
 
+[tool.setuptools.dynamic]
+    version = {attr = "autograder_platform.__version__"}
 
 [project]
     name = "128Autograder"
@@ -15,8 +18,32 @@
         { name = "Gregory Bell" }
     ]
 
-    version = "4.2.4"
-    requires-python = ">=3.10.0"
+    dynamic = ["version"]
+
+    requires-python = ">=3.11.0"
+
+    dependencies = [
+        "HybridJSONTestRunner==0.8.1",
+        "dill==0.3.6",
+        "Better-PyUnit-Format==0.2.3",
+        "schema==0.7.5",
+        "requests==2.31.0",
+        "tomli==2.0.1",
+    ]
+
+[project.optional-dependencies]
+    dev = [
+        "coverage[toml]",
+        "build",
+    ]
+
+[project.scripts]
+    run_gradescope = "autograder_cli.run_gradescope:tool"
+    run_prairielearn = "autograder_cli.run_prairielearn:tool"
+    test_my_work = "autograder_cli.run_local:tool"
+    run_autograder = "autograder_cli.run_local:tool"
+    create_gradescope_upload = "autograder_cli.create_upload:tool"
+    build_autograder = "autograder_cli.build_autograder:tool"
 
 [tool.pyright]
     include = ["source"]
@@ -24,9 +51,9 @@
     exclude = ["**__pycache__**"]
     scrict = ["."]
 
-executionEnvironments = [
-    { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
-]
+    executionEnvironments = [
+        { root = "tests", extraPaths = ["source", "source/utils/student", "source/utils"] }
+    ]
 
 [tool.coverage.run]
     command_line = "-m unittest"
@@ -35,6 +62,10 @@ executionEnvironments = [
     # Doing it at the run level as it will that means they wont be run in the first place
     # Ignore build.py as its it is primarly covered by integration tests
     omit = [
+        # TODO write unit tests for the CLI
+        # shouldnt be ignoring them, but also this needs to get out the door
+        # Technically the CLIs are covered via the e2e tests, and we dont seem to have a hole there anymore
+        "source/autograder_cli/*",
         "sandbox/*",
         "testPrograms/*",
         "test_code",

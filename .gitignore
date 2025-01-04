@@ -13,3 +13,5 @@ tests/e2e/*/bin/*
 tests/e2e/*/output
 
 !.keep
+build
+*.egg-info

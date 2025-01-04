@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r source/requirements.txt
+          pip install -e .
 
       - name: Test with PyUnit
         run:
