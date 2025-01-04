@@ -182,6 +182,45 @@ class TestStudentTestMyWork(unittest.TestCase):
 
     # def testSelectRoot(self, ):
 
+    def testCompareVersionExactMatch(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.0.0"
+
+        res = self.localCLI.compare_autograder_versions("2.0.0")
+
+        self.assertTrue(res)
+
+        self.localCLI.get_version = get_version
+
+    def testCompareVersionCurrentIsNewerPatch(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.0.1"
+
+        res = self.localCLI.compare_autograder_versions("2.0.0")
+
+        self.assertTrue(res)
+
+        self.localCLI.get_version = get_version
+
+    def testCompareVersionCurrentIsNewerMinor(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.1.0"
+
+        res = self.localCLI.compare_autograder_versions("2.0.0")
+
+        self.assertTrue(res)
+
+        self.localCLI.get_version = get_version
+
+    def testCompareVersionCurrentIsNewerMinorPatchHigher(self):
+        get_version = self.localCLI.get_version
+        self.localCLI.get_version = lambda: "2.1.0"
+
+        res = self.localCLI.compare_autograder_versions("2.0.1")
+
+        self.assertTrue(res)
+
+        self.localCLI.get_version = get_version
 
     @patch('sys.stdout', new_callable=StringIO)
     @unittest.skip("This feature is no longer available in the CLI")

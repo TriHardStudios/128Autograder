@@ -153,11 +153,7 @@ class LocalAutograderCLI(AutograderCLITool):
             return False
 
         # minor must be at least the same
-        if version[1] < actual_version[1]:
-            return False
-
-        # minor must be at least the same
-        if version[2] < actual_version[2]:
+        if version[1] > actual_version[1] and version[2] > actual_version[2]:
             return False
 
         return True
