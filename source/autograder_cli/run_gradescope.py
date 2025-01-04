@@ -19,7 +19,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
         if not os.path.exists(self.arguments.metadata_path):
             return
 
-        if "tests" not in autograderResults or len(autograderResults["tests"]):
+        if "tests" not in autograderResults or len(autograderResults["tests"]) == 0:
             autograderResults['output'] = "No tests were run. If you are a student seeing this message, please notify course staff."
             return
 

@@ -16,6 +16,13 @@ class TestGradescopeUtils(unittest.TestCase):
         }
 
         self.autograderResults = {
+            "tests": [
+                {
+                    "name": 'This is a test',
+                    "status": 'passed',
+                },
+
+            ],
             "score": 0
         }
         self.gradescopeCLI = GradescopeAutograderCLI()
