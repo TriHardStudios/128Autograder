@@ -82,7 +82,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
         self.load_config()
 
         if self.arguments is None:
-            return False
+            return True
 
         self.discover_tests()
 
@@ -94,7 +94,7 @@ class GradescopeAutograderCLI(AutograderCLITool):
 
             res = testRunner.run(self.tests)
 
-            return res.wasSuccessful()
+            return not res.wasSuccessful()
 
 
 tool = GradescopeAutograderCLI().run
@@ -102,7 +102,5 @@ tool = GradescopeAutograderCLI().run
 if __name__ == "__main__":
     res = tool()
 
-    if res:
-        exit(0)
+    exit(res)
 
-    exit(1)

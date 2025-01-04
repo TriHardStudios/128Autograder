@@ -34,7 +34,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
         self.load_config()
 
         if self.arguments is None:
-            return False
+            return True
 
         self.discover_tests()
 
@@ -45,7 +45,7 @@ class PrairieLearnAutograderCLI(AutograderCLITool):
 
             res = testRunner.run(self.tests)
 
-            return res.wasSuccessful()
+            return not res.wasSuccessful()
 
 
 tool = PrairieLearnAutograderCLI().run
@@ -53,7 +53,5 @@ tool = PrairieLearnAutograderCLI().run
 if __name__ == "__main__":
     res = tool()
 
-    if res:
-        exit(0)
+    exit(res)
 
-    exit(1)

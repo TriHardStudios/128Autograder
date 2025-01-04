@@ -297,7 +297,7 @@ class BuildAutograderCLI(AutograderCLITool):
 
         build.build()
 
-        return True
+        return False
 
     def set_config_arguments(self, configBuilder: AutograderConfigurationBuilder[AutograderConfiguration]):
         pass
@@ -307,8 +307,4 @@ tool = BuildAutograderCLI().run
 
 if __name__ == "__main__":
     res = tool()
-
-    if res:
-        exit(0)
-
-    exit(1)
+    exit(res)
