@@ -162,11 +162,11 @@ class LocalAutograderCLI(AutograderCLITool):
 
         return True
 
-    def update_autograder(self) -> bool:
+    def update_autograder(self, version) -> bool:
         self.print_info_message("Updating autograder...")
 
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "128Autograder", "--break-system-packages"])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", f"128Autograder=={version}", "--break-system-packages"])
         except subprocess.CalledProcessError:
             self.print_error_message(self.ENVIRONMENT_ERROR, "Failed to update autograder!")
             return False
@@ -253,7 +253,7 @@ class LocalAutograderCLI(AutograderCLITool):
         version = self.get_autograder_version(self.config_location)
 
         if not self.arguments.bypass_version_check and not self.compare_autograder_versions(version):
-            if self.update_autograder():
+            if self.update_autograder(version):
                 self.print_info_message("Updated succeeded! Please rerun the script!")
                 return False
             else:
