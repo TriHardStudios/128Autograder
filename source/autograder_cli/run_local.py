@@ -232,14 +232,14 @@ class LocalAutograderCLI(AutograderCLITool):
 
         if self.arguments.version:
             self.print_info_message(f"Autograder version: {self.get_version()}")
-            return True
+            return False
 
         self.config_location = os.path.abspath(self.arguments.config_file) if \
             os.path.exists(self.arguments.config_file) else self.select_root()
 
         if self.config_location is None:
             self.print_error_message(self.ENVIRONMENT_ERROR, "Failed to load autograder!")
-            return False
+            return True
 
         root_directory = os.path.dirname(self.config_location)
 
@@ -251,14 +251,14 @@ class LocalAutograderCLI(AutograderCLITool):
         if not self.arguments.bypass_version_check and not self.compare_autograder_versions(version):
             if self.update_autograder(version):
                 self.print_info_message("Updated succeeded! Please rerun the script!")
-                return False
+                return True
             else:
                 self.print_error_message(self.ENVIRONMENT_ERROR,
                                          "Update failed! Please see above for failure reason or rerun as 'test_my_work --bypass-version-check'")
-                return False
+                return True
 
         if not self.verify_student_work_present(os.path.join(root_directory, self.arguments.submission_directory)):
-            return False
+            return True
 
         fileChanged = self.verify_file_changed(os.path.join(root_directory, self.arguments.submission_directory))
 
@@ -281,7 +281,7 @@ class LocalAutograderCLI(AutograderCLITool):
         if not fileChanged:
             self.print_warning_message("Student Submission Warning", "Student's submission may not have changed!")
 
-        return res.wasSuccessful()
+        return not res.wasSuccessful()
 
 
 tool = LocalAutograderCLI().run
@@ -289,7 +289,7 @@ tool = LocalAutograderCLI().run
 if __name__ == "__main__":
     res = tool()
 
-    if res:
-        exit(0)
+    # this is the same behavior as the script and isnt actually documented well!
+    # thanks python
+    exit(res)
 
-    exit(1)
