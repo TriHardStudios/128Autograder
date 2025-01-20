@@ -21,9 +21,9 @@ class Executor:
         try:
             # create the sandbox and ensure that we have RWX permissions
             os.mkdir(environment.SANDBOX_LOCATION)
-        except OSError as ex:
+        except OSError as ex:  # pragma: no coverage
             # raise EnvironmentError(f"Failed to create sandbox for test run. Error is: {ex}")
-            print(f"ERROR: Failed to create sandbox folder.\n{ex}", file=sys.stderr)
+            print(f"ERROR: Failed to create sandbox folder.\n{ex}", file=sys.stderr)  # pragma: no coverage
 
         # TODO Logging
 
@@ -34,8 +34,8 @@ class Executor:
                 try:
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     shutil.copy(src, dest)
-                except OSError as ex:
-                    raise EnvironmentError(f"Failed to move file '{src}' to '{dest}'. Error is: {ex}")
+                except OSError as ex:  # pragma: no coverage
+                    raise EnvironmentError(f"Failed to move file '{src}' to '{dest}'. Error is: {ex}")  # pragma: no coverage
 
         return process
         
@@ -66,5 +66,5 @@ class Executor:
         if os.path.exists(environment.SANDBOX_LOCATION):
             try:
                 shutil.rmtree(environment.SANDBOX_LOCATION)
-            except OSError as ex:
-                print(f"ERROR: Failed to remove sandbox folder.\n{ex}", file=sys.stderr)
+            except OSError as ex:  # pragma: no coverage
+                print(f"ERROR: Failed to remove sandbox folder.\n{ex}", file=sys.stderr)  # pragma: no coverage
