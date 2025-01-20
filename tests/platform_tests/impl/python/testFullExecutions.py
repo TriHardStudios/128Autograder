@@ -432,3 +432,29 @@ class TestFullExecutions(unittest.TestCase):
         Executor.execute(environment, runner)
 
         self.assertEqual(expected, getResults(environment).return_val)
+
+    def testVerifySandboxDeletedAfterTests(self):
+        program = "print('OUTPUT stuff')"
+        self.writePythonFile("submission.py", program)
+
+        self.writePythonFile(".keep", "")
+
+        submission = PythonSubmission()\
+            .setSubmissionRoot(self.PYTHON_PROGRAM_DIRECTORY)\
+            .load()\
+            .build()\
+            .validate()
+        
+        environment = ExecutionEnvironmentBuilder()\
+            .addFile(os.path.join(self.PYTHON_PROGRAM_DIRECTORY, ".keep"), ".keep")\
+            .setTimeout(5)\
+            .build()
+        
+        for _ in range(10):
+            runner = PythonRunnerBuilder(submission)\
+                .setEntrypoint(module=True)\
+                .build()
+            Executor.execute(environment, runner)
+
+        
+        

@@ -154,8 +154,8 @@ class Build:
         if os.path.exists(self.binRoot):
             try:
                 shutil.rmtree(self.binRoot, ignore_errors=True)
-            except OSError:
-                print("WARN: Failed to clean bin directory")
+            except OSError:  # pragma: no coverage
+                print("WARN: Failed to clean bin directory")  # pragma: no coverage
 
         # create directories
         os.makedirs(self.generationDirectory, exist_ok=True)
