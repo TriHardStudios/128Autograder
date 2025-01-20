@@ -116,7 +116,13 @@ class StudentSubmissionProcess(multiprocessing.Process):
 
         This method also injects whatever import MetaPathFinders
         """
-        os.chdir(self.executionDirectory)
+        # This may error? so we are going to catch it and log the error
+        try:
+            os.chdir(self.executionDirectory)
+        except OSError as ex:
+            print(f"ERROR: Failed to change directory to sandbox folder.\n{ex}", file=sys.stderr)
+
+
         sys.path.append(os.getcwd())
 
         for importHandler in self.importHandlers:
