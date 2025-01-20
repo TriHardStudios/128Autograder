@@ -78,6 +78,7 @@
         "INJECTED_*",
         "__getstate__*",
         "__setstate__*",
+        "except OSError*",
     ]
 
 [tool.coverage.report]
