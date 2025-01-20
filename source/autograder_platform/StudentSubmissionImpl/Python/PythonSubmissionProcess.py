@@ -119,8 +119,8 @@ class StudentSubmissionProcess(multiprocessing.Process):
         # This may error? so we are going to catch it and log the error
         try:
             os.chdir(self.executionDirectory)
-        except OSError as ex:
-            print(f"ERROR: Failed to change directory to sandbox folder.\n{ex}", file=sys.stderr)
+        except OSError as ex:  # pragma: no coverage
+            print(f"ERROR: Failed to change directory to sandbox folder.\n{ex}", file=sys.stderr)  # pragma: no coverage
 
 
         sys.path.append(os.getcwd())
